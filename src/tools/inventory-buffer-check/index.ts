@@ -1,5 +1,5 @@
-export * from './types';
-export { inventoryBufferCheckMetadata } from './metadata';
-export { validateInventoryBufferInput } from './validate';
-export { calculateInventoryBuffer } from './calculate';
-export { inventoryBufferCheckTool } from './tool';
+export * from './types.ts';
+export { inventoryBufferCheckMetadata } from './metadata.ts';
+export { validateInventoryBufferInput } from './validate.ts';
+export { calculateInventoryBuffer } from './calculate.ts';
+export { inventoryBufferCheckTool } from './tool.ts';

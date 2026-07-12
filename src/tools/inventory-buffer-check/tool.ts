@@ -1,8 +1,8 @@
-import type { InitializeResult, PlatformContext, Tool } from '../../platform/tool-contract';
-import { calculateInventoryBuffer } from './calculate';
-import { inventoryBufferCheckMetadata } from './metadata';
-import type { InventoryBufferOutput, InventoryBufferRawInput, InventoryBufferValidatedInput } from './types';
-import { validateInventoryBufferInput } from './validate';
+import type { InitializeResult, PlatformContext, Tool } from '../../platform/tool-contract.ts';
+import { calculateInventoryBuffer } from './calculate.ts';
+import { inventoryBufferCheckMetadata } from './metadata.ts';
+import type { InventoryBufferOutput, InventoryBufferRawInput, InventoryBufferValidatedInput } from './types.ts';
+import { validateInventoryBufferInput } from './validate.ts';
 
 function initialize(_context: PlatformContext): InitializeResult {
 	// MVP: no external setup required, always ready.
