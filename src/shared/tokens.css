@@ -1,0 +1,44 @@
+/*
+  WTLab Design Tokens
+  Source: WTLab Foundations v3 (confirmed Design Source).
+  Minimal token set for the platform shell MVP — colors, typography,
+  spacing, borders, content widths. Extend deliberately, not by habit.
+*/
+
+:root {
+	/* Colors */
+	--color-bg: #0b0a08;
+	--color-bg-raised: #171310;
+	--color-bg-inset: #0f0d0b;
+
+	--color-text-primary: #e9e2d5;
+	--color-text-secondary: #a89e8e;
+	--color-text-tertiary: #8d8374;
+	--color-text-muted: #6d645a;
+
+	--color-accent: #c8a06a;
+	--color-accent-strong: #e0bd85;
+
+	--color-border: rgba(233, 226, 215, 0.1);
+
+	/* Typography */
+	--font-display: 'Newsreader', serif;
+	--font-body: 'Noto Sans SC', sans-serif;
+	--font-mono: ui-monospace, Menlo, monospace;
+
+	--tracking-kicker: 0.16em;
+
+	/* Spacing */
+	--space-xs: 8px;
+	--space-sm: 14px;
+	--space-md: 24px;
+	--space-lg: 48px;
+	--space-xl: 64px;
+
+	/* Borders */
+	--border-hairline: 1px solid var(--color-border);
+
+	/* Content widths */
+	--content-width-narrow: 860px;
+	--content-width-wide: 1240px;
+}

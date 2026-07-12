@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Astro generated types
+.astro/
+
+# macOS / IDE
+.DS_Store
+.idea/
+
+# Design reference (standalone prototype bundle, not source code)
+WTLab Foundations v3(standalone).html

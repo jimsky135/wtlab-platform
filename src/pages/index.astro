@@ -1,0 +1,80 @@
+---
+// MVP homepage — visual foundation migrated from WTLab Foundations v3
+// (confirmed Design Source). No layout component yet, single page only.
+import '../shared/global.css';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>WTLab</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<main>
+			<h1 class="wordmark">WT<span>Lab</span></h1>
+			<p class="tagline">A modular platform of independent tools and widgets.</p>
+
+			<section class="tools">
+				<p class="kicker">Tools</p>
+				<p class="empty-state">No active tools yet.</p>
+			</section>
+		</main>
+	</body>
+</html>
+
+<style>
+	main {
+		max-width: var(--content-width-narrow);
+		margin: 0 auto;
+		padding: var(--space-xl) var(--space-md);
+	}
+
+	.wordmark {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2.5rem, 6vw, 4rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.wordmark span {
+		color: var(--color-accent);
+	}
+
+	.tagline {
+		color: var(--color-text-secondary);
+		font-size: 1.1rem;
+		margin: 0 0 var(--space-xl);
+	}
+
+	.tools {
+		border-top: var(--border-hairline);
+		padding-top: var(--space-lg);
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.empty-state {
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+</style>
+
