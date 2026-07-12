@@ -1,0 +1,396 @@
+---
+// Water Level Checker (Tool ID: inventory-buffer-check) — tool page.
+// Availability is decided entirely by the platform Registry; this page
+// never renders the tool UI unless the Registry says it's available.
+import '../../shared/global.css';
+import { platformRegistry } from '../../platform/registry';
+
+const TOOL_ID = 'inventory-buffer-check';
+const available = platformRegistry.isAvailable(TOOL_ID);
+const tool = platformRegistry.getById(TOOL_ID);
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Water Level Checker · WTLab</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		{available && tool ? (
+			<main>
+				<p class="kicker">WTLab · {tool.metadata.category}</p>
+				<h1 class="tool-title">
+					Water Level Checker
+					<span class="tool-title-secondary">庫存水位檢查器</span>
+				</h1>
+				<p class="tagline">{tool.metadata.description}</p>
+
+				<form id="water-level-form">
+					<div class="field">
+						<label for="currentStock">Current Stock</label>
+						<input id="currentStock" name="currentStock" type="text" inputmode="decimal" required />
+					</div>
+
+					<div class="field">
+						<label for="monthlyConsumption">Monthly Consumption</label>
+						<input id="monthlyConsumption" name="monthlyConsumption" type="text" inputmode="decimal" required />
+					</div>
+
+					<div class="field-row">
+						<div class="field">
+							<label for="leadTime">Lead Time</label>
+							<input id="leadTime" name="leadTime" type="text" inputmode="decimal" required />
+						</div>
+						<div class="field field-unit">
+							<label for="leadTimeUnit">Unit</label>
+							<select id="leadTimeUnit" name="leadTimeUnit">
+								<option value="month">month</option>
+								<option value="day">day</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="field-row">
+						<div class="field">
+							<label for="safetyBuffer">Safety Buffer</label>
+							<input id="safetyBuffer" name="safetyBuffer" type="text" inputmode="decimal" required />
+						</div>
+						<div class="field field-unit">
+							<label for="safetyBufferUnit">Unit</label>
+							<select id="safetyBufferUnit" name="safetyBufferUnit">
+								<option value="month">month</option>
+								<option value="day">day</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="field">
+						<label for="inTransitQuantity">In-Transit Quantity <span class="optional-marker">(optional)</span></label>
+						<input id="inTransitQuantity" name="inTransitQuantity" type="text" inputmode="decimal" />
+					</div>
+
+					<div class="field-row">
+						<div class="field">
+							<label for="arrivalTime">Expected Arrival Time <span class="optional-marker">(optional)</span></label>
+							<input id="arrivalTime" name="arrivalTime" type="text" inputmode="decimal" />
+						</div>
+						<div class="field field-unit">
+							<label for="arrivalTimeUnit">Unit</label>
+							<select id="arrivalTimeUnit" name="arrivalTimeUnit">
+								<option value="month">month</option>
+								<option value="day">day</option>
+							</select>
+						</div>
+					</div>
+
+					<button type="submit">Check</button>
+				</form>
+
+				<div id="errors" class="errors" hidden></div>
+				<div id="results" class="results" hidden></div>
+			</main>
+		) : (
+			<main class="unavailable">
+				<p class="kicker">WTLab</p>
+				<h1 class="tool-title">This tool is not currently available.</h1>
+				<p class="tagline"><a href="/">Back to WTLab</a></p>
+			</main>
+		)}
+	</body>
+</html>
+
+<script>
+	import { calculateInventoryBuffer } from '../../tools/inventory-buffer-check/calculate.ts';
+	import type { ArrivalRisk, InventoryBufferRawInput, RiskStatus, TimeUnit } from '../../tools/inventory-buffer-check/types.ts';
+	import { validateInventoryBufferInput } from '../../tools/inventory-buffer-check/validate.ts';
+
+	const form = document.querySelector<HTMLFormElement>('#water-level-form');
+	const errorsEl = document.querySelector<HTMLElement>('#errors');
+	const resultsEl = document.querySelector<HTMLElement>('#results');
+
+	// The tool UI (and this form) only exists in the DOM when the Registry
+	// said the tool is available; if not, there is nothing to wire up.
+	if (form && errorsEl && resultsEl) {
+		const ARRIVAL_RISK_TEXT: Record<ArrivalRisk, string> = {
+			'possible-shortage': 'Possible shortage before arrival',
+			'can-cover-until-arrival': 'Current stock can cover until arrival',
+			'arrival-time-not-provided': 'Arrival time not provided',
+		};
+
+		const RISK_STATUS_TEXT: Record<RiskStatus, { label: string; description: string }> = {
+			safe: {
+				label: 'Safe',
+				description: 'Inventory covers replenishment lead time and safety buffer.',
+			},
+			caution: {
+				label: 'Caution',
+				description: 'Inventory has entered the safety buffer zone. Confirm replenishment or arrival timing.',
+			},
+			'high-risk': {
+				label: 'High Risk',
+				description: 'Inventory coverage is shorter than the normal replenishment lead time.',
+			},
+		};
+
+		function fieldValue(name: string): string {
+			const field = form!.elements.namedItem(name);
+			return field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value : '';
+		}
+
+		function optionalFieldValue(name: string): string | undefined {
+			const value = fieldValue(name);
+			return value.trim() === '' ? undefined : value;
+		}
+
+		function formatMonths(value: number): string {
+			return `${value.toFixed(1)} months`;
+		}
+
+		function formatQuantity(value: number): string {
+			return String(Math.round(value * 100) / 100);
+		}
+
+		function renderErrors(errors: string[]) {
+			resultsEl!.hidden = true;
+			resultsEl!.innerHTML = '';
+			errorsEl!.hidden = false;
+			errorsEl!.innerHTML = '';
+			const list = document.createElement('ul');
+			for (const message of errors) {
+				const item = document.createElement('li');
+				item.textContent = message;
+				list.appendChild(item);
+			}
+			errorsEl!.appendChild(list);
+		}
+
+		function renderResults(output: ReturnType<typeof calculateInventoryBuffer>) {
+			errorsEl!.hidden = true;
+			errorsEl!.innerHTML = '';
+			resultsEl!.hidden = false;
+			resultsEl!.innerHTML = '';
+
+			const rows: Array<[string, string]> = [['Current Coverage', formatMonths(output.currentCoverageMonths)]];
+
+			if (output.totalCoverageMonths !== undefined) {
+				rows.push(['Total Coverage', formatMonths(output.totalCoverageMonths)]);
+			}
+
+			rows.push(['Minimum Safety Stock', formatQuantity(output.minimumSafetyStock)]);
+			rows.push(['Reorder Point', formatQuantity(output.reorderPoint)]);
+			rows.push(['Arrival Risk', ARRIVAL_RISK_TEXT[output.arrivalRisk]]);
+
+			const riskStatus = RISK_STATUS_TEXT[output.riskStatus];
+			rows.push(['Risk Status', riskStatus.label]);
+
+			const dl = document.createElement('dl');
+			for (const [term, value] of rows) {
+				const dt = document.createElement('dt');
+				dt.textContent = term;
+				const dd = document.createElement('dd');
+				dd.textContent = value;
+				dl.append(dt, dd);
+			}
+			resultsEl!.appendChild(dl);
+
+			const note = document.createElement('p');
+			note.className = 'risk-note';
+			note.textContent = riskStatus.description;
+			resultsEl!.appendChild(note);
+		}
+
+		form.addEventListener('submit', (event) => {
+			event.preventDefault();
+
+			const raw: InventoryBufferRawInput = {
+				currentStock: fieldValue('currentStock'),
+				monthlyConsumption: fieldValue('monthlyConsumption'),
+				leadTime: fieldValue('leadTime'),
+				leadTimeUnit: fieldValue('leadTimeUnit') as TimeUnit,
+				safetyBuffer: fieldValue('safetyBuffer'),
+				safetyBufferUnit: fieldValue('safetyBufferUnit') as TimeUnit,
+				inTransitQuantity: optionalFieldValue('inTransitQuantity'),
+				arrivalTime: optionalFieldValue('arrivalTime'),
+				arrivalTimeUnit: fieldValue('arrivalTimeUnit') as TimeUnit,
+			};
+
+			const result = validateInventoryBufferInput(raw);
+
+			if (!result.valid) {
+				renderErrors(result.errors);
+				return;
+			}
+
+			renderResults(calculateInventoryBuffer(result.data));
+		});
+	}
+</script>
+
+<style>
+	main {
+		max-width: var(--content-width-narrow);
+		margin: 0 auto;
+		padding: var(--space-xl) var(--space-md);
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.tool-title {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-sm);
+	}
+
+	.tool-title-secondary {
+		font-family: var(--font-body);
+		font-style: normal;
+		font-size: 1rem;
+		color: var(--color-text-secondary);
+	}
+
+	.tagline {
+		color: var(--color-text-secondary);
+		font-size: 1.05rem;
+		margin: 0 0 var(--space-xl);
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+		padding-top: var(--space-lg);
+		border-top: var(--border-hairline);
+	}
+
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+		flex: 1;
+	}
+
+	.field-row {
+		display: flex;
+		gap: var(--space-md);
+		align-items: flex-end;
+	}
+
+	.field-unit {
+		flex: 0 0 8rem;
+	}
+
+	label {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.optional-marker {
+		text-transform: none;
+		letter-spacing: normal;
+		color: var(--color-text-muted);
+	}
+
+	input,
+	select {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		font-size: 1rem;
+		padding: var(--space-sm);
+	}
+
+	input:focus,
+	select:focus {
+		outline: 1px solid var(--color-accent);
+		outline-offset: -1px;
+	}
+
+	button {
+		align-self: flex-start;
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: none;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-sm) var(--space-lg);
+		cursor: pointer;
+	}
+
+	.errors {
+		margin-top: var(--space-lg);
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		color: var(--color-text-primary);
+	}
+
+	.errors ul {
+		margin: 0;
+		padding-left: 1.2em;
+	}
+
+	.results {
+		margin-top: var(--space-lg);
+		border-top: var(--border-hairline);
+		padding-top: var(--space-lg);
+	}
+
+	.results dl {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: 0;
+	}
+
+	.results dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.results dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.risk-note {
+		margin: var(--space-md) 0 0;
+		color: var(--color-text-secondary);
+	}
+
+	.unavailable .tagline a {
+		color: var(--color-accent);
+	}
+</style>

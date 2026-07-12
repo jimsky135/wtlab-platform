@@ -17,16 +17,23 @@ test('Case 8 — looking up an unknown tool id returns undefined', () => {
 	assert.equal(platformRegistry.isAvailable('does-not-exist'), false);
 });
 
-// Case 9 — Inventory Buffer Check is currently status:draft, enabled:false,
-// so it must not appear in getAvailable(), even though it is registered.
-test('Case 9 — draft/disabled Inventory Buffer Check is excluded from available tools', () => {
-	const availableIds = platformRegistry.getAvailable().map((tool) => tool.metadata.id);
-	assert.ok(!availableIds.includes(INVENTORY_BUFFER_CHECK_ID));
-	assert.equal(platformRegistry.isAvailable(INVENTORY_BUFFER_CHECK_ID), false);
+// Task 005's original Case 9 asserted that Inventory Buffer Check (then
+// status:draft, enabled:false) was excluded from getAvailable(). Task 006
+// §11 changed its metadata to status:active, enabled:true, making that
+// premise false — this is superseded by Task 006 Case 1 and Case 2 below,
+// which test the tool's current, real availability instead.
 
-	// Confirm this reflects the tool's real, unmodified metadata — the
-	// test does not mutate it.
+// Task 006 Case 1 — after status:active + enabled:true, the tool is
+// platform-available.
+test('Task 006 Case 1 — Inventory Buffer Check is available after status:active, enabled:true', () => {
 	const tool = platformRegistry.getById(INVENTORY_BUFFER_CHECK_ID);
-	assert.equal(tool?.metadata.status, 'draft');
-	assert.equal(tool?.metadata.enabled, false);
+	assert.equal(tool?.metadata.status, 'active');
+	assert.equal(tool?.metadata.enabled, true);
+	assert.equal(platformRegistry.isAvailable(INVENTORY_BUFFER_CHECK_ID), true);
+});
+
+// Task 006 Case 2 — getAvailable() includes Inventory Buffer Check.
+test('Task 006 Case 2 — getAvailable() includes Inventory Buffer Check', () => {
+	const availableIds = platformRegistry.getAvailable().map((tool) => tool.metadata.id);
+	assert.ok(availableIds.includes(INVENTORY_BUFFER_CHECK_ID));
 });

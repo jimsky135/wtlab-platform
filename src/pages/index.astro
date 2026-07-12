@@ -2,6 +2,11 @@
 // MVP homepage — visual foundation migrated from WTLab Foundations v3
 // (confirmed Design Source). No layout component yet, single page only.
 import '../shared/global.css';
+import { platformRegistry } from '../platform/registry';
+
+// Tools shown here are never hardcoded — only what the Registry currently
+// reports as platform-available (status:active + enabled:true) is listed.
+const availableTools = platformRegistry.getAvailable();
 ---
 
 <html lang="en">
@@ -26,7 +31,21 @@ import '../shared/global.css';
 
 			<section class="tools">
 				<p class="kicker">Tools</p>
-				<p class="empty-state">No active tools yet.</p>
+				{availableTools.length === 0 ? (
+					<p class="empty-state">No active tools yet.</p>
+				) : (
+					<ul class="tool-list">
+						{availableTools.map((tool) => (
+							<li class="tool-card">
+								<a href={`/tools/${tool.metadata.id}`}>
+									<h3>{tool.metadata.name}</h3>
+									<p class="tool-description">{tool.metadata.description}</p>
+									<p class="tool-category">{tool.metadata.category}</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</section>
 		</main>
 	</body>
@@ -73,6 +92,49 @@ import '../shared/global.css';
 	}
 
 	.empty-state {
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+
+	.tool-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.tool-card {
+		border: var(--border-hairline);
+	}
+
+	.tool-card a {
+		display: block;
+		padding: var(--space-md);
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.tool-card h3 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.4rem;
+		margin: 0 0 var(--space-xs);
+		color: var(--color-text-primary);
+	}
+
+	.tool-description {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xs);
+	}
+
+	.tool-category {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
 		color: var(--color-text-tertiary);
 		margin: 0;
 	}

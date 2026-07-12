@@ -15,6 +15,6 @@ export const inventoryBufferCheckMetadata: ToolMetadata = {
 		'Quickly check whether current inventory can cover consumption, replenishment lead time, and safety buffer.',
 	category: 'supply-chain-inventory',
 	version: '0.2',
-	status: 'draft',
-	enabled: false,
+	status: 'active',
+	enabled: true,
 };
