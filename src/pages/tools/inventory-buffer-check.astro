@@ -1,54 +1,83 @@
 ---
-// Water Level Checker (Tool ID: inventory-buffer-check) — tool page.
-// Availability is decided entirely by the platform Registry; this page
-// never renders the tool UI unless the Registry says it's available.
-import '../../shared/global.css';
+// Water Level Checker — first fully integrated WTLab platform instrument.
+// Availability gating stays with the execution registry; all display
+// metadata comes from the platform catalog (no duplicated constants).
+// The calculation core (validate.ts / calculate.ts) is untouched.
+import StatusTag from '../../components/StatusTag.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { ALL_CAPABILITIES, CAPABILITY_LABELS, findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
 import { platformRegistry } from '../../platform/registry';
 
 const TOOL_ID = 'inventory-buffer-check';
 const available = platformRegistry.isAvailable(TOOL_ID);
-const tool = platformRegistry.getById(TOOL_ID);
+const entry = findById(instruments, TOOL_ID);
+
+const relatedLinks = [
+	{ label: 'Decision Priority Map', href: '/workspace/decision-priority' },
+	{ label: 'Entity Workspace', href: '/workspace/entity' },
+	{ label: 'Command Center', href: '/command' },
+	{ label: 'Continuity', href: '/continuity' },
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Water Level Checker · WTLab</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&display=swap"
-			rel="stylesheet"
-		/>
-	</head>
-	<body>
-		{available && tool ? (
-			<main>
-				<p class="kicker">WTLab · {tool.metadata.category}</p>
-				<h1 class="tool-title">
-					Water Level Checker
-					<span class="tool-title-secondary">庫存水位檢查器</span>
+<PlatformShell title={`${entry?.displayName ?? 'Instrument'} · WTLab`} section="instruments">
+	{available && entry ? (
+		<article>
+			<header class="tool-header">
+				<p class="kicker">Instrument · {entry.layer}</p>
+				<h1>
+					{entry.displayName}
+					<span class="subtitle">庫存水位檢查器</span>
 				</h1>
-				<p class="tagline">{tool.metadata.description}</p>
+				<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} />
+				<dl class="tool-meta">
+					<dt>Version</dt>
+					<dd>{entry.version}</dd>
+					<dt>Core question</dt>
+					<dd>{entry.coreQuestion}</dd>
+					<dt>Description</dt>
+					<dd>{entry.description}</dd>
+				</dl>
+				<nav class="tool-nav" aria-label="Instrument">
+					<a href="/instruments">← Instrument Library</a>
+					<a href="/command">Command Center</a>
+				</nav>
+			</header>
 
-				<form id="water-level-form">
+			<section class="capabilities" aria-labelledby="capabilities-heading">
+				<h2 id="capabilities-heading">Capabilities</h2>
+				<ul>
+					{ALL_CAPABILITIES.map((capability) => {
+						const present = entry.capabilities.includes(capability);
+						return (
+							<li class:list={['capability', present ? 'present' : 'future']}>
+								{CAPABILITY_LABELS[capability]}
+								{!present && <span class="future-tag">Future</span>}
+							</li>
+						);
+					})}
+				</ul>
+			</section>
+
+			<form id="water-level-form">
+				<fieldset>
+					<legend>Inventory</legend>
 					<div class="field">
 						<label for="currentStock">Current Stock</label>
 						<input id="currentStock" name="currentStock" type="text" inputmode="decimal" required />
 					</div>
-
 					<div class="field">
-						<label for="monthlyConsumption">Monthly Consumption</label>
-						<input id="monthlyConsumption" name="monthlyConsumption" type="text" inputmode="decimal" required />
+						<label for="inTransitQuantity">In-Transit Quantity <span class="optional-marker">(optional)</span></label>
+						<input id="inTransitQuantity" name="inTransitQuantity" type="text" inputmode="decimal" />
 					</div>
+				</fieldset>
 
+				<fieldset>
+					<legend>Lead Time</legend>
 					<div class="field-row">
 						<div class="field">
-							<label for="leadTime">Lead Time</label>
+							<label for="leadTime">Replenishment Lead Time</label>
 							<input id="leadTime" name="leadTime" type="text" inputmode="decimal" required />
 						</div>
 						<div class="field field-unit">
@@ -59,26 +88,6 @@ const tool = platformRegistry.getById(TOOL_ID);
 							</select>
 						</div>
 					</div>
-
-					<div class="field-row">
-						<div class="field">
-							<label for="safetyBuffer">Safety Buffer</label>
-							<input id="safetyBuffer" name="safetyBuffer" type="text" inputmode="decimal" required />
-						</div>
-						<div class="field field-unit">
-							<label for="safetyBufferUnit">Unit</label>
-							<select id="safetyBufferUnit" name="safetyBufferUnit">
-								<option value="month">month</option>
-								<option value="day">day</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="field">
-						<label for="inTransitQuantity">In-Transit Quantity <span class="optional-marker">(optional)</span></label>
-						<input id="inTransitQuantity" name="inTransitQuantity" type="text" inputmode="decimal" />
-					</div>
-
 					<div class="field-row">
 						<div class="field">
 							<label for="arrivalTime">Expected Arrival Time <span class="optional-marker">(optional)</span></label>
@@ -92,35 +101,139 @@ const tool = platformRegistry.getById(TOOL_ID);
 							</select>
 						</div>
 					</div>
+				</fieldset>
 
-					<button type="submit">Check</button>
-				</form>
+				<fieldset>
+					<legend>Safety Buffer</legend>
+					<div class="field-row">
+						<div class="field">
+							<label for="safetyBuffer">Safety Buffer</label>
+							<input id="safetyBuffer" name="safetyBuffer" type="text" inputmode="decimal" required />
+						</div>
+						<div class="field field-unit">
+							<label for="safetyBufferUnit">Unit</label>
+							<select id="safetyBufferUnit" name="safetyBufferUnit">
+								<option value="month">month</option>
+								<option value="day">day</option>
+							</select>
+						</div>
+					</div>
+				</fieldset>
 
-				<div id="errors" class="errors" hidden></div>
-				<div id="results" class="results" hidden></div>
-			</main>
-		) : (
-			<main class="unavailable">
-				<p class="kicker">WTLab</p>
-				<h1 class="tool-title">This tool is not currently available.</h1>
-				<p class="tagline"><a href="/">Back to WTLab</a></p>
-			</main>
-		)}
-	</body>
-</html>
+				<fieldset>
+					<legend>Demand</legend>
+					<div class="field">
+						<label for="monthlyConsumption">Monthly Consumption</label>
+						<input id="monthlyConsumption" name="monthlyConsumption" type="text" inputmode="decimal" required />
+					</div>
+				</fieldset>
+
+				<button type="submit">Check</button>
+			</form>
+
+			<section id="validation-panel" class="validation-panel" aria-live="polite" hidden>
+				<h2>Validation</h2>
+				<p class="validation-explain">
+					The calculation did not run. Each item below names the field and the rule it failed — correct
+					the inputs and check again.
+				</p>
+				<h3>Errors</h3>
+				<ul id="validation-errors"></ul>
+			</section>
+
+			<section id="results" class="results" aria-live="polite" hidden>
+				<h2>Results</h2>
+				<div class="cards">
+					<div class="card">
+						<h3>Inventory Status</h3>
+						<p class="card-value" id="r-risk-label"></p>
+						<p class="card-note" id="r-risk-desc"></p>
+					</div>
+					<div class="card">
+						<h3>Coverage</h3>
+						<dl>
+							<dt>Current coverage</dt>
+							<dd id="r-coverage-current"></dd>
+							<dt>Total coverage (incl. in-transit)</dt>
+							<dd id="r-coverage-total"></dd>
+						</dl>
+					</div>
+					<div class="card">
+						<h3>Recommendation</h3>
+						<dl>
+							<dt>Minimum safety stock</dt>
+							<dd id="r-min-stock"></dd>
+							<dt>Reorder point</dt>
+							<dd id="r-reorder"></dd>
+						</dl>
+					</div>
+					<div class="card">
+						<h3>Evidence &amp; Notes</h3>
+						<dl>
+							<dt>Arrival risk</dt>
+							<dd id="r-arrival"></dd>
+						</dl>
+						<ul class="notes" id="r-notes"></ul>
+					</div>
+				</div>
+			</section>
+
+			<section class="continuity" aria-labelledby="continuity-heading">
+				<h2 id="continuity-heading">Continuity</h2>
+				<div class="continuity-actions">
+					<button type="button" id="export-csv" disabled>Export CSV</button>
+					<button type="button" id="export-json" disabled>Export JSON</button>
+					<span class="continuity-hint" id="export-hint">Run a check to enable export.</span>
+				</div>
+				<div class="continuity-actions planned-actions">
+					<button type="button" disabled>Prepare AI Context</button>
+					<span class="planned-tag">Planned</span>
+					<button type="button" disabled>Email Copy</button>
+					<span class="planned-tag">Planned</span>
+					<button type="button" disabled>Save Session</button>
+					<span class="planned-tag">Planned</span>
+				</div>
+			</section>
+
+			<section class="related" aria-labelledby="related-heading">
+				<h2 id="related-heading">Related</h2>
+				<ul>
+					{relatedLinks.map((link) => (
+						<li><a href={link.href}>{link.label}</a></li>
+					))}
+				</ul>
+			</section>
+		</article>
+	) : (
+		<article>
+			<p class="kicker">WTLab</p>
+			<h1>This tool is not currently available.</h1>
+			<p><a href="/instruments">← Back to Instrument Library</a></p>
+		</article>
+	)}
+</PlatformShell>
 
 <script>
 	import { calculateInventoryBuffer } from '../../tools/inventory-buffer-check/calculate.ts';
-	import type { ArrivalRisk, InventoryBufferRawInput, RiskStatus, TimeUnit } from '../../tools/inventory-buffer-check/types.ts';
+	import { outputToCsv, outputToJson } from '../../tools/inventory-buffer-check/export.ts';
+	import type {
+		ArrivalRisk,
+		InventoryBufferOutput,
+		InventoryBufferRawInput,
+		RiskStatus,
+		TimeUnit,
+	} from '../../tools/inventory-buffer-check/types.ts';
 	import { validateInventoryBufferInput } from '../../tools/inventory-buffer-check/validate.ts';
 
 	const form = document.querySelector<HTMLFormElement>('#water-level-form');
-	const errorsEl = document.querySelector<HTMLElement>('#errors');
+	const validationPanel = document.querySelector<HTMLElement>('#validation-panel');
+	const errorsList = document.querySelector<HTMLElement>('#validation-errors');
 	const resultsEl = document.querySelector<HTMLElement>('#results');
+	const exportCsvBtn = document.querySelector<HTMLButtonElement>('#export-csv');
+	const exportJsonBtn = document.querySelector<HTMLButtonElement>('#export-json');
+	const exportHint = document.querySelector<HTMLElement>('#export-hint');
 
-	// The tool UI (and this form) only exists in the DOM when the Registry
-	// said the tool is available; if not, there is nothing to wire up.
-	if (form && errorsEl && resultsEl) {
+	if (form && validationPanel && errorsList && resultsEl && exportCsvBtn && exportJsonBtn && exportHint) {
 		const ARRIVAL_RISK_TEXT: Record<ArrivalRisk, string> = {
 			'possible-shortage': 'Possible shortage before arrival',
 			'can-cover-until-arrival': 'Current stock can cover until arrival',
@@ -142,6 +255,8 @@ const tool = platformRegistry.getById(TOOL_ID);
 			},
 		};
 
+		let lastOutput: InventoryBufferOutput | null = null;
+
 		function fieldValue(name: string): string {
 			const field = form!.elements.namedItem(name);
 			return field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value : '';
@@ -160,54 +275,82 @@ const tool = platformRegistry.getById(TOOL_ID);
 			return String(Math.round(value * 100) / 100);
 		}
 
+		function setText(id: string, text: string) {
+			const el = document.getElementById(id);
+			if (el) el.textContent = text;
+		}
+
 		function renderErrors(errors: string[]) {
 			resultsEl!.hidden = true;
-			resultsEl!.innerHTML = '';
-			errorsEl!.hidden = false;
-			errorsEl!.innerHTML = '';
-			const list = document.createElement('ul');
+			lastOutput = null;
+			exportCsvBtn!.disabled = true;
+			exportJsonBtn!.disabled = true;
+			exportHint!.hidden = false;
+			errorsList!.innerHTML = '';
 			for (const message of errors) {
 				const item = document.createElement('li');
 				item.textContent = message;
-				list.appendChild(item);
+				errorsList!.appendChild(item);
 			}
-			errorsEl!.appendChild(list);
+			validationPanel!.hidden = false;
 		}
 
-		function renderResults(output: ReturnType<typeof calculateInventoryBuffer>) {
-			errorsEl!.hidden = true;
-			errorsEl!.innerHTML = '';
+		function renderResults(output: InventoryBufferOutput) {
+			validationPanel!.hidden = true;
+			lastOutput = output;
+			exportCsvBtn!.disabled = false;
+			exportJsonBtn!.disabled = false;
+			exportHint!.hidden = true;
+
+			const risk = RISK_STATUS_TEXT[output.riskStatus];
+			setText('r-risk-label', risk.label);
+			setText('r-risk-desc', risk.description);
+			setText('r-coverage-current', formatMonths(output.currentCoverageMonths));
+			setText(
+				'r-coverage-total',
+				output.totalCoverageMonths === undefined ? 'Not provided' : formatMonths(output.totalCoverageMonths)
+			);
+			setText('r-min-stock', formatQuantity(output.minimumSafetyStock));
+			setText('r-reorder', formatQuantity(output.reorderPoint));
+			setText('r-arrival', ARRIVAL_RISK_TEXT[output.arrivalRisk]);
+
+			const notes = document.getElementById('r-notes');
+			if (notes) {
+				notes.innerHTML = '';
+				const messages: string[] = [];
+				if (output.totalCoverageMonths === undefined) {
+					messages.push('In-transit quantity not provided — total coverage was not calculated.');
+				}
+				if (output.arrivalRisk === 'arrival-time-not-provided') {
+					messages.push('Expected arrival time not provided — arrival risk was not assessed.');
+				}
+				for (const message of messages) {
+					const item = document.createElement('li');
+					item.textContent = message;
+					notes.appendChild(item);
+				}
+			}
+
 			resultsEl!.hidden = false;
-			resultsEl!.innerHTML = '';
-
-			const rows: Array<[string, string]> = [['Current Coverage', formatMonths(output.currentCoverageMonths)]];
-
-			if (output.totalCoverageMonths !== undefined) {
-				rows.push(['Total Coverage', formatMonths(output.totalCoverageMonths)]);
-			}
-
-			rows.push(['Minimum Safety Stock', formatQuantity(output.minimumSafetyStock)]);
-			rows.push(['Reorder Point', formatQuantity(output.reorderPoint)]);
-			rows.push(['Arrival Risk', ARRIVAL_RISK_TEXT[output.arrivalRisk]]);
-
-			const riskStatus = RISK_STATUS_TEXT[output.riskStatus];
-			rows.push(['Risk Status', riskStatus.label]);
-
-			const dl = document.createElement('dl');
-			for (const [term, value] of rows) {
-				const dt = document.createElement('dt');
-				dt.textContent = term;
-				const dd = document.createElement('dd');
-				dd.textContent = value;
-				dl.append(dt, dd);
-			}
-			resultsEl!.appendChild(dl);
-
-			const note = document.createElement('p');
-			note.className = 'risk-note';
-			note.textContent = riskStatus.description;
-			resultsEl!.appendChild(note);
 		}
+
+		function download(filename: string, mime: string, content: string) {
+			const blob = new Blob([content], { type: mime });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = filename;
+			link.click();
+			URL.revokeObjectURL(url);
+		}
+
+		exportCsvBtn.addEventListener('click', () => {
+			if (lastOutput) download('water-level-checker.csv', 'text/csv', outputToCsv(lastOutput));
+		});
+
+		exportJsonBtn.addEventListener('click', () => {
+			if (lastOutput) download('water-level-checker.json', 'application/json', outputToJson(lastOutput));
+		});
 
 		form.addEventListener('submit', (event) => {
 			event.preventDefault();
@@ -237,12 +380,6 @@ const tool = platformRegistry.getById(TOOL_ID);
 </script>
 
 <style>
-	main {
-		max-width: var(--content-width-narrow);
-		margin: 0 auto;
-		padding: var(--space-xl) var(--space-md);
-	}
-
 	.kicker {
 		font-family: var(--font-mono);
 		font-size: 11px;
@@ -253,7 +390,7 @@ const tool = platformRegistry.getById(TOOL_ID);
 		margin: 0 0 var(--space-sm);
 	}
 
-	.tool-title {
+	h1 {
 		font-family: var(--font-display);
 		font-style: italic;
 		font-weight: 400;
@@ -265,25 +402,127 @@ const tool = platformRegistry.getById(TOOL_ID);
 		gap: var(--space-sm);
 	}
 
-	.tool-title-secondary {
+	.subtitle {
 		font-family: var(--font-body);
 		font-style: normal;
 		font-size: 1rem;
 		color: var(--color-text-secondary);
 	}
 
-	.tagline {
+	.tool-meta {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: var(--space-md) 0 0;
+	}
+
+	.tool-meta dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.tool-meta dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.tool-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+		margin-top: var(--space-md);
+	}
+
+	.tool-nav a {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	section {
+		border-top: var(--border-hairline);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+	}
+
+	h2 {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
 		color: var(--color-text-secondary);
-		font-size: 1.05rem;
-		margin: 0 0 var(--space-xl);
+		margin: 0 0 var(--space-md);
+	}
+
+	.capabilities ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-xs);
+	}
+
+	.capability {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		border: var(--border-hairline);
+		padding: 4px 10px;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.capability.present {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.capability.future {
+		color: var(--color-text-muted);
+	}
+
+	.future-tag {
+		font-size: 9px;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 1px 6px;
 	}
 
 	form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-md);
-		padding-top: var(--space-lg);
 		border-top: var(--border-hairline);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+	}
+
+	fieldset {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+		margin: 0;
+	}
+
+	legend {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		padding: 0 var(--space-xs);
 	}
 
 	.field {
@@ -295,6 +534,7 @@ const tool = platformRegistry.getById(TOOL_ID);
 
 	.field-row {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-md);
 		align-items: flex-end;
 	}
@@ -327,13 +567,7 @@ const tool = platformRegistry.getById(TOOL_ID);
 		padding: var(--space-sm);
 	}
 
-	input:focus,
-	select:focus {
-		outline: 1px solid var(--color-accent);
-		outline-offset: -1px;
-	}
-
-	button {
+	button[type='submit'] {
 		align-self: flex-start;
 		background: var(--color-accent);
 		color: var(--color-bg);
@@ -347,50 +581,143 @@ const tool = platformRegistry.getById(TOOL_ID);
 		cursor: pointer;
 	}
 
-	.errors {
-		margin-top: var(--space-lg);
+	.validation-panel {
 		border: var(--border-hairline);
 		padding: var(--space-md);
-		color: var(--color-text-primary);
 	}
 
-	.errors ul {
-		margin: 0;
-		padding-left: 1.2em;
+	.validation-explain {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-sm);
 	}
 
-	.results {
-		margin-top: var(--space-lg);
-		border-top: var(--border-hairline);
-		padding-top: var(--space-lg);
-	}
-
-	.results dl {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-xs) var(--space-md);
-		margin: 0;
-	}
-
-	.results dt {
+	.validation-panel h3 {
 		font-family: var(--font-mono);
 		font-size: 11px;
 		letter-spacing: var(--tracking-kicker);
 		text-transform: uppercase;
 		color: var(--color-text-tertiary);
+		margin: 0 0 var(--space-xs);
 	}
 
-	.results dd {
+	.validation-panel ul {
 		margin: 0;
+		padding-left: 1.2em;
 		color: var(--color-text-primary);
 	}
 
-	.risk-note {
-		margin: var(--space-md) 0 0;
-		color: var(--color-text-secondary);
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: var(--space-sm);
 	}
 
-	.unavailable .tagline a {
+	.card {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+	}
+
+	.card h3 {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.card-value {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 1.8rem;
 		color: var(--color-accent);
+		margin: 0 0 var(--space-xs);
+	}
+
+	.card-note {
+		color: var(--color-text-secondary);
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.card dl {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-xs);
+		margin: 0;
+	}
+
+	.card dt {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.card dd {
+		margin: 0 0 var(--space-xs);
+		color: var(--color-text-primary);
+	}
+
+	.notes {
+		margin: var(--space-sm) 0 0;
+		padding-left: 1.2em;
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+	}
+
+	.continuity-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-sm);
+	}
+
+	.continuity-actions button {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: pointer;
+	}
+
+	.continuity-actions button:disabled {
+		color: var(--color-text-muted);
+		cursor: not-allowed;
+	}
+
+	.continuity-hint {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+
+	.planned-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.related ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+	}
+
+	.related a {
+		color: var(--color-accent);
+		text-decoration: none;
+		border-bottom: 1px solid var(--color-accent);
+		padding-bottom: 2px;
 	}
 </style>

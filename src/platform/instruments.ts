@@ -20,10 +20,10 @@ export const instruments: readonly InstrumentEntry[] = [
 		// Confirmed decision: the live route stays /tools/inventory-buffer-check.
 		route: '/tools/inventory-buffer-check',
 		version: '0.2',
-		coreQuestion: 'Can current stock plus in-transit quantity safely cover until the next arrival?',
-		capabilities: ['manual-input', 'calculate'],
+		coreQuestion: 'Is current inventory sufficient to cover replenishment lead time and safety buffer?',
+		capabilities: ['manual-input', 'calculate', 'export'],
 		dataPersistence: 'none',
-		exportFormats: [],
+		exportFormats: ['csv', 'json'],
 		implementationState: 'implemented',
 		toolId: 'inventory-buffer-check',
 		prototypeRefs: ['021-WTLab Water Level Checker Result v1(standalone).html'],

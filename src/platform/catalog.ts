@@ -77,6 +77,30 @@ export interface ContinuityAction {
 }
 
 export const ALL_LAYERS: readonly ToolLayer[] = ['observe', 'think', 'work', 'continue', 'platform'];
+
+/** Display order + labels for capability badges. Pages read this instead
+ *  of hardcoding capability names. */
+export const ALL_CAPABILITIES: readonly Capability[] = [
+	'manual-input',
+	'csv-import',
+	'calculate',
+	'save',
+	'export',
+	'email-copy',
+	're-import',
+	'ai-handoff',
+];
+
+export const CAPABILITY_LABELS: Record<Capability, string> = {
+	'manual-input': 'Manual Input',
+	'csv-import': 'CSV Import',
+	calculate: 'Calculation',
+	save: 'Save',
+	export: 'Export',
+	'email-copy': 'Email Copy',
+	're-import': 'Re-import',
+	'ai-handoff': 'AI Handoff',
+};
 export const ALL_CATALOG_STATUSES: readonly CatalogStatus[] = [
 	'draft',
 	'prototype',

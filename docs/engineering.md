@@ -44,12 +44,24 @@ Standalone prototype bundles (`Prototype/`, `WTLab Foundations v3(standalone).ht
 
 Save / Export / Email Copy / Re-import / AI Handoff are typed (`ContinuityAction` in `catalog.ts`, data in `workspaces.ts`) and surfaced as *planned* — disabled controls, honest labels. Product rule: user work must never depend only on browser cookies or local site data. Backend/storage/email integrations require their own ADRs before implementation.
 
+## Instrument integration pattern
+
+Water Level Checker (`src/pages/tools/inventory-buffer-check.astro`) is the first fully integrated production instrument. Future instruments follow the same pattern:
+
+1. **Shell**: the page renders inside `PlatformShell` (`section="instruments"`) — shared navigation, header, footer, focus styles.
+2. **Gating**: availability is still decided by the execution registry (`platformRegistry.isAvailable(id)`); an unavailable tool renders a plain message, never the tool UI.
+3. **Metadata**: everything displayed about the instrument (name, layer, status, version, core question, description, implementation state) is read from the catalog entry via `findById(instruments, id)` — no constants duplicated into the page.
+4. **Capabilities**: the capability panel iterates `ALL_CAPABILITIES` with `CAPABILITY_LABELS` (both from `catalog.ts`) and marks entries not in the instrument's `capabilities` as Future.
+5. **Calculation**: the page's client script imports the tool's own `validate`/`calculate` modules; the UI never re-implements rules or formulas. Validation failures render in a grouped panel with an explanation; results render into pre-declared semantic cards (`aria-live`).
+6. **Continuity**: Export CSV/JSON is functional client-side (serialization lives in the tool's `export.ts`, unit-tested, separate from UI). Prepare AI Context / Email Copy / Save Session stay disabled and labeled Planned.
+7. **Related links**: plain navigation to relevant workspaces — no fake data.
+
 ## Engineering backlog
 
 | Task | Scope |
 |---|---|
-| Next: Water Level Checker production UI polish | refine result presentation, edge-case display |
 | CSV import and normalization | Data Intake Workspace foundation |
-| Save / export package format | first continuity capability, needs ADR |
+| Save / export package format | shared continuity package (extends per-tool export), needs ADR |
 | Entity domain types | shared entity model for workspaces |
 | Workspace context routing | linking instruments to workspace context |
+| Second instrument implementation | apply the integration pattern end-to-end |
