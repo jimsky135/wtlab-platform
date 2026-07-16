@@ -1,0 +1,156 @@
+---
+// Instrument Library — fully registry-driven, no hardcoded cards.
+import StatusTag from '../../components/StatusTag.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { instruments } from '../../platform/instruments';
+---
+
+<PlatformShell title="Instruments · WTLab" section="instruments">
+	<p class="kicker">Instrument Library</p>
+	<h1>Instruments</h1>
+	<p class="lede">
+		Each instrument observes or calculates one operational dimension. Entries marked as prototype are known in
+		the product architecture but not yet usable here.
+	</p>
+
+	<ol class="instrument-list">
+		{instruments.map((instrument, index) => (
+			<li class="instrument">
+				<div class="instrument-head">
+					<span class="seq">{String(index + 1).padStart(2, '0')}</span>
+					<h2>{instrument.displayName}</h2>
+				</div>
+				<p class="description">{instrument.description}</p>
+				<p class="core-question">
+					<span class="label">Core question</span>
+					{instrument.coreQuestion}
+				</p>
+				<p class="category">{instrument.category}</p>
+				<StatusTag
+					status={instrument.status}
+					implementationState={instrument.implementationState}
+					enabled={instrument.enabled}
+				/>
+				<p class="action">
+					{instrument.enabled && instrument.implementationState !== 'placeholder' ? (
+						<a href={instrument.route}>Open Instrument</a>
+					) : (
+						<a href={instrument.route} class="planned">
+							Prototype Planned
+						</a>
+					)}
+				</p>
+			</li>
+		))}
+	</ol>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xl);
+	}
+
+	.instrument-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.instrument {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.instrument-head {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-sm);
+	}
+
+	.seq {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-text-muted);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.4rem;
+		margin: 0;
+	}
+
+	.description {
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.core-question {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.core-question .label {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.category {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+
+	.action {
+		margin: var(--space-xs) 0 0;
+	}
+
+	.action a {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		text-decoration: none;
+		border-bottom: 1px solid var(--color-accent);
+		padding-bottom: 2px;
+	}
+
+	.action a.planned {
+		color: var(--color-text-tertiary);
+		border-bottom-color: var(--color-border);
+	}
+</style>

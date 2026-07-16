@@ -41,4 +41,8 @@
 	/* Content widths */
 	--content-width-narrow: 860px;
 	--content-width-wide: 1240px;
+
+	/* Focus */
+	--focus-outline: 2px solid var(--color-accent);
+	--focus-outline-offset: 2px;
 }

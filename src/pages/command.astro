@@ -1,0 +1,306 @@
+---
+// Operational Command Center — lightweight production skeleton.
+// Summary numbers and the operational focus block are DEMO DATA, labeled
+// as such; workspace and instrument sections are registry-driven.
+import StatusTag from '../components/StatusTag.astro';
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { findById } from '../platform/catalog';
+import { instruments } from '../platform/instruments';
+import { continuityActions, workspaces } from '../platform/workspaces';
+
+const todaySummary = [
+	{ label: 'Active Reviews', value: 3 },
+	{ label: 'Pending Decisions', value: 2 },
+	{ label: 'Open Questions', value: 4 },
+	{ label: 'New Observations', value: 6 },
+];
+
+const suggestedWorkspaceIds = ['decision-priority', 'decision-memory', 'relationship-explorer', 'case-intelligence'];
+const suggestedWorkspaces = suggestedWorkspaceIds
+	.map((id) => findById(workspaces, id))
+	.filter((workspace) => workspace !== undefined);
+---
+
+<PlatformShell title="Command Center · WTLab" section="today" wide>
+	<p class="kicker">Operational Command Center</p>
+	<h1>Today</h1>
+
+	<section aria-labelledby="summary-heading">
+		<h2 id="summary-heading">Today Summary <span class="demo-tag">Demo data</span></h2>
+		<ul class="summary">
+			{todaySummary.map((item) => (
+				<li>
+					<span class="summary-value">{item.value}</span>
+					<span class="summary-label">{item.label}</span>
+				</li>
+			))}
+		</ul>
+	</section>
+
+	<section aria-labelledby="focus-heading">
+		<h2 id="focus-heading">Current Operational Focus <span class="demo-tag">Demo data</span></h2>
+		<dl class="focus">
+			<dt>Entity</dt>
+			<dd>M50 Series</dd>
+			<dt>Stage</dt>
+			<dd>Decision Review</dd>
+			<dt>Current observations</dt>
+			<dd>Consumption is running ahead of the monthly average; one inbound shipment is unconfirmed.</dd>
+			<dt>Review question</dt>
+			<dd>Does the current buffer still cover the confirmed arrival gap?</dd>
+		</dl>
+	</section>
+
+	<section aria-labelledby="workspaces-heading">
+		<h2 id="workspaces-heading">Suggested Workspaces</h2>
+		<ul class="cards">
+			{suggestedWorkspaces.map((workspace) => (
+				<li class="card">
+					<h3><a href={workspace.route}>{workspace.displayName}</a></h3>
+					<p>{workspace.description}</p>
+					<StatusTag
+						status={workspace.status}
+						implementationState={workspace.implementationState}
+						enabled={workspace.enabled}
+					/>
+				</li>
+			))}
+		</ul>
+	</section>
+
+	<section aria-labelledby="instruments-heading">
+		<h2 id="instruments-heading">Instrument Status</h2>
+		<ul class="instrument-status">
+			{instruments.map((instrument) => (
+				<li>
+					<a href={instrument.route}>{instrument.displayName}</a>
+					<StatusTag
+						status={instrument.status}
+						implementationState={instrument.implementationState}
+						enabled={instrument.enabled}
+					/>
+				</li>
+			))}
+		</ul>
+	</section>
+
+	<section aria-labelledby="continuity-heading">
+		<h2 id="continuity-heading">Continuity Actions</h2>
+		<p class="continuity-note">
+			These capabilities are planned, not yet functional. User work will never depend only on browser
+			cookies or local site data.
+		</p>
+		<ul class="continuity">
+			{continuityActions.map((action) => (
+				<li>
+					<button type="button" disabled aria-describedby="continuity-heading">
+						{action.label}
+					</button>
+					<span class="planned-tag">Planned</span>
+				</li>
+			))}
+		</ul>
+	</section>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-lg);
+	}
+
+	section {
+		border-top: var(--border-hairline);
+		padding: var(--space-lg) 0;
+	}
+
+	h2 {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-md);
+	}
+
+	.demo-tag {
+		font-size: 10px;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 2px 8px;
+		margin-left: var(--space-xs);
+	}
+
+	.summary {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: var(--space-sm);
+	}
+
+	.summary li {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.summary-value {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 2rem;
+		color: var(--color-accent);
+	}
+
+	.summary-label {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.focus {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: 0;
+	}
+
+	.focus dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.focus dd {
+		margin: 0;
+	}
+
+	.cards {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: var(--space-sm);
+	}
+
+	.card {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.card h3 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.2rem;
+		margin: 0;
+	}
+
+	.card h3 a {
+		color: var(--color-text-primary);
+		text-decoration: none;
+	}
+
+	.card h3 a:hover {
+		color: var(--color-accent);
+	}
+
+	.card p {
+		color: var(--color-text-secondary);
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.instrument-status {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.instrument-status li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-sm);
+		border: var(--border-hairline);
+		padding: var(--space-sm) var(--space-md);
+	}
+
+	.instrument-status a {
+		color: var(--color-text-primary);
+		text-decoration: none;
+		min-width: 220px;
+	}
+
+	.instrument-status a:hover {
+		color: var(--color-accent);
+	}
+
+	.continuity-note {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-md);
+	}
+
+	.continuity {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-sm);
+	}
+
+	.continuity li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.continuity button {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: not-allowed;
+	}
+
+	.planned-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+</style>

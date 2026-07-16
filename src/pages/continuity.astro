@@ -1,0 +1,108 @@
+---
+// Continuity Center — honest placeholder for future save/export/
+// re-import/AI-handoff capabilities. Nothing here pretends to work.
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { continuityActions } from '../platform/workspaces';
+---
+
+<PlatformShell title="Continuity · WTLab" section="continuity">
+	<p class="kicker">Continuity Center</p>
+	<h1>Continuity</h1>
+	<p class="lede">
+		Continuity is how your work survives beyond a browser tab. None of these capabilities are functional yet
+		— they are the planned integration surface. User work will never depend only on browser cookies or local
+		site data.
+	</p>
+
+	<ul class="actions">
+		{continuityActions.map((action) => (
+			<li>
+				<div class="action-head">
+					<h2>{action.label}</h2>
+					<span class="planned-tag">Planned</span>
+				</div>
+				<p>{action.description}</p>
+			</li>
+		))}
+	</ul>
+
+	<p class="boundary-note">
+		Future integrations (storage, email delivery, package format) require their own architecture decisions
+		and will be recorded as ADRs before implementation.
+	</p>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xl);
+	}
+
+	.actions {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.actions li {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+	}
+
+	.action-head {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-sm);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.3rem;
+		margin: 0;
+	}
+
+	.planned-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 2px 8px;
+	}
+
+	.actions p {
+		color: var(--color-text-secondary);
+		margin: var(--space-xs) 0 0;
+	}
+
+	.boundary-note {
+		margin: var(--space-xl) 0 0;
+		color: var(--color-text-tertiary);
+		border-top: var(--border-hairline);
+		padding-top: var(--space-md);
+	}
+</style>

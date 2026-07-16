@@ -149,5 +149,6 @@ vite.config.ts.timestamp-*
 .DS_Store
 .idea/
 
-# Design reference (standalone prototype bundle, not source code)
+# Design reference (standalone prototype bundles, not source code)
 WTLab Foundations v3(standalone).html
+Prototype/

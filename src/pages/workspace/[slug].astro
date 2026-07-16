@@ -1,0 +1,100 @@
+---
+// Registry-driven placeholder routes for planned workspaces. The Command
+// Center (/command) and Continuity Center (/continuity) have their own
+// pages and are not generated here.
+import StatusTag from '../../components/StatusTag.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { workspaces } from '../../platform/workspaces';
+
+export function getStaticPaths() {
+	return workspaces
+		.filter((workspace) => workspace.route.startsWith('/workspace/'))
+		.map((workspace) => ({ params: { slug: workspace.slug }, props: { workspace } }));
+}
+
+const { workspace } = Astro.props;
+---
+
+<PlatformShell title={`${workspace.displayName} · WTLab`} section="workspaces">
+	<p class="kicker">Workspace · {workspace.layer}</p>
+	<h1>{workspace.displayName}</h1>
+	<StatusTag
+		status={workspace.status}
+		implementationState={workspace.implementationState}
+		enabled={workspace.enabled}
+	/>
+
+	<dl class="facts">
+		<dt>Purpose</dt>
+		<dd>{workspace.description}</dd>
+		<dt>Core question</dt>
+		<dd>{workspace.coreQuestion}</dd>
+		{workspace.prototypeRefs.length > 0 && (
+			<>
+				<dt>Related prototypes</dt>
+				<dd>{workspace.prototypeRefs.join(', ')} (visual reference only, not part of this build)</dd>
+			</>
+		)}
+	</dl>
+
+	<p class="notice">This workspace is planned but not yet implemented.</p>
+
+	<p class="back"><a href="/workspaces">← Back to Workspaces</a></p>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.facts {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: var(--space-lg) 0 0;
+		border-top: var(--border-hairline);
+		padding-top: var(--space-lg);
+	}
+
+	.facts dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.facts dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.notice {
+		margin: var(--space-lg) 0 0;
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		color: var(--color-text-secondary);
+	}
+
+	.back {
+		margin: var(--space-lg) 0 0;
+	}
+
+	.back a {
+		color: var(--color-accent);
+	}
+</style>

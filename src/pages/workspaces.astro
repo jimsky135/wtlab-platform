@@ -1,0 +1,94 @@
+---
+// Workspaces index — registry-driven. Workspaces are platform surfaces,
+// deliberately separate from the Instrument Library.
+import StatusTag from '../components/StatusTag.astro';
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { workspaces } from '../platform/workspaces';
+---
+
+<PlatformShell title="Workspaces · WTLab" section="workspaces">
+	<p class="kicker">Platform Workspaces</p>
+	<h1>Workspaces</h1>
+	<p class="lede">
+		Workspaces organize records, entities, observations, and decisions. Instruments measure one dimension;
+		workspaces hold the work itself.
+	</p>
+
+	<ul class="workspace-list">
+		{workspaces.map((workspace) => (
+			<li class="workspace">
+				<h2><a href={workspace.route}>{workspace.displayName}</a></h2>
+				<p class="description">{workspace.description}</p>
+				<StatusTag
+					status={workspace.status}
+					implementationState={workspace.implementationState}
+					enabled={workspace.enabled}
+				/>
+			</li>
+		))}
+	</ul>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xl);
+	}
+
+	.workspace-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.workspace {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.3rem;
+		margin: 0;
+	}
+
+	h2 a {
+		color: var(--color-text-primary);
+		text-decoration: none;
+	}
+
+	h2 a:hover {
+		color: var(--color-accent);
+	}
+
+	.description {
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+</style>

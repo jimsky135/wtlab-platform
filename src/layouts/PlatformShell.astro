@@ -1,0 +1,171 @@
+---
+// Shared platform shell: header, primary navigation, main slot, footer.
+// Pages pass `title` and `section` (which nav item is current).
+import '../shared/global.css';
+
+interface Props {
+	title: string;
+	section?: 'today' | 'instruments' | 'workspaces' | 'continuity' | 'about';
+	/** Wide pages (Command Center) can opt into the wide content width. */
+	wide?: boolean;
+}
+
+const { title, section, wide = false } = Astro.props;
+
+const navItems = [
+	{ id: 'today', label: 'Today', href: '/command' },
+	{ id: 'instruments', label: 'Instruments', href: '/instruments' },
+	{ id: 'workspaces', label: 'Workspaces', href: '/workspaces' },
+	{ id: 'continuity', label: 'Continuity', href: '/continuity' },
+	{ id: 'about', label: 'About', href: '/about' },
+] as const;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<header class="shell-header">
+			<div class="shell-header-inner" data-wide={wide}>
+				<a class="brand" href="/">WT<span>Lab</span></a>
+				<nav aria-label="Primary">
+					<ul>
+						{navItems.map((item) => (
+							<li>
+								<a href={item.href} aria-current={section === item.id ? 'page' : undefined}>
+									{item.label}
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+				<p class="header-note" aria-hidden="true">Save / Export — planned</p>
+			</div>
+		</header>
+
+		<main class="shell-main" data-wide={wide}>
+			<slot />
+		</main>
+
+		<footer class="shell-footer" data-wide={wide}>
+			<p>WTLab — instruments for operational judgment.</p>
+		</footer>
+	</body>
+</html>
+
+<style>
+	.shell-header {
+		border-bottom: var(--border-hairline);
+	}
+
+	.shell-header-inner,
+	.shell-main,
+	.shell-footer {
+		max-width: var(--content-width-narrow);
+		margin: 0 auto;
+		padding-left: var(--space-md);
+		padding-right: var(--space-md);
+	}
+
+	.shell-header-inner[data-wide='true'],
+	.shell-main[data-wide='true'],
+	.shell-footer[data-wide='true'] {
+		max-width: var(--content-width-wide);
+	}
+
+	.shell-header-inner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-md);
+		padding-top: var(--space-sm);
+		padding-bottom: var(--space-sm);
+	}
+
+	.brand {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.5rem;
+		color: var(--color-text-primary);
+		text-decoration: none;
+	}
+
+	.brand span {
+		color: var(--color-accent);
+	}
+
+	nav ul {
+		list-style: none;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+		margin: 0;
+		padding: 0;
+	}
+
+	nav a {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		text-decoration: none;
+		padding: var(--space-xs) 0;
+	}
+
+	nav a[aria-current='page'] {
+		color: var(--color-accent);
+		border-bottom: 1px solid var(--color-accent);
+	}
+
+	nav a:hover {
+		color: var(--color-text-primary);
+	}
+
+	.header-note {
+		margin: 0 0 0 auto;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.shell-main {
+		padding-top: var(--space-xl);
+		padding-bottom: var(--space-xl);
+	}
+
+	.shell-footer {
+		border-top: var(--border-hairline);
+		padding-top: var(--space-md);
+		padding-bottom: var(--space-lg);
+	}
+
+	.shell-footer p {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+
+	:global(a:focus-visible),
+	:global(button:focus-visible),
+	:global(input:focus-visible),
+	:global(select:focus-visible) {
+		outline: var(--focus-outline);
+		outline-offset: var(--focus-outline-offset);
+	}
+</style>

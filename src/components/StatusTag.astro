@@ -1,0 +1,62 @@
+---
+// Status is always communicated with a text label (never color alone).
+import type { CatalogStatus, ImplementationState } from '../platform/catalog';
+
+interface Props {
+	status: CatalogStatus;
+	implementationState: ImplementationState;
+	enabled: boolean;
+}
+
+const { status, implementationState, enabled } = Astro.props;
+
+const STATUS_LABEL: Record<CatalogStatus, string> = {
+	draft: 'Draft',
+	prototype: 'Prototype',
+	beta: 'Beta',
+	available: 'Available',
+	archived: 'Archived',
+};
+
+const IMPLEMENTATION_LABEL: Record<ImplementationState, string> = {
+	placeholder: 'Placeholder',
+	partial: 'Partial build',
+	implemented: 'Implemented',
+};
+---
+
+<p class="status-tags">
+	<span class:list={['tag', enabled && status === 'available' ? 'tag-live' : undefined]}>
+		{STATUS_LABEL[status]}
+	</span>
+	<span class="tag">{IMPLEMENTATION_LABEL[implementationState]}</span>
+	{!enabled && <span class="tag tag-muted">Disabled</span>}
+</p>
+
+<style>
+	.status-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-xs);
+		margin: 0;
+	}
+
+	.tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		border: var(--border-hairline);
+		padding: 2px 8px;
+	}
+
+	.tag-live {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.tag-muted {
+		color: var(--color-text-muted);
+	}
+</style>
