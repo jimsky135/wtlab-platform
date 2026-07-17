@@ -91,12 +91,34 @@ The tool's own validation stays authoritative — intake validation narrows obvi
 
 **Deferred**: backend storage, accounts, database, cloud upload, email, AI/fuzzy mapping, automatic unit conversion, business-rule inference, large-file streaming, XLSX import, saved mapping templates, full Water Level Checker migration, universal form builder, spreadsheet editing.
 
+## Water Level modes & the Reusable Input Loop (Sprint 003.5)
+
+Water Level Checker is one instrument with two modes (`src/tools/inventory-buffer-check/modes/`):
+
+| | Quick Check | Advanced Planning |
+|---|---|---|
+| Contract | `quickModeContract` (tier: free) | `advancedModeContract` (tier: professional) |
+| Schema | `water-level-quick` (one row per item) | `water-level-advanced` (long format: one row per item-period) |
+| Template | `water-level-quick-input` | `water-level-advanced-input` |
+| Adapter | `src/platform/adapters/water-level/quick-adapter.ts` | `advanced-adapter.ts` |
+| Engine | existing `calculate.ts` (unchanged) | new `projection.ts` (rolling balance, instrument-owned) |
+
+`tier` is capability metadata only — no paywall exists; future entitlement gating can read it from the contract/catalog.
+
+**The loop**: manual form values and uploaded CSVs both become intake records against the same schema, then: validate → confirm → adapter → engine. "Download Input CSV" writes current inputs using the same template contract as the blank template, so the exported file re-uploads identically (round-trip tested in `src/platform/adapters/water-level/reusable-loop.test.ts`). User data lives in downloadable files, never in cookies/localStorage.
+
+**CSV template spec** (`src/platform/templates/`): a `CsvTemplateDefinition`'s column ids MUST equal its intake schema's field ids (enforced by `templates.test.ts`). One contract serves three uses: blank template, manual-input export, re-upload. Time values in CSV contracts are always months — no unit columns, no unit guessing.
+
+**Input vs. result files**: `water-level-*-input.csv` (reusable, schema headers) vs. `water-level-*-result.csv` (records/sharing, result-only headers that deliberately fail input mapping — tested). See ADR-0003 for the full adapter pattern rationale.
+
+**Advanced projection definition** (instrument business logic, `projection.ts`): ending balance per period = previous + arrivals − consumption; buffer stock = average consumption × safetyBufferMonths; shortage = ending < 0; risk ranking orders shortage (earliest first), then buffer breach, then ok.
+
 ## Engineering backlog
 
 | Task | Scope |
 |---|---|
-| Water Level Checker batch intake | adapt confirmed intake data into the tool's `TRawInput` (adapter only) |
 | Save / export package format | shared continuity package (extends per-tool export), needs ADR |
 | Entity domain types | shared entity model for workspaces |
 | Workspace context routing | linking instruments to workspace context |
-| Second instrument implementation | apply the integration pattern end-to-end |
+| Second instrument implementation | apply the mode/adapter/template pattern end-to-end (e.g. Arrival Collision Detector) |
+| Saved mapping templates | remember user column mappings (deferred from Sprint 003.5) |

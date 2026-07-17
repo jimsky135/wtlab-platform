@@ -21,7 +21,7 @@ export const instruments: readonly InstrumentEntry[] = [
 		route: '/tools/inventory-buffer-check',
 		version: '0.2',
 		coreQuestion: 'Is current inventory sufficient to cover replenishment lead time and safety buffer?',
-		capabilities: ['manual-input', 'calculate', 'export'],
+		capabilities: ['manual-input', 'csv-import', 'calculate', 'export'],
 		dataPersistence: 'none',
 		exportFormats: ['csv', 'json'],
 		implementationState: 'implemented',
