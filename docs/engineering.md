@@ -113,12 +113,45 @@ Water Level Checker is one instrument with two modes (`src/tools/inventory-buffe
 
 **Advanced projection definition** (instrument business logic, `projection.ts`): ending balance per period = previous + arrivals − consumption; buffer stock = average consumption × safetyBufferMonths; shortage = ending < 0; risk ranking orders shortage (earliest first), then buffer breach, then ok.
 
+## Second instrument replication (Sprint 004)
+
+Arrival Collision Detector was integrated as the second production instrument to validate that the platform pattern replicates. Verdict: **it does** — the instrument needed only its own schemas, templates, contracts, adapters, engine, and page; every platform layer was reused unmodified:
+
+| Layer | Reused without modification? |
+|---|---|
+| Shared Intake (`src/platform/intake/`) | ✅ zero changes |
+| Template registry + CSV generation | ✅ zero changes (two new template registrations only) |
+| Mode contract shape | ✅ (promoted to `src/platform/modes.ts`, see below) |
+| Adapter outcome shape | ✅ (promoted to `src/platform/adapters/types.ts`) |
+| Execution registry + Tool Contract | ✅ zero changes (second `Tool` registered) |
+| CSV intake UI flow | ✅ (extracted to `src/shared/intake-ui.ts`, both instrument pages now share it) |
+| Export foundation (`buildCsv`) | ✅ zero changes |
+| StatusTag / PlatformShell / catalog | ✅ zero changes |
+
+**Arrival engine v0.1 rules** (instrument business logic, `src/tools/arrival-collision-detector/analyze.ts`): monthly aggregation by strict ISO date → 'YYYY-MM'; peak = highest-quantity month; severe = any month over declared capacity OR peak has ≥2 batches and ≥60% of total quantity; moderate = peak has ≥2 batches and ≥40%; a single batch never collides. Warning priority: capacity exceeded > severe concentration > moderate concentration > container stacking (≥3 distinct containers/month). Dates are never inferred — non-ISO dates are blocking intake errors (schema-level `validateRecord`).
+
+### Architecture review (Sprint 004, Task 007)
+
+Water-Level-specific things found and fixed during replication:
+
+1. `ModeContract` lived under the water-level instrument → promoted to `src/platform/modes.ts` (old path re-exports).
+2. `AdapterOutcome` lived in the water-level adapter → promoted to `src/platform/adapters/types.ts` (old path re-exports).
+3. The CSV intake UI (`setupCsvIntake` + issue/download helpers) was inlined in the water-level page → extracted to `src/shared/intake-ui.ts`; both instrument pages import it.
+4. The homepage hardcoded `/tools/{id}` as every tool's route → now resolves each route from the catalog entry.
+5. Instrument placeholder routes now generate only for `implementationState === 'placeholder'` (same rule the workspace placeholders already used), freeing `/instruments/{slug}` for implemented instruments.
+
+Remaining known duplication (accepted for now, queued in the backlog): the two instrument pages share large blocks of page-level CSS and the mode-switch / manual-table wiring pattern. Extracting an "instrument page" layout/component is deliberately deferred until the planned platform-wide UI unification pass, to avoid designing the abstraction before its third consumer exists.
+
+Route note: Water Level keeps its confirmed `/tools/inventory-buffer-check` URL; new instruments live at `/instruments/{slug}` (their catalog route).
+
 ## Engineering backlog
 
 | Task | Scope |
 |---|---|
+| Platform UI unification pass | shared instrument-page layout/component, unify spacing/typography/density across instruments (defer until ≥3 instruments) |
+| Instrument-page CSS dedupe | the two instrument pages share large style blocks — fold into the UI unification pass |
 | Save / export package format | shared continuity package (extends per-tool export), needs ADR |
 | Entity domain types | shared entity model for workspaces |
 | Workspace context routing | linking instruments to workspace context |
-| Second instrument implementation | apply the mode/adapter/template pattern end-to-end (e.g. Arrival Collision Detector) |
+| Third instrument | next replication (Demand Wave Radar or Lead Time Gap Checker) using the now-shared mode/adapter/template pattern |
 | Saved mapping templates | remember user column mappings (deferred from Sprint 003.5) |

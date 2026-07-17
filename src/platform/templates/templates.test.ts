@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { arrivalAdvancedSchema } from '../../tools/arrival-collision-detector/modes/advanced/schema.ts';
+import { arrivalQuickSchema } from '../../tools/arrival-collision-detector/modes/quick/schema.ts';
 import { advancedIntakeSchema } from '../../tools/inventory-buffer-check/modes/advanced/schema.ts';
 import { quickIntakeSchema } from '../../tools/inventory-buffer-check/modes/quick/schema.ts';
 import { parseCsv } from '../intake/csv.ts';
@@ -12,6 +14,8 @@ import type { CsvTemplateDefinition } from './types.ts';
 const schemaByTemplate: Record<string, IntakeSchema> = {
 	'water-level-quick-input': quickIntakeSchema,
 	'water-level-advanced-input': advancedIntakeSchema,
+	'arrival-collision-quick-input': arrivalQuickSchema,
+	'arrival-collision-advanced-input': arrivalAdvancedSchema,
 };
 
 test('template ids and filenames are unique', () => {

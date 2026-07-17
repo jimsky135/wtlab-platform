@@ -9,7 +9,10 @@ import { instruments } from '../../platform/instruments';
 
 export function getStaticPaths() {
 	return instruments
-		.filter((instrument) => instrument.route.startsWith('/instruments/'))
+		.filter(
+			(instrument) =>
+				instrument.route.startsWith('/instruments/') && instrument.implementationState === 'placeholder'
+		)
 		.map((instrument) => ({ params: { slug: instrument.slug }, props: { instrument } }));
 }
 

@@ -2,11 +2,17 @@
 // MVP homepage — visual foundation migrated from WTLab Foundations v3
 // (confirmed Design Source). No layout component yet, single page only.
 import '../shared/global.css';
+import { findById } from '../platform/catalog';
+import { instruments } from '../platform/instruments';
 import { platformRegistry } from '../platform/registry';
 
 // Tools shown here are never hardcoded — only what the Registry currently
 // reports as platform-available (status:active + enabled:true) is listed.
-const availableTools = platformRegistry.getAvailable();
+// Routes come from the catalog entry (each instrument declares its own).
+const availableTools = platformRegistry.getAvailable().map((tool) => ({
+	metadata: tool.metadata,
+	route: findById(instruments, tool.metadata.id)?.route ?? `/tools/${tool.metadata.id}`,
+}));
 ---
 
 <html lang="en">
@@ -37,7 +43,7 @@ const availableTools = platformRegistry.getAvailable();
 					<ul class="tool-list">
 						{availableTools.map((tool) => (
 							<li class="tool-card">
-								<a href={`/tools/${tool.metadata.id}`}>
+								<a href={tool.route}>
 									<h3>{tool.metadata.name}</h3>
 									<p class="tool-description">{tool.metadata.description}</p>
 									<p class="tool-category">{tool.metadata.category}</p>

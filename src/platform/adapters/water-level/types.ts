@@ -5,12 +5,12 @@
 // duplicates the instrument's own, no result formatting.
 
 import type { InventoryBufferRawInput } from '../../../tools/inventory-buffer-check/types.ts';
-import type { IntakeIssue } from '../../intake/types.ts';
+
+// AdapterOutcome was promoted to the shared adapter contract in Sprint 004.
+export type { AdapterOutcome } from '../types.ts';
 
 /** One quick-mode item ready for the existing single-item engine. */
 export interface QuickAdapterItem {
 	itemName: string;
 	input: InventoryBufferRawInput;
 }
-
-export type AdapterOutcome<T> = { ok: true; data: T } | { ok: false; issues: IntakeIssue[] };

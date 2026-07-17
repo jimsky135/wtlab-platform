@@ -1,0 +1,829 @@
+---
+// Arrival Collision Detector — second instrument, built entirely on the
+// shared platform architecture: catalog metadata, execution-registry
+// gating, shared intake UI, template registry, adapters, one engine.
+// UI priority this sprint is operability, not visual polish.
+import StatusTag from '../../components/StatusTag.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { ALL_CAPABILITIES, CAPABILITY_LABELS, findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
+import { platformRegistry } from '../../platform/registry';
+import { arrivalAdvancedContract } from '../../tools/arrival-collision-detector/modes/advanced/contract';
+import { arrivalQuickContract } from '../../tools/arrival-collision-detector/modes/quick/contract';
+
+const TOOL_ID = 'arrival-collision-detector';
+const available = platformRegistry.isAvailable(TOOL_ID);
+const entry = findById(instruments, TOOL_ID);
+const modes = [arrivalQuickContract, arrivalAdvancedContract];
+---
+
+<PlatformShell title={`${entry?.displayName ?? 'Instrument'} · WTLab`} section="instruments">
+	{available && entry ? (
+		<article>
+			<header class="tool-header">
+				<p class="kicker">Instrument · {entry.layer}</p>
+				<h1>{entry.displayName}</h1>
+				<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} />
+				<dl class="tool-meta">
+					<dt>Version</dt>
+					<dd>{entry.version}</dd>
+					<dt>Core question</dt>
+					<dd>{entry.coreQuestion}</dd>
+					<dt>Description</dt>
+					<dd>{entry.description}</dd>
+				</dl>
+				<nav class="tool-nav" aria-label="Instrument">
+					<a href="/instruments">← Instrument Library</a>
+					<a href="/command">Command Center</a>
+				</nav>
+			</header>
+
+			<section class="capabilities" aria-labelledby="capabilities-heading">
+				<h2 id="capabilities-heading">Capabilities</h2>
+				<ul>
+					{ALL_CAPABILITIES.map((capability) => {
+						const present = entry.capabilities.includes(capability);
+						return (
+							<li class:list={['capability', present ? 'present' : 'future']}>
+								{CAPABILITY_LABELS[capability]}
+								{!present && <span class="future-tag">Future</span>}
+							</li>
+						);
+					})}
+				</ul>
+			</section>
+
+			<section class="mode-switch" aria-label="Mode">
+				<h2>Mode</h2>
+				<div class="mode-buttons">
+					{modes.map((mode, index) => (
+						<button
+							type="button"
+							class="mode-btn"
+							id={`mode-btn-${mode.modeId}`}
+							data-mode={mode.modeId}
+							aria-pressed={index === 0 ? 'true' : 'false'}
+						>
+							<span class="mode-label">{mode.label}</span>
+							<span class="mode-desc">{mode.description}</span>
+						</button>
+					))}
+				</div>
+			</section>
+
+			<!-- ============ QUICK ============ -->
+			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
+				<details open>
+					<summary>Manual Entry — arrival batches</summary>
+					<p class="section-note">One row per arrival batch. Dates are ISO format (YYYY-MM-DD).</p>
+					<div class="action-row">
+						<button type="button" class="secondary" id="quick-add-row">Add Arrival</button>
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr><th>Arrival Date</th><th>Quantity</th><th>Container</th><th>Supplier</th><th></th></tr>
+							</thead>
+							<tbody id="quick-body"></tbody>
+						</table>
+					</div>
+					<div class="action-row">
+						<button type="button" id="quick-run">Run Quick Check</button>
+						<button type="button" class="secondary" id="quick-download-input">Download Input CSV</button>
+						<button type="button" class="secondary" id="quick-download-template">Download Blank Template</button>
+					</div>
+					<div id="quick-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>Upload CSV — reuse a downloaded input file</summary>
+					<p class="section-note">
+						Upload a previously downloaded <code>arrival-collision-quick-input.csv</code> (or the filled
+						blank template). Files are read in this browser only.
+					</p>
+					<div id="quick-intake"></div>
+				</details>
+
+				<div id="quick-results-block" hidden>
+					<h2>Results</h2>
+					<div id="quick-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="quick-download-result">Download Result CSV</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============ ADVANCED ============ -->
+			<section id="panel-advanced" class="mode-panel" aria-label="Advanced Planning" hidden>
+				<details open>
+					<summary>Manual Entry — batches with warehouse capacity</summary>
+					<p class="section-note">
+						Same batch rows as Quick Check, plus an optional monthly warehouse intake capacity.
+					</p>
+					<div class="field capacity-field">
+						<label for="adv-capacity">Monthly Capacity <span class="optional-marker">(optional)</span></label>
+						<input id="adv-capacity" type="text" inputmode="decimal" />
+					</div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-add-row">Add Arrival</button>
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr><th>Arrival Date</th><th>Quantity</th><th>Container</th><th>Supplier</th><th></th></tr>
+							</thead>
+							<tbody id="adv-body"></tbody>
+						</table>
+					</div>
+					<div class="action-row">
+						<button type="button" id="adv-run">Run Planning Analysis</button>
+						<button type="button" class="secondary" id="adv-download-input">Download Input CSV</button>
+						<button type="button" class="secondary" id="adv-download-template">Download Blank Template</button>
+					</div>
+					<div id="adv-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>Upload CSV — reuse a downloaded input file</summary>
+					<p class="section-note">
+						Upload a previously downloaded <code>arrival-collision-advanced-input.csv</code> (or the filled
+						blank template). Files are read in this browser only.
+					</p>
+					<div id="advanced-intake"></div>
+				</details>
+
+				<div id="adv-results-block" hidden>
+					<h2>Planning Results</h2>
+					<div id="adv-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-download-result">Download Result CSV</button>
+					</div>
+				</div>
+			</section>
+
+			<section class="related" aria-labelledby="related-heading">
+				<h2 id="related-heading">Related</h2>
+				<ul>
+					<li><a href="/tools/inventory-buffer-check">Water Level Checker</a></li>
+					<li><a href="/workspace/data-intake">Data Intake Workspace</a></li>
+					<li><a href="/command">Command Center</a></li>
+					<li><a href="/continuity">Continuity</a></li>
+				</ul>
+			</section>
+		</article>
+	) : (
+		<article>
+			<p class="kicker">WTLab</p>
+			<h1>This tool is not currently available.</h1>
+			<p><a href="/instruments">← Back to Instrument Library</a></p>
+		</article>
+	)}
+</PlatformShell>
+
+<script>
+	import { confirmIntake } from '../../platform/intake/confirm.ts';
+	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
+	import { validateRecords } from '../../platform/intake/validate.ts';
+	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
+	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
+	import { arrivalAdvancedAdapter } from '../../platform/adapters/arrival-collision/advanced-adapter.ts';
+	import { arrivalQuickAdapter } from '../../platform/adapters/arrival-collision/quick-adapter.ts';
+	import { analyzeArrivals } from '../../tools/arrival-collision-detector/analyze.ts';
+	import { arrivalResultToCsv } from '../../tools/arrival-collision-detector/export.ts';
+	import { arrivalAdvancedContract } from '../../tools/arrival-collision-detector/modes/advanced/contract.ts';
+	import { arrivalAdvancedSchema } from '../../tools/arrival-collision-detector/modes/advanced/schema.ts';
+	import { arrivalAdvancedTemplate } from '../../tools/arrival-collision-detector/modes/advanced/template.ts';
+	import { arrivalQuickContract } from '../../tools/arrival-collision-detector/modes/quick/contract.ts';
+	import { arrivalQuickSchema } from '../../tools/arrival-collision-detector/modes/quick/schema.ts';
+	import { arrivalQuickTemplate } from '../../tools/arrival-collision-detector/modes/quick/template.ts';
+	import type { ArrivalAnalysis } from '../../tools/arrival-collision-detector/types.ts';
+	import { validateArrivalInput } from '../../tools/arrival-collision-detector/validate.ts';
+
+	// ---------- mode switching ----------
+
+	const panels: Record<string, HTMLElement | null> = {
+		quick: document.getElementById('panel-quick'),
+		advanced: document.getElementById('panel-advanced'),
+	};
+	for (const button of document.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
+		button.addEventListener('click', () => {
+			for (const other of document.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
+				other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
+			}
+			for (const [modeId, panel] of Object.entries(panels)) {
+				if (panel) panel.hidden = modeId !== button.dataset.mode;
+			}
+		});
+	}
+
+	// ---------- shared arrival-row table (used by both modes) ----------
+
+	const ROW_FIELDS = ['arrivalDate', 'quantity', 'container', 'supplier'] as const;
+
+	function setupArrivalTable(bodyId: string) {
+		const body = document.getElementById(bodyId);
+
+		function addRow(values?: Partial<Record<(typeof ROW_FIELDS)[number], string>>) {
+			if (!body) return;
+			const row = el('tr');
+			for (const field of ROW_FIELDS) {
+				const cell = el('td');
+				const input = el('input');
+				input.type = 'text';
+				input.dataset.field = field;
+				input.value = values?.[field] ?? '';
+				input.setAttribute('aria-label', field);
+				if (field === 'arrivalDate') input.placeholder = 'YYYY-MM-DD';
+				cell.appendChild(input);
+				row.appendChild(cell);
+			}
+			const removeCell = el('td');
+			const removeBtn = el('button', 'secondary', 'Remove');
+			removeBtn.type = 'button';
+			removeBtn.addEventListener('click', () => row.remove());
+			removeCell.appendChild(removeBtn);
+			row.appendChild(removeCell);
+			body.appendChild(row);
+		}
+
+		function rows(): Array<Record<string, string>> {
+			if (!body) return [];
+			return Array.from(body.querySelectorAll('tr')).map((row) => {
+				const values: Record<string, string> = {};
+				for (const input of row.querySelectorAll<HTMLInputElement>('input')) {
+					values[input.dataset.field ?? ''] = input.value;
+				}
+				return values;
+			});
+		}
+
+		addRow();
+		return { addRow, rows };
+	}
+
+	// ---------- one result pipeline for both modes ----------
+
+	function renderAnalysis(analysis: ArrivalAnalysis, resultsId: string, blockId: string) {
+		const results = document.getElementById(resultsId);
+		const block = document.getElementById(blockId);
+		if (!results || !block) return;
+		results.innerHTML = '';
+
+		const summary = el('div', 'result-set');
+		summary.appendChild(el('h3', undefined, 'Collision Assessment'));
+		const levelText =
+			analysis.collisionLevel === 'severe' ? 'Severe' : analysis.collisionLevel === 'moderate' ? 'Moderate' : 'None';
+		summary.appendChild(el('p', 'card-value', levelText));
+		summary.appendChild(
+			el('p', 'card-note', analysis.peakMonth !== undefined ? `Peak period: ${analysis.peakMonth}` : 'No arrivals.')
+		);
+		summary.appendChild(el('p', 'card-note', analysis.suggestion));
+		results.appendChild(summary);
+
+		if (analysis.warnings.length > 0) {
+			const warningsBox = el('div', 'result-set');
+			warningsBox.appendChild(el('h3', undefined, 'Warnings'));
+			const list = el('ul');
+			for (const warning of analysis.warnings) {
+				list.appendChild(el('li', undefined, `${warning.severity.toUpperCase()} — ${warning.message}`));
+			}
+			warningsBox.appendChild(list);
+			results.appendChild(warningsBox);
+		}
+
+		const timeline = el('div', 'result-set');
+		timeline.appendChild(el('h3', undefined, 'Arrival Timeline'));
+		const tableWrap = el('div', 'table-wrap');
+		const table = el('table');
+		const thead = el('thead');
+		const headRow = el('tr');
+		const showCapacity = analysis.months.some((month) => month.overCapacity !== undefined);
+		headRow.append(
+			el('th', undefined, 'Month'),
+			el('th', undefined, 'Quantity'),
+			el('th', undefined, 'Batches'),
+			el('th', undefined, 'Containers'),
+			el('th', undefined, 'Suppliers'),
+			el('th', undefined, 'Share')
+		);
+		if (showCapacity) headRow.append(el('th', undefined, 'Capacity'));
+		thead.appendChild(headRow);
+		table.appendChild(thead);
+		const tbody = el('tbody');
+		for (const month of analysis.months) {
+			const tr = el('tr');
+			tr.append(
+				el('td', month.monthKey === analysis.peakMonth ? 'cell-peak' : undefined, month.monthKey + (month.monthKey === analysis.peakMonth ? ' (peak)' : '')),
+				el('td', undefined, String(month.totalQuantity)),
+				el('td', undefined, String(month.batchCount)),
+				el('td', undefined, String(month.containerCount)),
+				el('td', undefined, String(month.supplierCount)),
+				el('td', undefined, `${Math.round(month.share * 100)}%`)
+			);
+			if (showCapacity) {
+				tr.append(el('td', month.overCapacity ? 'cell-over' : undefined, month.overCapacity ? 'OVER' : 'ok'));
+			}
+			tbody.appendChild(tr);
+		}
+		table.appendChild(tbody);
+		tableWrap.appendChild(table);
+		timeline.appendChild(tableWrap);
+		results.appendChild(timeline);
+
+		block.hidden = false;
+		block.scrollIntoView({ block: 'nearest' });
+	}
+
+	// ---------- QUICK ----------
+
+	const quickTable = setupArrivalTable('quick-body');
+	const quickManualIssues = document.getElementById('quick-manual-issues');
+	let lastQuickAnalysis: ArrivalAnalysis | null = null;
+
+	function runQuick(confirmed: ConfirmedIntake) {
+		const adapted = arrivalQuickAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(quickManualIssues, adapted.issues);
+			return;
+		}
+		const validated = validateArrivalInput(adapted.data);
+		if (!validated.valid) {
+			renderIssues(quickManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			return;
+		}
+		renderIssues(quickManualIssues, []);
+		lastQuickAnalysis = analyzeArrivals(validated.data);
+		renderAnalysis(lastQuickAnalysis, 'quick-results', 'quick-results-block');
+	}
+
+	document.getElementById('quick-add-row')?.addEventListener('click', () => quickTable.addRow());
+	document.getElementById('quick-run')?.addEventListener('click', () => {
+		const records: RawIntakeRecord[] = quickTable.rows().map((values) => ({ values, unknown: {} }));
+		const result = validateRecords(records, arrivalQuickSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			return;
+		}
+		const outcome = confirmIntake(arrivalQuickSchema, result);
+		if (outcome.confirmed) runQuick(outcome.data);
+	});
+	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		download(arrivalQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(arrivalQuickTemplate, quickTable.rows()));
+	});
+	document.getElementById('quick-download-template')?.addEventListener('click', () => {
+		download('arrival-collision-quick-template.csv', 'text/csv', generateBlankTemplateCsv(arrivalQuickTemplate));
+	});
+	document.getElementById('quick-download-result')?.addEventListener('click', () => {
+		if (lastQuickAnalysis) {
+			download(arrivalQuickContract.exportProfile.resultFilename, 'text/csv', arrivalResultToCsv(lastQuickAnalysis));
+		}
+	});
+	setupCsvIntake('quick-intake', arrivalQuickSchema, runQuick);
+
+	// ---------- ADVANCED ----------
+
+	const advTable = setupArrivalTable('adv-body');
+	const advManualIssues = document.getElementById('adv-manual-issues');
+	let lastAdvAnalysis: ArrivalAnalysis | null = null;
+
+	function runAdvanced(confirmed: ConfirmedIntake) {
+		const adapted = arrivalAdvancedAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(advManualIssues, adapted.issues);
+			return;
+		}
+		const validated = validateArrivalInput(adapted.data);
+		if (!validated.valid) {
+			renderIssues(advManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			return;
+		}
+		renderIssues(advManualIssues, []);
+		lastAdvAnalysis = analyzeArrivals(validated.data);
+		renderAnalysis(lastAdvAnalysis, 'adv-results', 'adv-results-block');
+	}
+
+	function advLongRows(): Array<Record<string, string>> {
+		const capacity = (document.getElementById('adv-capacity') as HTMLInputElement | null)?.value.trim() ?? '';
+		return advTable.rows().map((values, index) => ({
+			...values,
+			monthlyCapacity: index === 0 ? capacity : '',
+		}));
+	}
+
+	document.getElementById('adv-add-row')?.addEventListener('click', () => advTable.addRow());
+	document.getElementById('adv-run')?.addEventListener('click', () => {
+		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
+		const result = validateRecords(records, arrivalAdvancedSchema);
+		if (result.errorCount > 0) {
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			return;
+		}
+		const outcome = confirmIntake(arrivalAdvancedSchema, result);
+		if (outcome.confirmed) runAdvanced(outcome.data);
+	});
+	document.getElementById('adv-download-input')?.addEventListener('click', () => {
+		download(arrivalAdvancedContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(arrivalAdvancedTemplate, advLongRows()));
+	});
+	document.getElementById('adv-download-template')?.addEventListener('click', () => {
+		download('arrival-collision-advanced-template.csv', 'text/csv', generateBlankTemplateCsv(arrivalAdvancedTemplate));
+	});
+	document.getElementById('adv-download-result')?.addEventListener('click', () => {
+		if (lastAdvAnalysis) {
+			download(arrivalAdvancedContract.exportProfile.resultFilename, 'text/csv', arrivalResultToCsv(lastAdvAnalysis));
+		}
+	});
+	setupCsvIntake('advanced-intake', arrivalAdvancedSchema, runAdvanced);
+</script>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.tool-meta {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: var(--space-md) 0 0;
+	}
+
+	.tool-meta dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.tool-meta dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.tool-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+		margin-top: var(--space-md);
+	}
+
+	.tool-nav a {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	section {
+		border-top: var(--border-hairline);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+	}
+
+	h2,
+	:global(#quick-results-block h2),
+	:global(#adv-results-block h2) {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-md);
+	}
+
+	.capabilities ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-xs);
+	}
+
+	.capability {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		border: var(--border-hairline);
+		padding: 4px 10px;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.capability.present {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.capability.future {
+		color: var(--color-text-muted);
+	}
+
+	.future-tag {
+		font-size: 9px;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 1px 6px;
+	}
+
+	.mode-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-sm);
+	}
+
+	.mode-btn {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-secondary);
+		padding: var(--space-sm) var(--space-md);
+		cursor: pointer;
+		text-align: left;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		max-width: 320px;
+	}
+
+	.mode-btn[aria-pressed='true'] {
+		border-color: var(--color-accent);
+		color: var(--color-text-primary);
+	}
+
+	.mode-label {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+	}
+
+	.mode-btn[aria-pressed='true'] .mode-label {
+		color: var(--color-accent);
+	}
+
+	.mode-desc {
+		font-size: 0.85rem;
+		color: var(--color-text-tertiary);
+	}
+
+	.mode-panel {
+		border-top: none;
+		padding-top: 0;
+		margin-top: var(--space-md);
+	}
+
+	details {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		margin-top: var(--space-md);
+	}
+
+	summary {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		cursor: pointer;
+	}
+
+	.section-note {
+		color: var(--color-text-secondary);
+		margin: var(--space-sm) 0 var(--space-md);
+		font-size: 0.95rem;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.capacity-field {
+		max-width: 20rem;
+		margin-top: var(--space-md);
+	}
+
+	:global(#panel-quick label),
+	:global(#panel-advanced label),
+	:global(.mapping-row label) {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.optional-marker {
+		text-transform: none;
+		letter-spacing: normal;
+		color: var(--color-text-muted);
+	}
+
+	:global(#panel-quick input),
+	:global(#panel-quick select),
+	:global(#panel-advanced input),
+	:global(#panel-advanced select) {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		font-size: 0.95rem;
+		padding: var(--space-xs) var(--space-sm);
+	}
+
+	.action-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-sm);
+		margin-top: var(--space-md);
+		align-items: center;
+	}
+
+	:global(#quick-run),
+	:global(#adv-run),
+	:global(#quick-intake > button),
+	:global(#advanced-intake > button) {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: none;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-sm) var(--space-lg);
+		cursor: pointer;
+	}
+
+	:global(button.secondary) {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: pointer;
+	}
+
+	:global(button:disabled) {
+		color: var(--color-text-muted) !important;
+		cursor: not-allowed !important;
+	}
+
+	:global(.issue-box) {
+		border: var(--border-hairline);
+		padding: var(--space-sm) var(--space-md);
+		margin-top: var(--space-md);
+		color: var(--color-text-primary);
+	}
+
+	:global(.issue-box ul) {
+		margin: 0;
+		padding-left: 1.2em;
+	}
+
+	:global(.counts-line) {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		color: var(--color-text-secondary);
+		border: var(--border-hairline);
+		padding: var(--space-xs) var(--space-sm);
+		display: inline-block;
+		margin: var(--space-md) 0 0;
+	}
+
+	:global(.mapping-box) {
+		margin-top: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	:global(.mapping-row) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	:global(.mapping-row label) {
+		min-width: 160px;
+	}
+
+	.table-wrap,
+	:global(.table-wrap) {
+		overflow-x: auto;
+		border: var(--border-hairline);
+		margin-top: var(--space-md);
+	}
+
+	:global(#panel-quick table),
+	:global(#panel-advanced table) {
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	:global(#panel-quick th),
+	:global(#panel-quick td),
+	:global(#panel-advanced th),
+	:global(#panel-advanced td) {
+		border-bottom: var(--border-hairline);
+		padding: var(--space-xs) var(--space-sm);
+		text-align: left;
+		font-size: 0.9rem;
+		white-space: nowrap;
+	}
+
+	:global(#panel-quick th),
+	:global(#panel-advanced th) {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	:global(.cell-peak) {
+		color: var(--color-accent);
+	}
+
+	:global(.cell-over) {
+		color: var(--color-accent-strong);
+		font-weight: 600;
+	}
+
+	:global(.result-set) {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		margin-top: var(--space-md);
+	}
+
+	:global(.result-set h3) {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: 0 0 var(--space-sm);
+	}
+
+	:global(.card-value) {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 1.8rem;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-xs);
+	}
+
+	:global(.card-note) {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xs);
+		font-size: 0.95rem;
+	}
+
+	:global(.result-set ul) {
+		margin: 0;
+		padding-left: 1.2em;
+		color: var(--color-text-primary);
+	}
+
+	.related ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+	}
+
+	.related a {
+		color: var(--color-accent);
+		text-decoration: none;
+		border-bottom: 1px solid var(--color-accent);
+		padding-bottom: 2px;
+	}
+</style>
