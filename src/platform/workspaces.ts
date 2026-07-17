@@ -40,10 +40,10 @@ export const workspaces: readonly WorkspaceEntry[] = [
 		description: 'Bring operational data into WTLab: CSV import, normalization, and validation.',
 		layer: 'work',
 		status: 'prototype',
-		enabled: false,
+		enabled: true,
 		route: '/workspace/data-intake',
 		coreQuestion: 'How does raw operational data become something instruments can read?',
-		implementationState: 'placeholder',
+		implementationState: 'partial',
 		prototypeRefs: ['030-WTLab Data Intake Workspace.html'],
 	},
 	{

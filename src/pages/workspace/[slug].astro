@@ -8,7 +8,10 @@ import { workspaces } from '../../platform/workspaces';
 
 export function getStaticPaths() {
 	return workspaces
-		.filter((workspace) => workspace.route.startsWith('/workspace/'))
+		.filter(
+			(workspace) =>
+				workspace.route.startsWith('/workspace/') && workspace.implementationState === 'placeholder'
+		)
 		.map((workspace) => ({ params: { slug: workspace.slug }, props: { workspace } }));
 }
 
