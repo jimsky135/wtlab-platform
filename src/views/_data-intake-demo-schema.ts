@@ -2,9 +2,8 @@
 // content, deliberately kept out of the shared intake modules — shared
 // intake code must stay instrument-agnostic. Field ids stay identical
 // across locales (machine contract); label/description are localized.
-// The zero-quantity warning message is engine/validation free-text and
-// stays English-only this sprint (same boundary as IntakeIssue.message
-// elsewhere — see Sprint 005.5 report).
+// The zero-quantity warning carries a code + English fallback like every
+// other IntakeIssue (Sprint 006, Task 013) — the view resolves it.
 
 import { getDictionary, type Locale } from '../i18n/index.ts';
 import type { IntakeSchema } from '../platform/intake/types.ts';
@@ -22,7 +21,14 @@ export function getDemoIntakeSchema(locale: Locale): IntakeSchema {
 		],
 		validateRecord: (record) =>
 			record.fields['quantity']?.value === 0
-				? [{ severity: 'warning', message: 'Quantity is zero — confirm this is intended.', field: 'quantity' }]
+				? [
+						{
+							severity: 'warning',
+							message: 'Quantity is zero — confirm this is intended.',
+							code: 'DEMO_QUANTITY_ZERO_WARNING',
+							field: 'quantity',
+						},
+					]
 				: [],
 	};
 }

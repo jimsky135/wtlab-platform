@@ -4,7 +4,9 @@
 // Instrument-agnostic: everything is driven by the intake schema passed
 // in. This module is DOM code — never import it from Node tests.
 
+import type { Locale } from '../i18n/types.ts';
 import type { CommonText } from '../i18n/types.ts';
+import { resolveMessage } from '../i18n/resolveMessage.ts';
 import { canConfirm, confirmIntake } from '../platform/intake/confirm.ts';
 import { parseCsv, type CsvParseResult } from '../platform/intake/csv.ts';
 import { applyMapping, suggestMapping, validateMapping, type ColumnMapping } from '../platform/intake/mapping.ts';
@@ -13,6 +15,9 @@ import { validateRecords } from '../platform/intake/validate.ts';
 
 /** Locale-specific labels for setupCsvIntake(), sourced by each caller from getDictionary(locale).common.csvIntake. */
 export type CsvIntakeLabels = CommonText['csvIntake'];
+
+/** Schema/instrument field id → localized display label, sourced by each caller from its results dictionary's `fields`. */
+export type FieldLabels = Record<string, string>;
 
 function formatCountsLine(template: string, counts: { imported: number; valid: number; warnings: number; errors: number }): string {
 	return template
@@ -32,14 +37,35 @@ export function download(filename: string, mime: string, content: string) {
 	URL.revokeObjectURL(url);
 }
 
-export function issueText(issue: IntakeIssue, rowPrefix = 'Row'): string {
+/**
+ * Resolves an issue's display text (Sprint 006, Task 015 presentation
+ * boundary). `code`/`params` are locale-independent; the field id — from
+ * `issue.field` (Shared Intake issues) or `issue.params.field` (tool-level
+ * ValidationMessage, mapped into an issue shape by the caller) — is
+ * translated through `fieldLabels` before interpolation. Falls back to
+ * `issue.message` (English) when no `code` is present.
+ */
+export function localizedIssueText(issue: IntakeIssue, locale: Locale, fieldLabels: FieldLabels = {}): string {
+	if (!issue.code) return issue.message;
+	const rawField = typeof issue.params?.field === 'string' ? issue.params.field : issue.field;
+	const params = { ...issue.params, ...(rawField !== undefined ? { field: fieldLabels[rawField] ?? rawField } : {}) };
+	return resolveMessage(locale, issue.code, params);
+}
+
+export function issueText(issue: IntakeIssue, locale: Locale, fieldLabels: FieldLabels = {}, rowPrefix = 'Row'): string {
 	const location = issue.row !== undefined ? `${rowPrefix} ${issue.row + 1}` : null;
 	const field = issue.field ? `“${issue.field}”` : null;
 	const prefix = [location, field].filter(Boolean).join(' · ');
-	return `${issue.severity.toUpperCase()} — ${prefix ? `${prefix}: ` : ''}${issue.message}`;
+	return `${issue.severity.toUpperCase()} — ${prefix ? `${prefix}: ` : ''}${localizedIssueText(issue, locale, fieldLabels)}`;
 }
 
-export function renderIssues(target: HTMLElement | null, issues: IntakeIssue[], rowPrefix = 'Row') {
+export function renderIssues(
+	target: HTMLElement | null,
+	issues: IntakeIssue[],
+	locale: Locale,
+	fieldLabels: FieldLabels = {},
+	rowPrefix = 'Row'
+) {
 	if (!target) return;
 	target.innerHTML = '';
 	if (issues.length === 0) {
@@ -49,7 +75,7 @@ export function renderIssues(target: HTMLElement | null, issues: IntakeIssue[], 
 	const list = document.createElement('ul');
 	for (const issue of issues) {
 		const item = document.createElement('li');
-		item.textContent = issueText(issue, rowPrefix);
+		item.textContent = issueText(issue, locale, fieldLabels, rowPrefix);
 		list.appendChild(item);
 	}
 	target.appendChild(list);
@@ -76,7 +102,9 @@ export function setupCsvIntake(
 	containerId: string,
 	schema: IntakeSchema,
 	onConfirmed: (confirmed: ConfirmedIntake) => void,
-	labels: CsvIntakeLabels
+	labels: CsvIntakeLabels,
+	locale: Locale,
+	fieldLabels: FieldLabels = {}
 ) {
 	const container = document.getElementById(containerId);
 	if (!container) return;
@@ -114,7 +142,7 @@ export function setupCsvIntake(
 		}
 		const mappingIssues = validateMapping(mapping, schema);
 		if (mappingIssues.some((issue) => issue.severity === 'error')) {
-			renderIssues(validationIssues, mappingIssues, labels.rowPrefix);
+			renderIssues(validationIssues, mappingIssues, locale, fieldLabels, labels.rowPrefix);
 			countsLine.hidden = true;
 			confirmBtn.hidden = true;
 			return;
@@ -133,7 +161,7 @@ export function setupCsvIntake(
 			errors: result.errorCount,
 		});
 		countsLine.hidden = false;
-		renderIssues(validationIssues, result.issues.filter((issue) => issue.severity !== 'info'), labels.rowPrefix);
+		renderIssues(validationIssues, result.issues.filter((issue) => issue.severity !== 'info'), locale, fieldLabels, labels.rowPrefix);
 		confirmBtn.hidden = false;
 		confirmBtn.disabled = !canConfirm(result);
 	}
@@ -146,7 +174,7 @@ export function setupCsvIntake(
 		countsLine.hidden = true;
 		validationIssues.hidden = true;
 		currentParse = parseCsv(await file.text(), file.name);
-		renderIssues(parseIssues, currentParse.issues.filter((issue) => issue.severity === 'error'), labels.rowPrefix);
+		renderIssues(parseIssues, currentParse.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels, labels.rowPrefix);
 		mappingBox.innerHTML = '';
 		if (!currentParse.ok) {
 			mappingBox.hidden = true;

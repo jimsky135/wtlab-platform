@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getDictionary } from './index.ts';
+import { resolveMessage } from './resolveMessage.ts';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, equivalentPath, isSupportedLocale, localizePath, resolveLocaleFromPath } from './locales.ts';
+import { MESSAGE_CODES } from '../platform/message-codes.ts';
 
 test('English is the default, unprefixed locale', () => {
 	assert.equal(DEFAULT_LOCALE, 'en');
@@ -127,4 +129,67 @@ test('per-instrument result dictionaries exist for all three production instrume
 		assert.ok(results.arrivalCollisionDetector);
 		assert.ok(results.deadStockScanner);
 	}
+});
+
+// ---- structured messages (Sprint 006, Task 015/016) ----
+// The `Dictionary.messages: Record<MessageCode, string>` type already gives
+// EN/zh-TW key-parity and completeness at compile time — a missing code is
+// a type error, and `satisfies Dictionary` catches it before these tests
+// even run. These tests are the runtime belt-and-suspenders the sprint
+// brief asks for, plus behavior resolveMessage() itself is responsible for.
+
+test('every message code resolves to non-empty text in both locales', () => {
+	for (const locale of SUPPORTED_LOCALES) {
+		for (const code of MESSAGE_CODES) {
+			const text = resolveMessage(locale, code, { field: 'x', value: 'x', min: 1, max: 1, index: 1, name: 'x', count: 1 });
+			assert.ok(text.trim().length > 0, `${locale}/${code} resolved to empty text`);
+		}
+	}
+});
+
+test('resolveMessage interpolates every {param} placeholder — no literal braces leak through', () => {
+	for (const locale of SUPPORTED_LOCALES) {
+		for (const code of MESSAGE_CODES) {
+			const text = resolveMessage(locale, code, {
+				field: 'FIELD',
+				value: 'VALUE',
+				min: 1,
+				max: 2,
+				index: 3,
+				name: 'NAME',
+				count: 4,
+				row: 4,
+				month: 'MONTH',
+				total: 5,
+				capacity: 6,
+				percent: 7,
+				batches: 8,
+				containers: 9,
+				period: 10,
+				high: 11,
+				excess: 12,
+				dormant: 13,
+				dead: 14,
+				got: 15,
+				expected: 16,
+				sources: 'SOURCES',
+				values: 'VALUES',
+			});
+			assert.ok(!/\{[a-zA-Z]+\}/.test(text), `${locale}/${code} left an unresolved placeholder: "${text}"`);
+		}
+	}
+});
+
+test('resolveMessage is deterministic — same code/locale/params always resolves the same text', () => {
+	const a = resolveMessage('en', 'REQUIRED_FIELD', { field: 'Item Name' });
+	const b = resolveMessage('en', 'REQUIRED_FIELD', { field: 'Item Name' });
+	assert.equal(a, b);
+});
+
+test('EN resolves to English, zh-TW resolves to Traditional Chinese, for the same code and params', () => {
+	const en = resolveMessage('en', 'REQUIRED_FIELD', { field: 'Item Name' });
+	const zh = resolveMessage('zh-TW', 'REQUIRED_FIELD', { field: 'Item Name' });
+	assert.match(en, /required/i);
+	assert.match(zh, /必填/);
+	assert.notEqual(en, zh);
 });

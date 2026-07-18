@@ -222,11 +222,13 @@ const relatedLinks = [
 	import type { ProjectionResult } from '../../tools/inventory-buffer-check/modes/advanced/types.ts';
 	import type { InventoryBufferOutput } from '../../tools/inventory-buffer-check/types.ts';
 	import { validateInventoryBufferInput } from '../../tools/inventory-buffer-check/validate.ts';
-	import { getDictionary, type Locale } from '../../i18n/index.ts';
+	import type { ValidationMessage } from '../../platform/message-codes.ts';
+	import { getDictionary, resolveMessage, type Locale } from '../../i18n/index.ts';
 
 	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
 	const rt = getDictionary(locale).results.inventoryBufferCheck;
 	const csvLabels = getDictionary(locale).common.csvIntake;
+	const fieldLabels = Object.fromEntries(Object.entries(rt.fields).map(([id, field]) => [id, field.label]));
 
 	initModeSwitcher();
 
@@ -250,7 +252,10 @@ const relatedLinks = [
 		return `${date.toISOString().slice(0, 10)} (~${days} ${rt.labels.daysUnit})`;
 	}
 
-	function renderQuickResults(results: Array<{ itemName: string; output: InventoryBufferOutput }>, failures: Array<{ itemName: string; errors: string[] }>) {
+	function renderQuickResults(
+		results: Array<{ itemName: string; output: InventoryBufferOutput }>,
+		failures: Array<{ itemName: string; errors: ValidationMessage[] }>
+	) {
 		if (!quickResults || !quickResultsBlock) return;
 		lastQuickResults = results;
 		quickResults.innerHTML = '';
@@ -259,7 +264,11 @@ const relatedLinks = [
 			const box = el('div', 'issue-box');
 			box.appendChild(el('p', 'result-item-name', failure.itemName));
 			const list = el('ul');
-			for (const message of failure.errors) list.appendChild(el('li', undefined, message));
+			for (const e of failure.errors) {
+				const field = typeof e.params?.field === 'string' ? fieldLabels[e.params.field] ?? e.params.field : undefined;
+				const text = resolveMessage(locale, e.code, { ...e.params, ...(field !== undefined ? { field } : {}) });
+				list.appendChild(el('li', undefined, text));
+			}
 			box.appendChild(list);
 			box.hidden = false;
 			quickResults.appendChild(box);
@@ -322,11 +331,11 @@ const relatedLinks = [
 	function runQuick(confirmed: ConfirmedIntake) {
 		const adapted = quickAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(quickManualIssues, adapted.issues);
+			renderIssues(quickManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		const results: Array<{ itemName: string; output: InventoryBufferOutput }> = [];
-		const failures: Array<{ itemName: string; errors: string[] }> = [];
+		const failures: Array<{ itemName: string; errors: ValidationMessage[] }> = [];
 		for (const item of adapted.data) {
 			const validated = validateInventoryBufferInput(item.input);
 			if (validated.valid) {
@@ -367,10 +376,10 @@ const relatedLinks = [
 			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
 			const result = validateRecords([record], quickIntakeSchema);
 			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 				return;
 			}
-			renderIssues(quickManualIssues, []);
+			renderIssues(quickManualIssues, [], locale, fieldLabels);
 			const outcome = confirmIntake(quickIntakeSchema, result);
 			if (outcome.confirmed) runQuick(outcome.data);
 		});
@@ -397,7 +406,7 @@ const relatedLinks = [
 		}
 	});
 
-	setupCsvIntake('quick-intake', quickIntakeSchema, runQuick, csvLabels);
+	setupCsvIntake('quick-intake', quickIntakeSchema, runQuick, csvLabels, locale, fieldLabels);
 
 	// ---------- ADVANCED MODE ----------
 
@@ -567,10 +576,10 @@ const relatedLinks = [
 	function runAdvanced(confirmed: ConfirmedIntake) {
 		const adapted = advancedAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(advManualIssues, adapted.issues);
+			renderIssues(advManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
-		renderIssues(advManualIssues, []);
+		renderIssues(advManualIssues, [], locale, fieldLabels);
 		renderProjection(computeRollingProjection(adapted.data));
 	}
 
@@ -582,7 +591,7 @@ const relatedLinks = [
 		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
 		const result = validateRecords(records, advancedIntakeSchema);
 		if (result.errorCount > 0) {
-			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 			return;
 		}
 		const outcome = confirmIntake(advancedIntakeSchema, result);
@@ -601,7 +610,7 @@ const relatedLinks = [
 		}
 	});
 
-	setupCsvIntake('advanced-intake', advancedIntakeSchema, runAdvanced, csvLabels);
+	setupCsvIntake('advanced-intake', advancedIntakeSchema, runAdvanced, csvLabels, locale, fieldLabels);
 
 	// Initial advanced table state.
 	advRenderHead();

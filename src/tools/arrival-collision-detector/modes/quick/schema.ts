@@ -12,6 +12,8 @@ export function isoDateIssues(record: NormalizedIntakeRecord): IntakeIssue[] {
 			{
 				severity: 'error',
 				message: `Arrival Date must be an ISO date (YYYY-MM-DD), got "${value}".`,
+				code: 'ARRIVAL_DATE_INVALID_ISO',
+				params: { value },
 				field: 'arrivalDate',
 			},
 		];

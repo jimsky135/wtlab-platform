@@ -8,7 +8,7 @@ import { toArrivalRecords } from './quick-adapter.ts';
 
 export function arrivalAdvancedAdapter(confirmed: ConfirmedIntake): AdapterOutcome<ArrivalAnalysisInput> {
 	if (confirmed.records.length === 0) {
-		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.' }] };
+		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.', code: 'NO_CONFIRMED_ROWS' }] };
 	}
 	const capacityValue = confirmed.records
 		.map((record) => record['monthlyCapacity'])

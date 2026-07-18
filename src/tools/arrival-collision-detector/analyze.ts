@@ -65,6 +65,8 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 				severity: 'high',
 				monthKey: month.monthKey,
 				message: `${month.monthKey}: total arrivals (${month.totalQuantity}) exceed monthly capacity (${input.monthlyCapacity}).`,
+				code: 'ARRIVAL_CAPACITY_EXCEEDED',
+				params: { month: month.monthKey, total: month.totalQuantity, capacity: input.monthlyCapacity ?? 0 },
 			});
 		}
 	}
@@ -73,6 +75,8 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 			severity: 'high',
 			monthKey: peak.monthKey,
 			message: `${peak.monthKey}: ${Math.round(peak.share * 100)}% of all arriving quantity lands in one month across ${peak.batchCount} batches.`,
+			code: 'ARRIVAL_CONCENTRATION_SEVERE',
+			params: { month: peak.monthKey, percent: Math.round(peak.share * 100), batches: peak.batchCount },
 		});
 	}
 	if (peak !== undefined && collisionLevel === 'moderate') {
@@ -80,6 +84,8 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 			severity: 'medium',
 			monthKey: peak.monthKey,
 			message: `${peak.monthKey}: ${Math.round(peak.share * 100)}% of arriving quantity concentrates in one month.`,
+			code: 'ARRIVAL_CONCENTRATION_MODERATE',
+			params: { month: peak.monthKey, percent: Math.round(peak.share * 100) },
 		});
 	}
 	for (const month of months) {
@@ -88,6 +94,8 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 				severity: 'medium',
 				monthKey: month.monthKey,
 				message: `${month.monthKey}: ${month.containerCount} containers land in the same month — check unloading capacity.`,
+				code: 'ARRIVAL_CONTAINER_STACKING',
+				params: { month: month.monthKey, containers: month.containerCount },
 			});
 		}
 	}
@@ -98,6 +106,8 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 			: collisionLevel === 'moderate'
 				? 'Review whether peak-month arrivals can be staggered.'
 				: 'No significant arrival concentration detected.';
+	const suggestionCode =
+		collisionLevel === 'severe' ? 'SUGGESTION_SEVERE' : collisionLevel === 'moderate' ? 'SUGGESTION_MODERATE' : 'SUGGESTION_NONE';
 
 	return {
 		months,
@@ -105,5 +115,6 @@ export function analyzeArrivals(input: ArrivalAnalysisInput): ArrivalAnalysis {
 		collisionLevel,
 		warnings,
 		suggestion,
+		suggestionCode,
 	};
 }

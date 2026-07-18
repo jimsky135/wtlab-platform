@@ -6,16 +6,26 @@
 // confirm → instrument-ready data. Raw values are always preserved;
 // transformations are recorded as issues, never applied silently.
 
+import type { MessageCode, MessageParams } from '../message-codes.ts';
+
 export type IntakeSeverity = 'error' | 'warning' | 'info';
 
 /**
  * A single reported problem or note. `error` blocks confirmation,
  * `warning` stays visible but allows confirmation, `info` explains a
  * transformation without implying a problem.
+ *
+ * `message` is the English rendering — kept for backward compatibility
+ * (existing tests, non-localized contexts). `code` + `params` (Sprint 006,
+ * Task 013) are the locale-independent form; presentation should resolve
+ * these through the current locale via src/i18n/resolveMessage.ts and only
+ * fall back to `message` when `code` is absent.
  */
 export interface IntakeIssue {
 	severity: IntakeSeverity;
 	message: string;
+	code?: MessageCode;
+	params?: MessageParams;
 	/** Schema field id (or source column name for parse/mapping issues). */
 	field?: string;
 	/** 0-based data row index, when the issue belongs to a specific row. */

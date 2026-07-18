@@ -5,6 +5,16 @@
 // Scope note (ADR-0001): tool UI belongs to each tool's own Astro
 // Component, not this contract. This file only covers the calculation
 // side — initialize, validate, calculate — not rendering.
+//
+// Sprint 006, Task 013: ValidationResult's failure branch carries
+// ValidationMessage[] instead of string[] so validation failures can be
+// localized at the presentation boundary. This is a deliberate, contained
+// touch of the v0.2 contract — see the Sprint 006 report's Architecture
+// Review for why it doesn't rise to a "major breaking contract change"
+// (no CSV/Shared Intake/production-behavior impact; the discriminated
+// union shape and every other field are unchanged).
+
+import type { ValidationMessage } from './message-codes.ts';
 
 /** A tool's own development/publication lifecycle (Interface Proposal §A). */
 export type ToolStatus = 'draft' | 'active' | 'deprecated';
@@ -40,13 +50,14 @@ export type InitializeResult = { ready: true } | { ready: false; reason: string 
 /**
  * Outcome of `validate`. A discriminated union, not a boolean: success
  * carries the normalized `TValidatedInput` that `calculate` can safely
- * consume; failure carries one or more human-readable error messages.
- * This is the boundary where raw UI input (e.g. HTML form string values)
- * becomes a type `calculate` can trust.
+ * consume; failure carries one or more structured validation messages
+ * (stable code + params + an English fallback rendering). This is the
+ * boundary where raw UI input (e.g. HTML form string values) becomes a
+ * type `calculate` can trust.
  */
 export type ValidationResult<TValidatedInput> =
 	| { valid: true; data: TValidatedInput }
-	| { valid: false; errors: string[] };
+	| { valid: false; errors: ValidationMessage[] };
 
 /**
  * A tool's calculation behavior (Interface Proposal §B, minus `render` —

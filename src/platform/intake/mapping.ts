@@ -37,6 +37,8 @@ export function validateMapping(mapping: ColumnMapping, schema: IntakeSchema): I
 			issues.push({
 				severity: 'error',
 				message: `Columns ${sources.map((s) => `"${s}"`).join(' and ')} are both mapped to "${destination}". Map only one.`,
+				code: 'MAPPING_DUPLICATE_DESTINATION',
+				params: { sources: sources.map((s) => `"${s}"`).join(' and ') },
 				field: destination,
 			});
 		}
@@ -47,6 +49,7 @@ export function validateMapping(mapping: ColumnMapping, schema: IntakeSchema): I
 			issues.push({
 				severity: 'error',
 				message: `Required field "${field.label}" has no mapped column.`,
+				code: 'MAPPING_REQUIRED_FIELD_UNMAPPED',
 				field: field.id,
 			});
 		}

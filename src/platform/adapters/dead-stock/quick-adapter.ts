@@ -30,7 +30,7 @@ export function toDeadStockItems(records: ConfirmedIntake['records']): DeadStock
 
 export function deadStockQuickAdapter(confirmed: ConfirmedIntake): AdapterOutcome<DeadStockAnalysisInput> {
 	if (confirmed.records.length === 0) {
-		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.' }] };
+		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.', code: 'NO_CONFIRMED_ROWS' }] };
 	}
 	const thresholdOverride = confirmed.records
 		.map((record) => record['thresholdMonths'])

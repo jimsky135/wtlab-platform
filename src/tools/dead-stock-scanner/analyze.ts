@@ -20,6 +20,7 @@
 // Exposure: dead-stock exposes full stock; others expose excessQuantity.
 // Priority: dead/excess = high, dormant/slow = medium, healthy = low.
 
+import type { MessageCode } from '../../platform/message-codes.ts';
 import type {
 	DeadStockAnalysis,
 	DeadStockAnalysisInput,
@@ -39,12 +40,28 @@ const RECOMMENDED_ACTION: Record<DeadStockClassification, string> = {
 	'excess-exposure': 'Stock materially exceeds supported demand — stop inbound and work down the excess.',
 };
 
+const RECOMMENDED_ACTION_CODE: Record<DeadStockClassification, MessageCode> = {
+	healthy: 'DEAD_STOCK_ACTION_HEALTHY',
+	'slow-moving': 'DEAD_STOCK_ACTION_SLOW_MOVING',
+	dormant: 'DEAD_STOCK_ACTION_DORMANT',
+	'dead-stock': 'DEAD_STOCK_ACTION_DEAD_STOCK',
+	'excess-exposure': 'DEAD_STOCK_ACTION_EXCESS_EXPOSURE',
+};
+
 const PRIMARY_WARNING: Record<DeadStockClassification, string | undefined> = {
 	healthy: undefined,
 	'slow-moving': 'Coverage significantly exceeds the expected need.',
 	dormant: 'No recent consumption — classification held back from dead stock only by demand or uncertainty.',
 	'dead-stock': 'No recent movement and explicitly no future demand.',
 	'excess-exposure': 'Quantity materially exceeds demand-supported inventory.',
+};
+
+const PRIMARY_WARNING_CODE: Record<DeadStockClassification, MessageCode | undefined> = {
+	healthy: undefined,
+	'slow-moving': 'DEAD_STOCK_WARNING_SLOW_MOVING',
+	dormant: 'DEAD_STOCK_WARNING_DORMANT',
+	'dead-stock': 'DEAD_STOCK_WARNING_DEAD_STOCK',
+	'excess-exposure': 'DEAD_STOCK_WARNING_EXCESS_EXPOSURE',
 };
 
 function dormancy(age: number | undefined, thresholds: DeadStockThresholds): DormancyStatus {
@@ -118,6 +135,8 @@ function classifyItem(input: DeadStockItemInput, thresholds: DeadStockThresholds
 		reasonCodes: reasons,
 		primaryWarning: PRIMARY_WARNING[classification],
 		recommendedAction: RECOMMENDED_ACTION[classification],
+		primaryWarningCode: PRIMARY_WARNING_CODE[classification],
+		recommendedActionCode: RECOMMENDED_ACTION_CODE[classification],
 	};
 }
 

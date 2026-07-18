@@ -525,6 +525,104 @@ export const en = {
 				'dead-stock': 'Dead Stock',
 				'excess-exposure': 'Excess Exposure',
 			},
+			dormancyStatus: {
+				active: 'Active',
+				dormant: 'Dormant',
+				'long-dormant': 'Long Dormant',
+				unknown: 'Unknown',
+			},
+			priority: {
+				high: 'High',
+				medium: 'Medium',
+				low: 'Low',
+			},
 		},
+	},
+
+	// ---- structured messages (Sprint 006, Task 015) ----
+	// Codes are the stable vocabulary business logic emits; templates here
+	// are the only place English prose is composed for them. `{param}`
+	// placeholders are interpolated by resolveMessage().
+	messages: {
+		// Shared Intake — normalization
+		WHITESPACE_TRIMMED: 'Surrounding whitespace was removed.',
+		BLANK_TREATED_AS_MISSING: 'Blank value treated as missing.',
+		INVALID_NUMBER: '"{value}" is not a valid number.',
+
+		// Shared Intake — validation
+		REQUIRED_FIELD: '"{field}" is required.',
+		NUMBER_TOO_LOW: '"{field}" must be at least {min}.',
+		NUMBER_TOO_HIGH: '"{field}" must be at most {max}.',
+		NOT_ALLOWED_VALUE: '"{field}" must be one of: {values}.',
+
+		// Shared Intake — CSV parsing
+		CSV_FILE_EMPTY: 'The file is empty.',
+		CSV_NO_ROWS: 'The file contains no rows.',
+		CSV_NO_HEADERS: 'The first row contains no column headers.',
+		CSV_BLANK_HEADER: 'A column header is blank.',
+		CSV_DUPLICATE_HEADER: 'Duplicate column header: "{field}".',
+		CSV_NO_DATA_ROWS: 'The file has headers but no data rows.',
+		CSV_ROW_LENGTH_MISMATCH: 'Row {row} has {got} values but there are {expected} columns. The row was kept as-is.',
+
+		// Shared Intake — mapping
+		MAPPING_DUPLICATE_DESTINATION: 'Columns {sources} are both mapped to "{field}". Map only one.',
+		MAPPING_REQUIRED_FIELD_UNMAPPED: 'Required field "{field}" has no mapped column.',
+
+		// Shared Intake — confirmation
+		CONFIRM_NO_DATA: 'There is no data to confirm.',
+		CONFIRM_BLOCKED_BY_ERRORS: 'Confirmation is blocked by {count} error(s).',
+
+		// Data Intake workspace demo
+		DEMO_QUANTITY_ZERO_WARNING: 'Quantity is zero — confirm this is intended.',
+
+		// Adapters — structural guards
+		NO_CONFIRMED_ROWS: 'No confirmed rows to run.',
+		ROW_MISSING_ITEM_OR_PERIOD: 'Row is missing an item name or period and cannot be structured.',
+		DUPLICATE_PERIOD_FOR_ITEM: 'Item "{name}" has more than one row for period {period}.',
+		ITEM_MISSING_BEGINNING_INVENTORY: 'Item "{name}" has no beginning inventory on any of its rows.',
+
+		// Mode schema validateRecord
+		ARRIVAL_DATE_INVALID_ISO: '"{field}" must be an ISO date (YYYY-MM-DD), got "{value}".',
+		DEAD_STOCK_NO_RECENT_CONSUMPTION_WARNING: 'No recent consumption — item will be assessed as dormant/dead-stock candidate.',
+		DEAD_STOCK_FUTURE_DEMAND_UNKNOWN_WARNING: 'Future demand unknown — a dead-stock verdict will be withheld (dormant at most).',
+		DEAD_STOCK_UNIT_COST_MISSING_WARNING: 'Unit cost missing — exposure value cannot be estimated for this item.',
+		DEAD_STOCK_DEFAULT_THRESHOLDS_USED:
+			'Default thresholds used (high coverage {high} months, excess {excess}, dormant {dormant}, dead {dead}).',
+		WATER_LEVEL_LEAD_TIME_BLANK: 'Lead Time is blank — it will be treated as 0 months.',
+		WATER_LEVEL_SAFETY_BUFFER_BLANK: 'Safety Buffer is blank — it will be treated as 0 months.',
+
+		// Tool Contract validators
+		VALIDATE_AT_LEAST_ONE_ARRIVAL: 'At least one arrival is required.',
+		VALIDATE_INVALID_MONTH_KEY: 'Arrival {index}: month key "{value}" is not a valid YYYY-MM value.',
+		VALIDATE_QUANTITY_NON_NEGATIVE: 'Arrival {index}: quantity must be a non-negative number.',
+		VALIDATE_CAPACITY_NON_NEGATIVE: 'Monthly capacity must be a non-negative number.',
+		VALIDATE_AT_LEAST_ONE_ITEM: 'At least one item is required.',
+		VALIDATE_MISSING_ITEM_ID: 'Item {index}: missing item identifier.',
+		VALIDATE_STOCK_NON_NEGATIVE: 'Item {index}: current stock must be a non-negative number.',
+		VALIDATE_CONSUMPTION_NON_NEGATIVE: 'Item {index}: recent monthly consumption must be a non-negative number.',
+		VALIDATE_THRESHOLD_POSITIVE: 'Threshold {name} must be a positive number.',
+		VALIDATE_NUMBER_REQUIRED: '{field} must be a valid number.',
+		VALIDATE_NUMBER_NON_NEGATIVE: '{field} must not be negative.',
+		VALIDATE_NUMBER_POSITIVE: '{field} must be greater than 0.',
+
+		// Arrival Collision engine narratives
+		ARRIVAL_CAPACITY_EXCEEDED: '{month}: total arrivals ({total}) exceed monthly capacity ({capacity}).',
+		ARRIVAL_CONCENTRATION_SEVERE: '{month}: {percent}% of all arriving quantity lands in one month across {batches} batches.',
+		ARRIVAL_CONCENTRATION_MODERATE: '{month}: {percent}% of arriving quantity concentrates in one month.',
+		ARRIVAL_CONTAINER_STACKING: '{month}: {containers} containers land in the same month — check unloading capacity.',
+		SUGGESTION_SEVERE: 'Split or reschedule arrivals to spread quantity across adjacent months.',
+		SUGGESTION_MODERATE: 'Review whether peak-month arrivals can be staggered.',
+		SUGGESTION_NONE: 'No significant arrival concentration detected.',
+
+		// Dead Stock engine narratives
+		DEAD_STOCK_WARNING_SLOW_MOVING: 'Coverage significantly exceeds the expected need.',
+		DEAD_STOCK_WARNING_DORMANT: 'No recent consumption — classification held back from dead stock only by demand or uncertainty.',
+		DEAD_STOCK_WARNING_DEAD_STOCK: 'No recent movement and explicitly no future demand.',
+		DEAD_STOCK_WARNING_EXCESS_EXPOSURE: 'Quantity materially exceeds demand-supported inventory.',
+		DEAD_STOCK_ACTION_HEALTHY: 'No action needed — keep monitoring.',
+		DEAD_STOCK_ACTION_SLOW_MOVING: 'Reduce or pause replenishment; review whether coverage this long is intended.',
+		DEAD_STOCK_ACTION_DORMANT: 'Confirm whether future demand is real; if not, plan drawdown or disposal.',
+		DEAD_STOCK_ACTION_DEAD_STOCK: 'No consumption and no known demand — plan write-down, disposal, or resale.',
+		DEAD_STOCK_ACTION_EXCESS_EXPOSURE: 'Stock materially exceeds supported demand — stop inbound and work down the excess.',
 	},
 } satisfies Dictionary;

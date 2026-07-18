@@ -1,3 +1,4 @@
+import type { ValidationMessage } from '../../platform/message-codes';
 import type { ValidationResult } from '../../platform/tool-contract';
 import type { InventoryBufferRawInput, InventoryBufferValidatedInput, TimeUnit } from './types';
 
@@ -14,27 +15,27 @@ function toFiniteNumber(value: string): number | null {
 	return Number.isFinite(parsed) ? parsed : null;
 }
 
-function parseNonNegative(value: string, field: string, errors: string[]): number | undefined {
+function parseNonNegative(value: string, field: string, errors: ValidationMessage[]): number | undefined {
 	const parsed = toFiniteNumber(value);
 	if (parsed === null) {
-		errors.push(`${field} must be a valid number.`);
+		errors.push({ code: 'VALIDATE_NUMBER_REQUIRED', params: { field }, message: `${field} must be a valid number.` });
 		return undefined;
 	}
 	if (parsed < 0) {
-		errors.push(`${field} must not be negative.`);
+		errors.push({ code: 'VALIDATE_NUMBER_NON_NEGATIVE', params: { field }, message: `${field} must not be negative.` });
 		return undefined;
 	}
 	return parsed;
 }
 
-function parsePositive(value: string, field: string, errors: string[]): number | undefined {
+function parsePositive(value: string, field: string, errors: ValidationMessage[]): number | undefined {
 	const parsed = toFiniteNumber(value);
 	if (parsed === null) {
-		errors.push(`${field} must be a valid number.`);
+		errors.push({ code: 'VALIDATE_NUMBER_REQUIRED', params: { field }, message: `${field} must be a valid number.` });
 		return undefined;
 	}
 	if (parsed <= 0) {
-		errors.push(`${field} must be greater than 0.`);
+		errors.push({ code: 'VALIDATE_NUMBER_POSITIVE', params: { field }, message: `${field} must be greater than 0.` });
 		return undefined;
 	}
 	return parsed;
@@ -52,7 +53,7 @@ function toMonths(value: number, unit: TimeUnit): number {
 export function validateInventoryBufferInput(
 	input: InventoryBufferRawInput
 ): ValidationResult<InventoryBufferValidatedInput> {
-	const errors: string[] = [];
+	const errors: ValidationMessage[] = [];
 
 	const currentStock = parseNonNegative(input.currentStock, 'currentStock', errors);
 	const monthlyConsumption = parsePositive(input.monthlyConsumption, 'monthlyConsumption', errors);

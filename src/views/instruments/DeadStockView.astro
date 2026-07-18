@@ -1,9 +1,10 @@
 ---
 // Dead Stock Scanner — one shared implementation across both locales.
-// Note: `item.primaryWarning` / `item.recommendedAction` are free-text
-// engine output and `item.reasonCodes` are stable machine codes (Task
-// 007: reason codes are never translated) — both stay as-is regardless
-// of locale; only the surrounding labels/headings localize.
+// `item.primaryWarning` / `item.recommendedAction` carry a stable
+// `*Code` alongside their English text (Sprint 006, Task 014); the client
+// script resolves them through the current locale. `item.reasonCodes`
+// remain stable machine codes (Task 007: reason codes are never
+// translated) — those stay as-is regardless of locale.
 import '../../shared/instrument.css';
 import CapabilityPanel from '../../components/CapabilityPanel.astro';
 import InstrumentHeader from '../../components/InstrumentHeader.astro';
@@ -174,11 +175,12 @@ const quickFields = quickFieldOrder.map((id) => ({
 	import { deadStockQuickTemplate } from '../../tools/dead-stock-scanner/modes/quick/template.ts';
 	import type { DeadStockAnalysis } from '../../tools/dead-stock-scanner/types.ts';
 	import { validateDeadStockInput } from '../../tools/dead-stock-scanner/validate.ts';
-	import { getDictionary, type Locale } from '../../i18n/index.ts';
+	import { getDictionary, resolveMessage, type Locale } from '../../i18n/index.ts';
 
 	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
 	const rt = getDictionary(locale).results.deadStockScanner;
 	const csvLabels = getDictionary(locale).common.csvIntake;
+	const fieldLabels = Object.fromEntries(Object.entries(rt.fields).map(([id, field]) => [id, field.label]));
 
 	initModeSwitcher();
 
@@ -206,9 +208,8 @@ const quickFields = quickFieldOrder.map((id) => ({
 		const verdict = el('div', 'card');
 		verdict.appendChild(el('h3', undefined, rt.headings.classification));
 		verdict.appendChild(el('p', 'card-value', rt.classification[item.classification]));
-		// primaryWarning / recommendedAction are free-text engine output — locale-neutral this sprint.
-		if (item.primaryWarning) verdict.appendChild(el('p', 'card-note', item.primaryWarning));
-		verdict.appendChild(el('p', 'card-note', item.recommendedAction));
+		if (item.primaryWarningCode) verdict.appendChild(el('p', 'card-note', resolveMessage(locale, item.primaryWarningCode)));
+		verdict.appendChild(el('p', 'card-note', resolveMessage(locale, item.recommendedActionCode)));
 		cards.appendChild(verdict);
 
 		const numbers = el('div', 'card');
@@ -218,7 +219,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 			el('dt', undefined, rt.labels.coverage),
 			el('dd', undefined, item.coverageMonths === undefined ? rt.labels.noConsumption : `${fmt(item.coverageMonths)} ${monthsWord}`),
 			el('dt', undefined, rt.labels.dormancy),
-			el('dd', undefined, item.dormancyStatus),
+			el('dd', undefined, rt.dormancyStatus[item.dormancyStatus]),
 			el('dt', undefined, rt.labels.futureDemandSupport),
 			el('dd', undefined, item.futureDemandSupport ? rt.labels.demandSupportsYes : rt.labels.demandSupportsNo),
 			el('dt', undefined, rt.labels.excessQuantity),
@@ -256,12 +257,17 @@ const quickFields = quickFieldOrder.map((id) => ({
 	function runQuick(confirmed: ConfirmedIntake) {
 		const adapted = deadStockQuickAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(quickManualIssues, adapted.issues);
+			renderIssues(quickManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		const validated = validateDeadStockInput(adapted.data);
 		if (!validated.valid) {
-			renderIssues(quickManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			renderIssues(
+				quickManualIssues,
+				validated.errors.map((e) => ({ severity: 'error' as const, code: e.code, params: e.params, message: e.message })),
+				locale,
+				fieldLabels
+			);
 			return;
 		}
 		renderQuickResult(analyzeDeadStock(validated.data));
@@ -289,10 +295,10 @@ const quickFields = quickFieldOrder.map((id) => ({
 			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
 			const result = validateRecords([record], deadStockQuickSchema);
 			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 				return;
 			}
-			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'));
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
 			const outcome = confirmIntake(deadStockQuickSchema, result);
 			if (outcome.confirmed) runQuick(outcome.data);
 		});
@@ -309,7 +315,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 			download(deadStockQuickContract.exportProfile.resultFilename, 'text/csv', deadStockResultToCsv(lastQuickAnalysis));
 		}
 	});
-	setupCsvIntake('quick-intake', deadStockQuickSchema, runQuick, csvLabels);
+	setupCsvIntake('quick-intake', deadStockQuickSchema, runQuick, csvLabels, locale, fieldLabels);
 
 	// ---------- ADVANCED ----------
 
@@ -398,10 +404,10 @@ const quickFields = quickFieldOrder.map((id) => ({
 				el('td', undefined, item.item),
 				el('td', item.priority === 'high' ? 'cell-high' : item.priority === 'medium' ? 'cell-medium' : undefined, rt.classification[item.classification]),
 				el('td', undefined, item.coverageMonths === undefined ? 'n/a' : `${fmt(item.coverageMonths)} ${monthsWord}`),
-				el('td', undefined, item.dormancyStatus),
+				el('td', undefined, rt.dormancyStatus[item.dormancyStatus]),
 				el('td', undefined, fmt(item.excessQuantity)),
 				el('td', undefined, item.exposureValue === undefined ? rt.labels.exposureUnknown : fmt(item.exposureValue)),
-				el('td', undefined, item.priority),
+				el('td', undefined, rt.priority[item.priority]),
 				// Reason codes are stable machine codes (Task 007) — never translated.
 				el('td', undefined, item.reasonCodes.join(', '))
 			);
@@ -419,15 +425,20 @@ const quickFields = quickFieldOrder.map((id) => ({
 	function runAdvanced(confirmed: ConfirmedIntake) {
 		const adapted = deadStockAdvancedAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(advManualIssues, adapted.issues);
+			renderIssues(advManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		const validated = validateDeadStockInput(adapted.data);
 		if (!validated.valid) {
-			renderIssues(advManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			renderIssues(
+				advManualIssues,
+				validated.errors.map((e) => ({ severity: 'error' as const, code: e.code, params: e.params, message: e.message })),
+				locale,
+				fieldLabels
+			);
 			return;
 		}
-		renderIssues(advManualIssues, []);
+		renderIssues(advManualIssues, [], locale, fieldLabels);
 		renderAdvanced(analyzeDeadStock(validated.data));
 	}
 
@@ -440,7 +451,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
 		const result = validateRecords(records, deadStockAdvancedSchema);
 		if (result.errorCount > 0) {
-			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 			return;
 		}
 		const outcome = confirmIntake(deadStockAdvancedSchema, result);
@@ -457,7 +468,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 			download(deadStockAdvancedContract.exportProfile.resultFilename, 'text/csv', deadStockResultToCsv(lastAdvAnalysis));
 		}
 	});
-	setupCsvIntake('advanced-intake', deadStockAdvancedSchema, runAdvanced, csvLabels);
+	setupCsvIntake('advanced-intake', deadStockAdvancedSchema, runAdvanced, csvLabels, locale, fieldLabels);
 </script>
 
 <style>

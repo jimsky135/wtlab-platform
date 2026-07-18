@@ -15,6 +15,7 @@ function normalizeField(raw: string, type: 'text' | 'number', fieldId: string): 
 		result.issues.push({
 			severity: 'info',
 			message: 'Surrounding whitespace was removed.',
+			code: 'WHITESPACE_TRIMMED',
 			field: fieldId,
 		});
 	}
@@ -23,7 +24,12 @@ function normalizeField(raw: string, type: 'text' | 'number', fieldId: string): 
 		// Blank means missing — value stays undefined; requiredness is
 		// judged later by validation, not here.
 		if (raw !== '') {
-			result.issues.push({ severity: 'info', message: 'Blank value treated as missing.', field: fieldId });
+			result.issues.push({
+				severity: 'info',
+				message: 'Blank value treated as missing.',
+				code: 'BLANK_TREATED_AS_MISSING',
+				field: fieldId,
+			});
 		}
 		return result;
 	}
@@ -34,6 +40,8 @@ function normalizeField(raw: string, type: 'text' | 'number', fieldId: string): 
 			result.issues.push({
 				severity: 'error',
 				message: `"${raw}" is not a valid number.`,
+				code: 'INVALID_NUMBER',
+				params: { value: raw },
 				field: fieldId,
 			});
 			return result;

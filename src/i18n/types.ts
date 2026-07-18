@@ -3,6 +3,8 @@
 // reason codes, or Tool/Template/Mode ids — see docs/adr for the
 // locale-neutral machine contract policy.
 
+import type { MessageCode } from '../platform/message-codes.ts';
+
 export type Locale = 'en' | 'zh-TW';
 
 export interface CatalogEntryText {
@@ -214,6 +216,10 @@ export interface ResultsText {
 	};
 	deadStockScanner: InstrumentResultText & {
 		classification: Record<'healthy' | 'slow-moving' | 'dormant' | 'dead-stock' | 'excess-exposure', string>;
+		/** Sprint 006 Task 012 finding: dormancyStatus was rendered raw/untranslated. */
+		dormancyStatus: Record<'active' | 'dormant' | 'long-dormant' | 'unknown', string>;
+		/** Sprint 006 Task 012 finding: priority was rendered raw/untranslated. */
+		priority: Record<'high' | 'medium' | 'low', string>;
 	};
 }
 
@@ -239,4 +245,12 @@ export interface Dictionary {
 	/** Mode presentation overlay, keyed by `${instrumentId}.${modeId}`. */
 	modes: Record<string, ModeText>;
 	results: ResultsText;
+	/**
+	 * Structured message templates (Sprint 006, Task 015). Keyed by the
+	 * stable, locale-neutral `MessageCode` vocabulary business logic emits.
+	 * `Record<MessageCode, string>` gives EN/zh-TW key parity at compile
+	 * time — a code missing from either dictionary is a type error.
+	 * `{param}` placeholders are interpolated by src/i18n/resolveMessage.ts.
+	 */
+	messages: Record<MessageCode, string>;
 }

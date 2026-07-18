@@ -84,7 +84,7 @@ export function parseCsv(text: string, fileName?: string): CsvParseResult {
 	const base: Omit<CsvParseResult, 'ok' | 'headers' | 'rows' | 'issues'> = { rawText: text, fileName };
 
 	if (text.trim() === '') {
-		issues.push({ severity: 'error', message: 'The file is empty.' });
+		issues.push({ severity: 'error', message: 'The file is empty.', code: 'CSV_FILE_EMPTY' });
 		return { ok: false, headers: [], rows: [], issues, ...base };
 	}
 
@@ -94,32 +94,38 @@ export function parseCsv(text: string, fileName?: string): CsvParseResult {
 	);
 
 	if (records.length === 0) {
-		issues.push({ severity: 'error', message: 'The file contains no rows.' });
+		issues.push({ severity: 'error', message: 'The file contains no rows.', code: 'CSV_NO_ROWS' });
 		return { ok: false, headers: [], rows: [], issues, ...base };
 	}
 
 	const headers = records[0].map((header) => header.trim());
 
 	if (headers.every((header) => header === '')) {
-		issues.push({ severity: 'error', message: 'The first row contains no column headers.' });
+		issues.push({ severity: 'error', message: 'The first row contains no column headers.', code: 'CSV_NO_HEADERS' });
 		return { ok: false, headers: [], rows: [], issues, ...base };
 	}
 
 	const seen = new Set<string>();
 	for (const header of headers) {
 		if (header === '') {
-			issues.push({ severity: 'error', message: 'A column header is blank.' });
+			issues.push({ severity: 'error', message: 'A column header is blank.', code: 'CSV_BLANK_HEADER' });
 			continue;
 		}
 		if (seen.has(header)) {
-			issues.push({ severity: 'error', message: `Duplicate column header: "${header}".`, field: header });
+			issues.push({
+				severity: 'error',
+				message: `Duplicate column header: "${header}".`,
+				code: 'CSV_DUPLICATE_HEADER',
+				params: { field: header },
+				field: header,
+			});
 		}
 		seen.add(header);
 	}
 
 	const rows = records.slice(1);
 	if (rows.length === 0) {
-		issues.push({ severity: 'error', message: 'The file has headers but no data rows.' });
+		issues.push({ severity: 'error', message: 'The file has headers but no data rows.', code: 'CSV_NO_DATA_ROWS' });
 	}
 
 	rows.forEach((row, index) => {
@@ -127,6 +133,8 @@ export function parseCsv(text: string, fileName?: string): CsvParseResult {
 			issues.push({
 				severity: 'warning',
 				message: `Row ${index + 1} has ${row.length} values but there are ${headers.length} columns. The row was kept as-is.`,
+				code: 'CSV_ROW_LENGTH_MISMATCH',
+				params: { row: index + 1, got: row.length, expected: headers.length },
 				row: index,
 			});
 		}

@@ -1,10 +1,10 @@
 ---
 // Arrival Collision Detector — one shared implementation across both
-// locales (thin route wrappers pass `locale`). Note: `analysis.suggestion`
-// and `warning.message` are free-text engine output (not enum codes) and
-// stay English-only this sprint — translating them would mean changing
-// the ArrivalAnalysis/ArrivalWarning engine result contract, which this
-// sprint does not touch (see Sprint 005.5 report, Task 009 boundary).
+// locales (thin route wrappers pass `locale`). `analysis.suggestion` and
+// `warning.message` carry a stable `Code`/`code`+`params` alongside their
+// English `message` (Sprint 006, Task 014); the client script resolves
+// them through the current locale via resolveMessage() instead of
+// rendering the English fallback directly.
 import '../../shared/instrument.css';
 import CapabilityPanel from '../../components/CapabilityPanel.astro';
 import InstrumentHeader from '../../components/InstrumentHeader.astro';
@@ -161,11 +161,12 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import { arrivalQuickTemplate } from '../../tools/arrival-collision-detector/modes/quick/template.ts';
 	import type { ArrivalAnalysis } from '../../tools/arrival-collision-detector/types.ts';
 	import { validateArrivalInput } from '../../tools/arrival-collision-detector/validate.ts';
-	import { getDictionary, type Locale } from '../../i18n/index.ts';
+	import { getDictionary, resolveMessage, type Locale } from '../../i18n/index.ts';
 
 	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
 	const rt = getDictionary(locale).results.arrivalCollisionDetector;
 	const csvLabels = getDictionary(locale).common.csvIntake;
+	const fieldLabels = Object.fromEntries(Object.entries(rt.fields).map(([id, field]) => [id, field.label]));
 
 	initModeSwitcher();
 
@@ -188,10 +189,9 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 		summary.appendChild(el('h3', undefined, rt.headings.collisionAssessment));
 		summary.appendChild(el('p', 'card-value', rt.collisionLevel[analysis.collisionLevel]));
 		summary.appendChild(
-			// Free-text engine output — locale-neutral this sprint (see file header note).
 			el('p', 'card-note', analysis.peakMonth !== undefined ? `${rt.labels.peakPeriod}: ${analysis.peakMonth}` : rt.labels.noArrivals)
 		);
-		summary.appendChild(el('p', 'card-note', analysis.suggestion));
+		summary.appendChild(el('p', 'card-note', resolveMessage(locale, analysis.suggestionCode)));
 		results.appendChild(summary);
 
 		if (analysis.warnings.length > 0) {
@@ -199,7 +199,8 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 			warningsBox.appendChild(el('h3', undefined, rt.headings.warnings));
 			const list = el('ul');
 			for (const warning of analysis.warnings) {
-				list.appendChild(el('li', undefined, `${warning.severity.toUpperCase()} — ${warning.message}`));
+				const text = resolveMessage(locale, warning.code, warning.params);
+				list.appendChild(el('li', undefined, `${warning.severity.toUpperCase()} — ${text}`));
 			}
 			warningsBox.appendChild(list);
 			results.appendChild(warningsBox);
@@ -257,15 +258,20 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	function runQuick(confirmed: ConfirmedIntake) {
 		const adapted = arrivalQuickAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(quickManualIssues, adapted.issues);
+			renderIssues(quickManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		const validated = validateArrivalInput(adapted.data);
 		if (!validated.valid) {
-			renderIssues(quickManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			renderIssues(
+				quickManualIssues,
+				validated.errors.map((e) => ({ severity: 'error' as const, code: e.code, params: e.params, message: e.message })),
+				locale,
+				fieldLabels
+			);
 			return;
 		}
-		renderIssues(quickManualIssues, []);
+		renderIssues(quickManualIssues, [], locale, fieldLabels);
 		lastQuickAnalysis = analyzeArrivals(validated.data);
 		renderAnalysis(lastQuickAnalysis, 'quick-results', 'quick-results-block');
 	}
@@ -275,7 +281,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 		const records: RawIntakeRecord[] = quickTable.rows().map((values) => ({ values, unknown: {} }));
 		const result = validateRecords(records, arrivalQuickSchema);
 		if (result.errorCount > 0) {
-			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 			return;
 		}
 		const outcome = confirmIntake(arrivalQuickSchema, result);
@@ -292,7 +298,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 			download(arrivalQuickContract.exportProfile.resultFilename, 'text/csv', arrivalResultToCsv(lastQuickAnalysis));
 		}
 	});
-	setupCsvIntake('quick-intake', arrivalQuickSchema, runQuick, csvLabels);
+	setupCsvIntake('quick-intake', arrivalQuickSchema, runQuick, csvLabels, locale, fieldLabels);
 
 	// ---------- ADVANCED ----------
 
@@ -303,15 +309,20 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	function runAdvanced(confirmed: ConfirmedIntake) {
 		const adapted = arrivalAdvancedAdapter(confirmed);
 		if (!adapted.ok) {
-			renderIssues(advManualIssues, adapted.issues);
+			renderIssues(advManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		const validated = validateArrivalInput(adapted.data);
 		if (!validated.valid) {
-			renderIssues(advManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			renderIssues(
+				advManualIssues,
+				validated.errors.map((e) => ({ severity: 'error' as const, code: e.code, params: e.params, message: e.message })),
+				locale,
+				fieldLabels
+			);
 			return;
 		}
-		renderIssues(advManualIssues, []);
+		renderIssues(advManualIssues, [], locale, fieldLabels);
 		lastAdvAnalysis = analyzeArrivals(validated.data);
 		renderAnalysis(lastAdvAnalysis, 'adv-results', 'adv-results-block');
 	}
@@ -329,7 +340,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
 		const result = validateRecords(records, arrivalAdvancedSchema);
 		if (result.errorCount > 0) {
-			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 			return;
 		}
 		const outcome = confirmIntake(arrivalAdvancedSchema, result);
@@ -346,7 +357,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 			download(arrivalAdvancedContract.exportProfile.resultFilename, 'text/csv', arrivalResultToCsv(lastAdvAnalysis));
 		}
 	});
-	setupCsvIntake('advanced-intake', arrivalAdvancedSchema, runAdvanced, csvLabels);
+	setupCsvIntake('advanced-intake', arrivalAdvancedSchema, runAdvanced, csvLabels, locale, fieldLabels);
 </script>
 
 <style>

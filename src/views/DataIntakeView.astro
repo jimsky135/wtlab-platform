@@ -116,12 +116,22 @@ const demoIntakeSchema = getDemoIntakeSchema(locale);
 	import { applyMapping, suggestMapping, validateMapping, type ColumnMapping } from '../platform/intake/mapping.ts';
 	import type { IntakeIssue, IntakeValidationResult, RawIntakeRecord } from '../platform/intake/types.ts';
 	import { validateRecords } from '../platform/intake/validate.ts';
-	import { getDictionary, type Locale } from '../i18n/index.ts';
+	import { getDictionary, resolveMessage, type Locale } from '../i18n/index.ts';
 	import { getDemoIntakeSchema } from './_data-intake-demo-schema.ts';
 
 	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
 	const di = getDictionary(locale).dataIntake;
 	const demoIntakeSchema = getDemoIntakeSchema(locale);
+	// This demo schema is already generated per-locale (see _data-intake-demo-schema.ts),
+	// so field.label doubles as the localized field label — no separate map needed.
+	const fieldLabels = Object.fromEntries(demoIntakeSchema.fields.map((field) => [field.id, field.label]));
+
+	function localizedIssueMessage(issue: IntakeIssue): string {
+		if (!issue.code) return issue.message;
+		const rawField = typeof issue.params?.field === 'string' ? issue.params.field : issue.field;
+		const params = { ...issue.params, ...(rawField !== undefined ? { field: fieldLabels[rawField] ?? rawField } : {}) };
+		return resolveMessage(locale, issue.code, params);
+	}
 
 	const statusEl = document.getElementById('intake-status');
 	const manualForm = document.querySelector<HTMLFormElement>('#manual-form');
@@ -155,7 +165,7 @@ const demoIntakeSchema = getDemoIntakeSchema(locale);
 		const list = document.createElement('ul');
 		for (const issue of issues) {
 			const item = document.createElement('li');
-			item.textContent = `${issue.severity.toUpperCase()}: ${issue.message}`;
+			item.textContent = `${issue.severity.toUpperCase()}: ${localizedIssueMessage(issue)}`;
 			list.appendChild(item);
 		}
 		el.appendChild(list);
@@ -166,7 +176,8 @@ const demoIntakeSchema = getDemoIntakeSchema(locale);
 		const location = issue.row !== undefined ? `${di.rowPrefix} ${issue.row + 1}` : null;
 		const field = issue.field ? `“${issue.field}”` : null;
 		const prefix = [location, field].filter(Boolean).join(' · ');
-		return prefix ? `${prefix}: ${issue.message}` : issue.message;
+		const text = localizedIssueMessage(issue);
+		return prefix ? `${prefix}: ${text}` : text;
 	}
 
 	function renderPreview(result: IntakeValidationResult) {
@@ -363,7 +374,7 @@ const demoIntakeSchema = getDemoIntakeSchema(locale);
 			if (!currentResult) return;
 			const outcome = confirmIntake(demoIntakeSchema, currentResult);
 			if (!outcome.confirmed) {
-				if (confirmReason) confirmReason.textContent = outcome.reason;
+				if (confirmReason) confirmReason.textContent = resolveMessage(locale, outcome.code, outcome.params);
 				return;
 			}
 			if (confirmedOutput) confirmedOutput.textContent = JSON.stringify(outcome.data, null, 2);

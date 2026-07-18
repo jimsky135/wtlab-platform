@@ -21,7 +21,7 @@ export function toArrivalRecords(records: ConfirmedIntake['records']): ArrivalRe
 
 export function arrivalQuickAdapter(confirmed: ConfirmedIntake): AdapterOutcome<ArrivalAnalysisInput> {
 	if (confirmed.records.length === 0) {
-		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.' }] };
+		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.', code: 'NO_CONFIRMED_ROWS' }] };
 	}
 	return { ok: true, data: { arrivals: toArrivalRecords(confirmed.records), monthlyCapacity: undefined } };
 }

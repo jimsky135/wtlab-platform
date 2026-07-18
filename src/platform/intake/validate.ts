@@ -20,6 +20,7 @@ function validateRecord(record: NormalizedIntakeRecord, schema: IntakeSchema, ro
 				issues.push({
 					severity: 'error',
 					message: `"${field.label}" is required.`,
+					code: 'REQUIRED_FIELD',
 					field: field.id,
 					row,
 				});
@@ -32,6 +33,8 @@ function validateRecord(record: NormalizedIntakeRecord, schema: IntakeSchema, ro
 				issues.push({
 					severity: 'error',
 					message: `"${field.label}" must be at least ${field.min}.`,
+					code: 'NUMBER_TOO_LOW',
+					params: { min: field.min },
 					field: field.id,
 					row,
 				});
@@ -40,6 +43,8 @@ function validateRecord(record: NormalizedIntakeRecord, schema: IntakeSchema, ro
 				issues.push({
 					severity: 'error',
 					message: `"${field.label}" must be at most ${field.max}.`,
+					code: 'NUMBER_TOO_HIGH',
+					params: { max: field.max },
 					field: field.id,
 					row,
 				});
@@ -51,6 +56,8 @@ function validateRecord(record: NormalizedIntakeRecord, schema: IntakeSchema, ro
 				issues.push({
 					severity: 'error',
 					message: `"${field.label}" must be one of: ${field.allowedValues.join(', ')}.`,
+					code: 'NOT_ALLOWED_VALUE',
+					params: { values: field.allowedValues.join(', ') },
 					field: field.id,
 					row,
 				});

@@ -492,6 +492,100 @@ export const zhTW = {
 				'dead-stock': '呆滯庫存',
 				'excess-exposure': '超額佔用',
 			},
+			dormancyStatus: {
+				active: '活躍',
+				dormant: '停滯',
+				'long-dormant': '長期停滯',
+				unknown: '未知',
+			},
+			priority: {
+				high: '高',
+				medium: '中',
+				low: '低',
+			},
 		},
+	},
+
+	// ---- 結構化訊息（Sprint 006, Task 015）----
+	messages: {
+		// Shared Intake — 正規化
+		WHITESPACE_TRIMMED: '已移除前後多餘空白。',
+		BLANK_TREATED_AS_MISSING: '空白值視為缺漏。',
+		INVALID_NUMBER: '「{value}」不是有效數字。',
+
+		// Shared Intake — 驗證
+		REQUIRED_FIELD: '「{field}」為必填欄位。',
+		NUMBER_TOO_LOW: '「{field}」至少須為 {min}。',
+		NUMBER_TOO_HIGH: '「{field}」至多為 {max}。',
+		NOT_ALLOWED_VALUE: '「{field}」須為以下其中之一：{values}。',
+
+		// Shared Intake — CSV 解析
+		CSV_FILE_EMPTY: '檔案為空。',
+		CSV_NO_ROWS: '檔案不含任何資料列。',
+		CSV_NO_HEADERS: '第一列沒有欄位標頭。',
+		CSV_BLANK_HEADER: '有一個欄位標頭是空白的。',
+		CSV_DUPLICATE_HEADER: '欄位標頭重複：「{field}」。',
+		CSV_NO_DATA_ROWS: '檔案有標頭但沒有資料列。',
+		CSV_ROW_LENGTH_MISMATCH: '第 {row} 列有 {got} 個值,但欄位標頭有 {expected} 欄。此列已原樣保留。',
+
+		// Shared Intake — 欄位對應
+		MAPPING_DUPLICATE_DESTINATION: '欄位 {sources} 都對應到「{field}」。請只對應其中一個。',
+		MAPPING_REQUIRED_FIELD_UNMAPPED: '必填欄位「{field}」尚未對應任何欄位。',
+
+		// Shared Intake — 確認
+		CONFIRM_NO_DATA: '沒有可供確認的資料。',
+		CONFIRM_BLOCKED_BY_ERRORS: '因 {count} 個錯誤而無法確認。',
+
+		// Data Intake workspace demo
+		DEMO_QUANTITY_ZERO_WARNING: '數量為零 — 請確認這是預期的情況。',
+
+		// Adapters — 結構檢查
+		NO_CONFIRMED_ROWS: '沒有已確認的資料列可執行。',
+		ROW_MISSING_ITEM_OR_PERIOD: '此列缺少品項名稱或期別,無法結構化。',
+		DUPLICATE_PERIOD_FOR_ITEM: '品項「{name}」在第 {period} 期出現超過一列資料。',
+		ITEM_MISSING_BEGINNING_INVENTORY: '品項「{name}」在所有資料列中都沒有期初庫存。',
+
+		// Mode schema validateRecord
+		ARRIVAL_DATE_INVALID_ISO: '「{field}」須為 ISO 日期格式（YYYY-MM-DD）,但收到「{value}」。',
+		DEAD_STOCK_NO_RECENT_CONSUMPTION_WARNING: '近期無耗用 — 此品項將被評估為停滯／呆滯庫存候選項目。',
+		DEAD_STOCK_FUTURE_DEMAND_UNKNOWN_WARNING: '未來需求未知 — 將暫不判定為呆滯庫存（至多列為停滯）。',
+		DEAD_STOCK_UNIT_COST_MISSING_WARNING: '缺少單位成本 — 無法估算此品項的佔用資金。',
+		DEAD_STOCK_DEFAULT_THRESHOLDS_USED: '已套用預設門檻（高覆蓋 {high} 個月、超額 {excess} 個月、停滯 {dormant} 個月、呆滯 {dead} 個月）。',
+		WATER_LEVEL_LEAD_TIME_BLANK: '前置時間為空白 — 將視為 0 個月。',
+		WATER_LEVEL_SAFETY_BUFFER_BLANK: '安全緩衝為空白 — 將視為 0 個月。',
+
+		// Tool Contract 驗證器
+		VALIDATE_AT_LEAST_ONE_ARRIVAL: '至少須有一筆到貨資料。',
+		VALIDATE_INVALID_MONTH_KEY: '第 {index} 筆到貨:月份代碼「{value}」不是有效的 YYYY-MM 格式。',
+		VALIDATE_QUANTITY_NON_NEGATIVE: '第 {index} 筆到貨:數量須為非負數。',
+		VALIDATE_CAPACITY_NON_NEGATIVE: '月度容量須為非負數。',
+		VALIDATE_AT_LEAST_ONE_ITEM: '至少須有一個品項。',
+		VALIDATE_MISSING_ITEM_ID: '第 {index} 個品項:缺少品項識別碼。',
+		VALIDATE_STOCK_NON_NEGATIVE: '第 {index} 個品項:目前庫存須為非負數。',
+		VALIDATE_CONSUMPTION_NON_NEGATIVE: '第 {index} 個品項:近期月耗用須為非負數。',
+		VALIDATE_THRESHOLD_POSITIVE: '門檻「{name}」須為正數。',
+		VALIDATE_NUMBER_REQUIRED: '「{field}」須為有效數字。',
+		VALIDATE_NUMBER_NON_NEGATIVE: '「{field}」不得為負數。',
+		VALIDATE_NUMBER_POSITIVE: '「{field}」須大於 0。',
+
+		// Arrival Collision 引擎敘述
+		ARRIVAL_CAPACITY_EXCEEDED: '{month}:到貨總量（{total}）超過月度容量（{capacity}）。',
+		ARRIVAL_CONCENTRATION_SEVERE: '{month}:全部到貨數量中有 {percent}% 集中在單一月份,共 {batches} 批。',
+		ARRIVAL_CONCENTRATION_MODERATE: '{month}:{percent}% 的到貨數量集中在單一月份。',
+		ARRIVAL_CONTAINER_STACKING: '{month}:有 {containers} 個貨櫃於同月抵達 — 請確認卸貨產能。',
+		SUGGESTION_SEVERE: '建議拆分或改期到貨,將數量分散至鄰近月份。',
+		SUGGESTION_MODERATE: '建議檢視高峰月份的到貨是否可錯開安排。',
+		SUGGESTION_NONE: '未偵測到明顯的到貨集中情形。',
+
+		// Dead Stock 引擎敘述
+		DEAD_STOCK_WARNING_SLOW_MOVING: '覆蓋月數明顯超過預期所需。',
+		DEAD_STOCK_WARNING_DORMANT: '近期無耗用 — 因需求或不確定性而暫未判定為呆滯庫存。',
+		DEAD_STOCK_WARNING_DEAD_STOCK: '近期無異動且明確無未來需求。',
+		DEAD_STOCK_WARNING_EXCESS_EXPOSURE: '數量明顯超過需求所能支撐的庫存水準。',
+		DEAD_STOCK_ACTION_HEALTHY: '無需採取行動 — 持續追蹤即可。',
+		DEAD_STOCK_ACTION_SLOW_MOVING: '減少或暫停補貨;檢視如此長的覆蓋期是否為預期情況。',
+		DEAD_STOCK_ACTION_DORMANT: '確認未來需求是否屬實;若非屬實,規劃去化或報廢。',
+		DEAD_STOCK_ACTION_DEAD_STOCK: '無耗用且無已知需求 — 規劃減損、報廢或轉售。',
+		DEAD_STOCK_ACTION_EXCESS_EXPOSURE: '庫存明顯超過需求所支撐的水準 — 停止進貨並去化超額庫存。',
 	},
 } satisfies Dictionary;

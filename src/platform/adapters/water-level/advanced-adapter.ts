@@ -17,7 +17,7 @@ export function advancedAdapter(confirmed: ConfirmedIntake): AdapterOutcome<Adva
 	const issues: IntakeIssue[] = [];
 
 	if (confirmed.records.length === 0) {
-		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.' }] };
+		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.', code: 'NO_CONFIRMED_ROWS' }] };
 	}
 
 	const byItem = new Map<string, PlanningItem & { seenPeriods: Set<number> }>();
@@ -29,6 +29,7 @@ export function advancedAdapter(confirmed: ConfirmedIntake): AdapterOutcome<Adva
 			issues.push({
 				severity: 'error',
 				message: 'Row is missing an item name or period and cannot be structured.',
+				code: 'ROW_MISSING_ITEM_OR_PERIOD',
 				row,
 			});
 			return;
@@ -50,6 +51,8 @@ export function advancedAdapter(confirmed: ConfirmedIntake): AdapterOutcome<Adva
 			issues.push({
 				severity: 'error',
 				message: `Item "${name}" has more than one row for period ${period}.`,
+				code: 'DUPLICATE_PERIOD_FOR_ITEM',
+				params: { name, period },
 				field: 'period',
 				row,
 			});
@@ -78,6 +81,8 @@ export function advancedAdapter(confirmed: ConfirmedIntake): AdapterOutcome<Adva
 			issues.push({
 				severity: 'error',
 				message: `Item "${item.name}" has no beginning inventory on any of its rows.`,
+				code: 'ITEM_MISSING_BEGINNING_INVENTORY',
+				params: { name: item.name },
 				field: 'beginningInventory',
 			});
 		}

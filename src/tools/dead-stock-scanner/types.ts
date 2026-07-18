@@ -3,6 +3,8 @@
 // transparent rules-based model (no scoring, no opaque weights) and
 // every result carries machine-readable reason codes.
 
+import type { MessageCode } from '../../platform/message-codes.ts';
+
 export type DeadStockClassification = 'healthy' | 'slow-moving' | 'dormant' | 'dead-stock' | 'excess-exposure';
 
 export type DormancyStatus = 'active' | 'dormant' | 'long-dormant' | 'unknown';
@@ -73,8 +75,12 @@ export interface DeadStockItemResult {
 	exposureValue: number | undefined;
 	priority: DeadStockPriority;
 	reasonCodes: ReasonCode[];
+	/** English fallback — kept for backward compatibility (existing tests). */
 	primaryWarning: string | undefined;
 	recommendedAction: string;
+	/** Stable, locale-independent forms (Sprint 006, Task 014) — no dynamic params, resolve via src/i18n/resolveMessage.ts. */
+	primaryWarningCode: MessageCode | undefined;
+	recommendedActionCode: MessageCode;
 }
 
 export interface DeadStockPortfolioSummary {

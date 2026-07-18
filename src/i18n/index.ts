@@ -8,6 +8,7 @@ export {
 	localizePath,
 	resolveLocaleFromPath,
 } from './locales.ts';
+export { resolveMessage } from './resolveMessage.ts';
 
 import type { Dictionary, Locale } from './types.ts';
 import { en } from './en.ts';

@@ -30,7 +30,7 @@ test('Case 9 — monthlyConsumption = 0 fails validation', () => {
 	const result = validateInventoryBufferInput({ ...validRaw, monthlyConsumption: '0' });
 	assert.equal(result.valid, false);
 	if (!result.valid) {
-		assert.ok(result.errors.some((message) => message.includes('monthlyConsumption')));
+		assert.ok(result.errors.some((e) => e.message.includes('monthlyConsumption')));
 	}
 });
 
@@ -39,7 +39,7 @@ test('Case 10 — negative numeric input fails validation', () => {
 	const result = validateInventoryBufferInput({ ...validRaw, currentStock: '-5' });
 	assert.equal(result.valid, false);
 	if (!result.valid) {
-		assert.ok(result.errors.some((message) => message.includes('currentStock')));
+		assert.ok(result.errors.some((e) => e.message.includes('currentStock')));
 	}
 });
 
@@ -56,6 +56,6 @@ test('negative optional fields, when provided, also fail validation', () => {
 	const result = validateInventoryBufferInput({ ...validRaw, inTransitQuantity: '-1' });
 	assert.equal(result.valid, false);
 	if (!result.valid) {
-		assert.ok(result.errors.some((message) => message.includes('inTransitQuantity')));
+		assert.ok(result.errors.some((e) => e.message.includes('inTransitQuantity')));
 	}
 });

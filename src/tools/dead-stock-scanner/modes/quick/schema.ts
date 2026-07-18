@@ -4,6 +4,7 @@
 // unit cost means exposure value cannot be estimated, and a blank
 // threshold falls back to the documented defaults.
 
+import { DEFAULT_THRESHOLDS } from '../../types.ts';
 import type { IntakeIssue, IntakeSchema, NormalizedIntakeRecord } from '../../../../platform/intake/types.ts';
 
 export function deadStockWarnings(record: NormalizedIntakeRecord): IntakeIssue[] {
@@ -12,6 +13,7 @@ export function deadStockWarnings(record: NormalizedIntakeRecord): IntakeIssue[]
 		issues.push({
 			severity: 'warning',
 			message: 'No recent consumption — item will be assessed as dormant/dead-stock candidate.',
+			code: 'DEAD_STOCK_NO_RECENT_CONSUMPTION_WARNING',
 			field: 'recentMonthlyConsumption',
 		});
 	}
@@ -19,6 +21,7 @@ export function deadStockWarnings(record: NormalizedIntakeRecord): IntakeIssue[]
 		issues.push({
 			severity: 'warning',
 			message: 'Future demand unknown — a dead-stock verdict will be withheld (dormant at most).',
+			code: 'DEAD_STOCK_FUTURE_DEMAND_UNKNOWN_WARNING',
 			field: 'futureDemand',
 		});
 	}
@@ -26,6 +29,7 @@ export function deadStockWarnings(record: NormalizedIntakeRecord): IntakeIssue[]
 		issues.push({
 			severity: 'warning',
 			message: 'Unit cost missing — exposure value cannot be estimated for this item.',
+			code: 'DEAD_STOCK_UNIT_COST_MISSING_WARNING',
 			field: 'unitCost',
 		});
 	}
@@ -97,7 +101,14 @@ export const deadStockQuickSchema: IntakeSchema = {
 		if (record.fields['thresholdMonths']?.value === undefined) {
 			issues.push({
 				severity: 'warning',
-				message: 'Default thresholds used (high coverage 12 months, excess 24, dormant 6, dead 12).',
+				message: `Default thresholds used (high coverage ${DEFAULT_THRESHOLDS.highCoverageMonths} months, excess ${DEFAULT_THRESHOLDS.excessCoverageMonths}, dormant ${DEFAULT_THRESHOLDS.dormantMonths}, dead ${DEFAULT_THRESHOLDS.deadMonths}).`,
+				code: 'DEAD_STOCK_DEFAULT_THRESHOLDS_USED',
+				params: {
+					high: DEFAULT_THRESHOLDS.highCoverageMonths,
+					excess: DEFAULT_THRESHOLDS.excessCoverageMonths,
+					dormant: DEFAULT_THRESHOLDS.dormantMonths,
+					dead: DEFAULT_THRESHOLDS.deadMonths,
+				},
 				field: 'thresholdMonths',
 			});
 		}

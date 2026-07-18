@@ -15,7 +15,7 @@ function asString(value: string | number | undefined): string | undefined {
 
 export function quickAdapter(confirmed: ConfirmedIntake): AdapterOutcome<QuickAdapterItem[]> {
 	if (confirmed.records.length === 0) {
-		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.' }] };
+		return { ok: false, issues: [{ severity: 'error', message: 'No confirmed rows to run.', code: 'NO_CONFIRMED_ROWS' }] };
 	}
 
 	const items: QuickAdapterItem[] = confirmed.records.map((record) => {

@@ -72,6 +72,7 @@ export const quickIntakeSchema: IntakeSchema = {
 			issues.push({
 				severity: 'warning' as const,
 				message: 'Lead Time is blank — it will be treated as 0 months.',
+				code: 'WATER_LEVEL_LEAD_TIME_BLANK' as const,
 				field: 'leadTimeMonths',
 			});
 		}
@@ -79,6 +80,7 @@ export const quickIntakeSchema: IntakeSchema = {
 			issues.push({
 				severity: 'warning' as const,
 				message: 'Safety Buffer is blank — it will be treated as 0 months.',
+				code: 'WATER_LEVEL_SAFETY_BUFFER_BLANK' as const,
 				field: 'safetyBufferMonths',
 			});
 		}
