@@ -155,3 +155,4 @@ Route note: Water Level keeps its confirmed `/tools/inventory-buffer-check` URL;
 | Workspace context routing | linking instruments to workspace context |
 | Third instrument | next replication (Demand Wave Radar or Lead Time Gap Checker) using the now-shared mode/adapter/template pattern |
 | Saved mapping templates | remember user column mappings (deferred from Sprint 003.5) |
+| SEO minimum pass | meta descriptions, canonical tags, Open Graph, robots.txt/sitemap (optional, not launch-blocking — from Deployment 001 audit) |
