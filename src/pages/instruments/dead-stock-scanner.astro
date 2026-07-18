@@ -1,0 +1,462 @@
+---
+// Dead Stock Scanner — third instrument, built on the shared instrument
+// UI promoted in Sprint 005 (InstrumentHeader, CapabilityPanel,
+// ModeSwitcher, shared instrument.css, setupRowTable, setupCsvIntake).
+import '../../shared/instrument.css';
+import CapabilityPanel from '../../components/CapabilityPanel.astro';
+import InstrumentHeader from '../../components/InstrumentHeader.astro';
+import ModeSwitcher from '../../components/ModeSwitcher.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
+import { platformRegistry } from '../../platform/registry';
+import { deadStockAdvancedContract } from '../../tools/dead-stock-scanner/modes/advanced/contract';
+import { deadStockQuickContract } from '../../tools/dead-stock-scanner/modes/quick/contract';
+
+const TOOL_ID = 'dead-stock-scanner';
+const available = platformRegistry.isAvailable(TOOL_ID);
+const entry = findById(instruments, TOOL_ID);
+const modes = [deadStockQuickContract, deadStockAdvancedContract];
+
+const quickFields = [
+	{ id: 'item', label: 'Item Name', required: true, note: undefined },
+	{ id: 'currentStock', label: 'Current Stock', required: true, note: undefined },
+	{ id: 'recentMonthlyConsumption', label: 'Recent Monthly Consumption', required: true, note: '0 = no recent consumption' },
+	{ id: 'monthsSinceLastMovement', label: 'Months Since Last Movement', required: false, note: 'blank = unknown' },
+	{ id: 'futureDemand', label: 'Known Future Demand', required: false, note: '0 = explicitly none; blank = unknown' },
+	{ id: 'unitCost', label: 'Unit Cost', required: false, note: 'enables exposure value' },
+	{ id: 'thresholdMonths', label: 'Coverage Threshold (months)', required: false, note: 'blank = default 12' },
+];
+---
+
+<PlatformShell title={`${entry?.displayName ?? 'Instrument'} · WTLab`} section="instruments">
+	{available && entry ? (
+		<article class="instrument-page">
+			<InstrumentHeader entry={entry} />
+			<CapabilityPanel capabilities={entry.capabilities} />
+			<ModeSwitcher modes={modes} />
+
+			<!-- ============ QUICK ============ -->
+			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
+				<details open>
+					<summary>Manual Entry — single item</summary>
+					<form id="quick-form">
+						{quickFields.map((field) => (
+							<div class="field">
+								<label for={`q-${field.id}`}>
+									{field.label}
+									{field.required ? '' : <span class="optional-marker"> (optional{field.note ? ` — ${field.note}` : ''})</span>}
+									{field.required && field.note ? <span class="optional-marker"> ({field.note})</span> : ''}
+								</label>
+								<input id={`q-${field.id}`} name={field.id} type="text" inputmode={field.id === 'item' ? undefined : 'decimal'} required={field.required} />
+							</div>
+						))}
+						<div class="action-row">
+							<button type="submit">Run Quick Check</button>
+							<button type="button" class="secondary" id="quick-download-input">Download Input CSV</button>
+							<button type="button" class="secondary" id="quick-download-template">Download Blank Template</button>
+						</div>
+					</form>
+					<div id="quick-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>Upload CSV — reuse a downloaded input file</summary>
+					<p class="section-note">
+						Upload a previously downloaded <code>dead-stock-quick-input.csv</code> (or the filled blank
+						template). Files are read in this browser only.
+					</p>
+					<div id="quick-intake"></div>
+				</details>
+
+				<div id="quick-results-block" class="results-block" hidden>
+					<h2>Result</h2>
+					<div id="quick-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="quick-download-result">Download Result CSV</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============ ADVANCED ============ -->
+			<section id="panel-advanced" class="mode-panel" aria-label="Advanced Scan" hidden>
+				<details open>
+					<summary>Manual Table — many SKUs</summary>
+					<p class="section-note">
+						One row per SKU. Blank optional cells mean unknown — the engine never fills them in silently.
+					</p>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-add-row">Add Item</button>
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr>
+									<th>Item</th><th>Current Stock</th><th>Monthly Consumption</th><th>Months Since Movement</th><th>Future Demand</th><th>Unit Cost</th><th>Category</th><th></th>
+								</tr>
+							</thead>
+							<tbody id="adv-body"></tbody>
+						</table>
+					</div>
+					<div class="action-row">
+						<button type="button" class="primary" id="adv-run">Run Scan</button>
+						<button type="button" class="secondary" id="adv-download-input">Download Input CSV</button>
+						<button type="button" class="secondary" id="adv-download-template">Download Blank Template</button>
+					</div>
+					<div id="adv-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>Upload CSV — reuse a downloaded input file</summary>
+					<p class="section-note">
+						Upload a previously downloaded <code>dead-stock-advanced-input.csv</code> (or the filled blank
+						template). Files are read in this browser only.
+					</p>
+					<div id="advanced-intake"></div>
+				</details>
+
+				<div id="adv-results-block" class="results-block" hidden>
+					<h2>Scan Results</h2>
+					<div id="adv-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-download-result">Download Result CSV</button>
+					</div>
+				</div>
+			</section>
+
+			<section class="related" aria-labelledby="related-heading">
+				<h2 id="related-heading">Related</h2>
+				<ul>
+					<li><a href="/tools/inventory-buffer-check">Water Level Checker</a></li>
+					<li><a href="/instruments/arrival-collision-detector">Arrival Collision Detector</a></li>
+					<li><a href="/workspace/data-intake">Data Intake Workspace</a></li>
+					<li><a href="/command">Command Center</a></li>
+				</ul>
+			</section>
+		</article>
+	) : (
+		<article class="instrument-page">
+			<p class="kicker">WTLab</p>
+			<h1>This tool is not currently available.</h1>
+			<p><a href="/instruments">← Back to Instrument Library</a></p>
+		</article>
+	)}
+</PlatformShell>
+
+<script>
+	import { confirmIntake } from '../../platform/intake/confirm.ts';
+	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
+	import { validateRecords } from '../../platform/intake/validate.ts';
+	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
+	import { initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
+	import { deadStockAdvancedAdapter } from '../../platform/adapters/dead-stock/advanced-adapter.ts';
+	import { deadStockQuickAdapter } from '../../platform/adapters/dead-stock/quick-adapter.ts';
+	import { analyzeDeadStock } from '../../tools/dead-stock-scanner/analyze.ts';
+	import { deadStockResultToCsv } from '../../tools/dead-stock-scanner/export.ts';
+	import { deadStockAdvancedContract } from '../../tools/dead-stock-scanner/modes/advanced/contract.ts';
+	import { deadStockAdvancedSchema } from '../../tools/dead-stock-scanner/modes/advanced/schema.ts';
+	import { deadStockAdvancedTemplate } from '../../tools/dead-stock-scanner/modes/advanced/template.ts';
+	import { deadStockQuickContract } from '../../tools/dead-stock-scanner/modes/quick/contract.ts';
+	import { deadStockQuickSchema } from '../../tools/dead-stock-scanner/modes/quick/schema.ts';
+	import { deadStockQuickTemplate } from '../../tools/dead-stock-scanner/modes/quick/template.ts';
+	import type { DeadStockAnalysis, DeadStockClassification } from '../../tools/dead-stock-scanner/types.ts';
+	import { validateDeadStockInput } from '../../tools/dead-stock-scanner/validate.ts';
+
+	initModeSwitcher();
+
+	const CLASSIFICATION_LABEL: Record<DeadStockClassification, string> = {
+		healthy: 'Healthy',
+		'slow-moving': 'Slow Moving',
+		dormant: 'Dormant',
+		'dead-stock': 'Dead Stock',
+		'excess-exposure': 'Excess Exposure',
+	};
+
+	function fmt(value: number): string {
+		return String(Math.round(value * 100) / 100);
+	}
+
+	// ---------- QUICK ----------
+
+	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	const quickManualIssues = document.getElementById('quick-manual-issues');
+	const quickResults = document.getElementById('quick-results');
+	const quickResultsBlock = document.getElementById('quick-results-block');
+	let lastQuickAnalysis: DeadStockAnalysis | null = null;
+
+	function renderQuickResult(analysis: DeadStockAnalysis) {
+		if (!quickResults || !quickResultsBlock) return;
+		lastQuickAnalysis = analysis;
+		const item = analysis.items[0];
+		quickResults.innerHTML = '';
+
+		const cards = el('div', 'cards');
+
+		const verdict = el('div', 'card');
+		verdict.appendChild(el('h3', undefined, 'Classification'));
+		verdict.appendChild(el('p', 'card-value', CLASSIFICATION_LABEL[item.classification]));
+		if (item.primaryWarning) verdict.appendChild(el('p', 'card-note', item.primaryWarning));
+		verdict.appendChild(el('p', 'card-note', item.recommendedAction));
+		cards.appendChild(verdict);
+
+		const numbers = el('div', 'card');
+		numbers.appendChild(el('h3', undefined, 'Numbers'));
+		const dl = el('dl');
+		dl.append(
+			el('dt', undefined, 'Coverage'),
+			el('dd', undefined, item.coverageMonths === undefined ? 'n/a — no consumption' : `${fmt(item.coverageMonths)} months`),
+			el('dt', undefined, 'Dormancy'),
+			el('dd', undefined, item.dormancyStatus),
+			el('dt', undefined, 'Future demand support'),
+			el('dd', undefined, item.futureDemandSupport ? 'yes — demand covers stock' : 'no'),
+			el('dt', undefined, 'Estimated excess quantity'),
+			el('dd', undefined, fmt(item.excessQuantity)),
+			el('dt', undefined, 'Estimated exposure value'),
+			el('dd', undefined, item.exposureValue === undefined ? 'unknown (no unit cost)' : fmt(item.exposureValue))
+		);
+		numbers.appendChild(dl);
+		cards.appendChild(numbers);
+
+		const reasons = el('div', 'card');
+		reasons.appendChild(el('h3', undefined, 'Why (reason codes)'));
+		const list = el('ul');
+		for (const code of item.reasonCodes) list.appendChild(el('li', undefined, code));
+		reasons.appendChild(list);
+		reasons.appendChild(
+			el(
+				'p',
+				'card-note',
+				`Thresholds: high coverage ${analysis.thresholds.highCoverageMonths}m · excess ${analysis.thresholds.excessCoverageMonths}m · dormant ${analysis.thresholds.dormantMonths}m · dead ${analysis.thresholds.deadMonths}m`
+			)
+		);
+		cards.appendChild(reasons);
+
+		quickResults.appendChild(cards);
+		quickResultsBlock.hidden = false;
+		quickResultsBlock.scrollIntoView({ block: 'nearest' });
+	}
+
+	function runQuick(confirmed: ConfirmedIntake) {
+		const adapted = deadStockQuickAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(quickManualIssues, adapted.issues);
+			return;
+		}
+		const validated = validateDeadStockInput(adapted.data);
+		if (!validated.valid) {
+			renderIssues(quickManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			return;
+		}
+		renderQuickResult(analyzeDeadStock(validated.data));
+	}
+
+	function quickFormRow(): Record<string, string> {
+		const value = (name: string) => {
+			const field = quickForm?.elements.namedItem(name);
+			return field instanceof HTMLInputElement ? field.value : '';
+		};
+		return {
+			item: value('item'),
+			currentStock: value('currentStock'),
+			recentMonthlyConsumption: value('recentMonthlyConsumption'),
+			monthsSinceLastMovement: value('monthsSinceLastMovement'),
+			futureDemand: value('futureDemand'),
+			unitCost: value('unitCost'),
+			thresholdMonths: value('thresholdMonths'),
+		};
+	}
+
+	if (quickForm) {
+		quickForm.addEventListener('submit', (event) => {
+			event.preventDefault();
+			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+			const result = validateRecords([record], deadStockQuickSchema);
+			if (result.errorCount > 0) {
+				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+				return;
+			}
+			// Surface non-blocking warnings alongside the result.
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'));
+			const outcome = confirmIntake(deadStockQuickSchema, result);
+			if (outcome.confirmed) runQuick(outcome.data);
+		});
+	}
+
+	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		download(deadStockQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(deadStockQuickTemplate, [quickFormRow()]));
+	});
+	document.getElementById('quick-download-template')?.addEventListener('click', () => {
+		download('dead-stock-quick-template.csv', 'text/csv', generateBlankTemplateCsv(deadStockQuickTemplate));
+	});
+	document.getElementById('quick-download-result')?.addEventListener('click', () => {
+		if (lastQuickAnalysis) {
+			download(deadStockQuickContract.exportProfile.resultFilename, 'text/csv', deadStockResultToCsv(lastQuickAnalysis));
+		}
+	});
+	setupCsvIntake('quick-intake', deadStockQuickSchema, runQuick);
+
+	// ---------- ADVANCED ----------
+
+	const ADV_FIELDS = [
+		{ id: 'item' },
+		{ id: 'currentStock' },
+		{ id: 'recentMonthlyConsumption' },
+		{ id: 'monthsSinceLastMovement' },
+		{ id: 'futureDemand' },
+		{ id: 'unitCost' },
+		{ id: 'category' },
+	];
+	const advTable = setupRowTable('adv-body', ADV_FIELDS);
+	const advManualIssues = document.getElementById('adv-manual-issues');
+	const advResults = document.getElementById('adv-results');
+	const advResultsBlock = document.getElementById('adv-results-block');
+	let lastAdvAnalysis: DeadStockAnalysis | null = null;
+
+	function renderAdvanced(analysis: DeadStockAnalysis) {
+		if (!advResults || !advResultsBlock) return;
+		lastAdvAnalysis = analysis;
+		advResults.innerHTML = '';
+
+		const summary = analysis.summary;
+		const cards = el('div', 'cards');
+		const addStat = (label: string, value: string, note?: string) => {
+			const card = el('div', 'card');
+			card.appendChild(el('h3', undefined, label));
+			card.appendChild(el('p', 'card-value', value));
+			if (note) card.appendChild(el('p', 'card-note', note));
+			cards.appendChild(card);
+		};
+		addStat('Items', String(summary.totalItems), `Healthy ${summary.counts.healthy} · Slow ${summary.counts['slow-moving']} · Dormant ${summary.counts.dormant} · Dead ${summary.counts['dead-stock']} · Excess ${summary.counts['excess-exposure']}`);
+		addStat('Total Excess Quantity', fmt(summary.totalExcessQuantity));
+		addStat(
+			'Estimated Capital Exposure',
+			fmt(summary.totalExposureValue),
+			summary.itemsWithoutUnitCost > 0
+				? `Lower bound — ${summary.itemsWithoutUnitCost} item(s) have no unit cost.`
+				: undefined
+		);
+		const summarySet = el('div', 'result-set');
+		summarySet.appendChild(el('h3', undefined, 'Portfolio Summary'));
+		summarySet.appendChild(cards);
+		advResults.appendChild(summarySet);
+
+		if (summary.topRiskItems.length > 0) {
+			const risk = el('div', 'result-set');
+			risk.appendChild(el('h3', undefined, 'Top Risk Items'));
+			const list = el('ol');
+			for (const name of summary.topRiskItems) {
+				const item = analysis.items.find((candidate) => candidate.item === name);
+				list.appendChild(el('li', undefined, item ? `${name} — ${CLASSIFICATION_LABEL[item.classification]}${item.exposureValue !== undefined ? ` · exposure ${fmt(item.exposureValue)}` : ''}` : name));
+			}
+			risk.appendChild(list);
+			advResults.appendChild(risk);
+		}
+
+		const tableSet = el('div', 'result-set');
+		tableSet.appendChild(el('h3', undefined, 'Items'));
+		const wrap = el('div', 'table-wrap');
+		const table = el('table');
+		const thead = el('thead');
+		const headRow = el('tr');
+		for (const header of ['Item', 'Classification', 'Coverage', 'Dormancy', 'Excess Qty', 'Exposure', 'Priority', 'Reasons']) {
+			headRow.appendChild(el('th', undefined, header));
+		}
+		thead.appendChild(headRow);
+		table.appendChild(thead);
+		const tbody = el('tbody');
+		for (const item of analysis.items) {
+			const tr = el('tr');
+			tr.append(
+				el('td', undefined, item.item),
+				el('td', item.priority === 'high' ? 'cell-high' : item.priority === 'medium' ? 'cell-medium' : undefined, CLASSIFICATION_LABEL[item.classification]),
+				el('td', undefined, item.coverageMonths === undefined ? 'n/a' : `${fmt(item.coverageMonths)}m`),
+				el('td', undefined, item.dormancyStatus),
+				el('td', undefined, fmt(item.excessQuantity)),
+				el('td', undefined, item.exposureValue === undefined ? 'unknown' : fmt(item.exposureValue)),
+				el('td', undefined, item.priority),
+				el('td', undefined, item.reasonCodes.join(', '))
+			);
+			tbody.appendChild(tr);
+		}
+		table.appendChild(tbody);
+		wrap.appendChild(table);
+		tableSet.appendChild(wrap);
+		advResults.appendChild(tableSet);
+
+		advResultsBlock.hidden = false;
+		advResultsBlock.scrollIntoView({ block: 'nearest' });
+	}
+
+	function runAdvanced(confirmed: ConfirmedIntake) {
+		const adapted = deadStockAdvancedAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(advManualIssues, adapted.issues);
+			return;
+		}
+		const validated = validateDeadStockInput(adapted.data);
+		if (!validated.valid) {
+			renderIssues(advManualIssues, validated.errors.map((message) => ({ severity: 'error' as const, message })));
+			return;
+		}
+		renderIssues(advManualIssues, []);
+		renderAdvanced(analyzeDeadStock(validated.data));
+	}
+
+	function advLongRows(): Array<Record<string, string>> {
+		return advTable.rows().map((values) => ({ ...values, note: '' }));
+	}
+
+	document.getElementById('adv-add-row')?.addEventListener('click', () => advTable.addRow());
+	document.getElementById('adv-run')?.addEventListener('click', () => {
+		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
+		const result = validateRecords(records, deadStockAdvancedSchema);
+		if (result.errorCount > 0) {
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			return;
+		}
+		const outcome = confirmIntake(deadStockAdvancedSchema, result);
+		if (outcome.confirmed) runAdvanced(outcome.data);
+	});
+	document.getElementById('adv-download-input')?.addEventListener('click', () => {
+		download(deadStockAdvancedContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(deadStockAdvancedTemplate, advLongRows()));
+	});
+	document.getElementById('adv-download-template')?.addEventListener('click', () => {
+		download('dead-stock-advanced-template.csv', 'text/csv', generateBlankTemplateCsv(deadStockAdvancedTemplate));
+	});
+	document.getElementById('adv-download-result')?.addEventListener('click', () => {
+		if (lastAdvAnalysis) {
+			download(deadStockAdvancedContract.exportProfile.resultFilename, 'text/csv', deadStockResultToCsv(lastAdvAnalysis));
+		}
+	});
+	setupCsvIntake('advanced-intake', deadStockAdvancedSchema, runAdvanced);
+</script>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	:global(.cell-high) {
+		color: var(--color-accent-strong);
+		font-weight: 600;
+	}
+
+	:global(.cell-medium) {
+		color: var(--color-accent);
+	}
+</style>

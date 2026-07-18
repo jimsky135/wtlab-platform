@@ -3,7 +3,8 @@
 // No tool-specific logic lives here.
 
 import { arrivalCollisionTool } from '../tools/arrival-collision-detector/index.ts';
+import { deadStockTool } from '../tools/dead-stock-scanner/index.ts';
 import { inventoryBufferCheckTool } from '../tools/inventory-buffer-check/index.ts';
 import { createToolRegistry } from './tool-registry.ts';
 
-export const platformRegistry = createToolRegistry([inventoryBufferCheckTool, arrivalCollisionTool]);
+export const platformRegistry = createToolRegistry([inventoryBufferCheckTool, arrivalCollisionTool, deadStockTool]);

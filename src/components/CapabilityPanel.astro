@@ -1,0 +1,81 @@
+---
+// Shared capability badge panel — iterates the platform capability list
+// and marks entries the instrument doesn't declare as Future.
+import { ALL_CAPABILITIES, CAPABILITY_LABELS, type Capability } from '../platform/catalog';
+
+interface Props {
+	capabilities: readonly Capability[];
+}
+
+const { capabilities } = Astro.props;
+---
+
+<section class="capabilities" aria-labelledby="capabilities-heading">
+	<h2 id="capabilities-heading">Capabilities</h2>
+	<ul>
+		{ALL_CAPABILITIES.map((capability) => {
+			const present = capabilities.includes(capability);
+			return (
+				<li class:list={['capability', present ? 'present' : 'future']}>
+					{CAPABILITY_LABELS[capability]}
+					{!present && <span class="future-tag">Future</span>}
+				</li>
+			);
+		})}
+	</ul>
+</section>
+
+<style>
+	section {
+		border-top: var(--border-hairline);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+	}
+
+	h2 {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-md);
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-xs);
+	}
+
+	.capability {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		border: var(--border-hairline);
+		padding: 4px 10px;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.capability.present {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.capability.future {
+		color: var(--color-text-muted);
+	}
+
+	.future-tag {
+		font-size: 9px;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 1px 6px;
+	}
+</style>

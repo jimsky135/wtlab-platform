@@ -144,15 +144,46 @@ Remaining known duplication (accepted for now, queued in the backlog): the two i
 
 Route note: Water Level keeps its confirmed `/tools/inventory-buffer-check` URL; new instruments live at `/instruments/{slug}` (their catalog route).
 
+## Third instrument & shared UI maturity (Sprint 005)
+
+Dead Stock Scanner is the third production instrument — a materially different analysis model (multi-factor classification + portfolio aggregation, vs. coverage math and timeline aggregation). Platform verdict: Shared Intake, template registry, adapter pattern, execution registry, and export foundation were all reused **without modification**.
+
+**Dead Stock engine v0.1 model** (transparent, deterministic; `src/tools/dead-stock-scanner/analyze.ts`):
+
+- `coverageMonths = stock / consumption` (undefined when consumption = 0)
+- `supportedQty = max(futureDemand ?? 0, consumption × highCoverageMonths)`; `excessQuantity = max(0, stock − supportedQty)`
+- Classification (first match): no stock → healthy(NO_STOCK) · demand ≥ stock → healthy(FUTURE_DEMAND_SUPPORT) · consumption=0 ∧ demand≡0 ∧ age≥deadMonths → dead-stock · consumption=0 otherwise → dormant (unknown demand/age deliberately blocks a dead verdict) · coverage≥excess → excess-exposure · coverage≥high → slow-moving · else healthy
+- Thresholds are explicit and documented: dormant 6m, dead 12m, high coverage 12m, excess 24m (`DEFAULT_THRESHOLDS`); quick mode's optional thresholdMonths overrides high (and excess = 2×)
+- Exposure: dead-stock exposes full stock × unit cost; others expose excess × unit cost; missing unit cost → exposure "unknown", portfolio total is a labeled lower bound
+- Every result carries reason codes (NO_RECENT_MOVEMENT, NO_FUTURE_DEMAND, HIGH_COVERAGE, EXCESS_QUANTITY, FUTURE_DEMAND_SUPPORT, ACTIVE_CONSUMPTION, UNKNOWN_MOVEMENT_AGE, NO_CONSUMPTION_DATA, NO_STOCK)
+
+**Missing-data policy**: optional fields are never silently defaulted — blank futureDemand/movement-age mean *unknown* and are surfaced as intake warnings; unknown data can only make the verdict *less* severe (dormant instead of dead), never more.
+
+### Task 008 — third-instance shared UI review (decision table)
+
+| Pattern (seen in all 3 pages) | Decision | Outcome |
+|---|---|---|
+| Instrument header (kicker/title/status/meta/nav) | **A. Promoted** | `src/components/InstrumentHeader.astro` |
+| Capability badge panel | **A. Promoted** | `src/components/CapabilityPanel.astro` |
+| Mode switcher (markup + wiring) | **A. Promoted** | `src/components/ModeSwitcher.astro` + `initModeSwitcher()` in `src/shared/instrument-ui.ts` |
+| Page-level CSS (forms, buttons, tables, cards, issues, mapping) | **A. Promoted** | `src/shared/instrument.css`, namespaced under `.instrument-page` |
+| Fixed-column dynamic row table | **A. Promoted** (Arrival ×2 + Dead Stock ×1 mounts; field-driven API, no instrument branching) | `setupRowTable()` in `src/shared/instrument-ui.ts` |
+| Water Level period-matrix table | **B. Instrument-specific** — different responsibility (dynamic period columns), single consumer | stays in the WL page |
+| Result renderers (cards vs. timeline vs. portfolio) | **B. Instrument-specific** — outputs differ materially; only their CSS classes are shared | per page |
+| Action bars / related links | **B. Instrument-specific** — trivial markup, extraction would only move wiring around | per page |
+| Manual quick single-item form | **C. Observe** — WL and Dead Stock quick forms are similar; a schema-driven form generator is plausible at the 4th instance | revisit next instrument |
+
+Rule applied: shared components never know instrument names — all APIs take catalog entries, mode contracts, schemas, or field lists.
+
 ## Engineering backlog
 
 | Task | Scope |
 |---|---|
-| Platform UI unification pass | shared instrument-page layout/component, unify spacing/typography/density across instruments (defer until ≥3 instruments) |
-| Instrument-page CSS dedupe | the two instrument pages share large style blocks — fold into the UI unification pass |
+| Schema-driven quick form generator | WL + Dead Stock quick forms are near-duplicates — extract at the 4th instance (Task 008 class C) |
 | Save / export package format | shared continuity package (extends per-tool export), needs ADR |
 | Entity domain types | shared entity model for workspaces |
 | Workspace context routing | linking instruments to workspace context |
-| Third instrument | next replication (Demand Wave Radar or Lead Time Gap Checker) using the now-shared mode/adapter/template pattern |
+| Fourth instrument | Demand Wave Radar or Lead Time Gap Checker — should now cost less than the third |
 | Saved mapping templates | remember user column mappings (deferred from Sprint 003.5) |
+| Dead Stock category insights | category field is captured but not yet aggregated (v0.1 scope) |
 | SEO minimum pass | meta descriptions, canonical tags, Open Graph, robots.txt/sitemap (optional, not launch-blocking — from Deployment 001 audit) |

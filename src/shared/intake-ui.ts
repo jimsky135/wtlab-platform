@@ -85,7 +85,7 @@ export function setupCsvIntake(
 	countsLine.hidden = true;
 	const validationIssues = el('div', 'issue-box');
 	validationIssues.hidden = true;
-	const confirmBtn = el('button', undefined, 'Confirm & Run');
+	const confirmBtn = el('button', 'primary', 'Confirm & Run');
 	confirmBtn.type = 'button';
 	confirmBtn.hidden = true;
 	container.append(fileField, parseIssues, mappingBox, countsLine, validationIssues, confirmBtn);

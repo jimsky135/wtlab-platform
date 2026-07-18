@@ -1,0 +1,314 @@
+/*
+  Shared instrument-page styles (Sprint 005: promoted after the same
+  rules appeared in all three instrument pages). Namespaced under
+  .instrument-page so importing pages don't leak styles into the shell.
+  Instrument-specific styles (result cell markers, special tables) stay
+  in their own pages.
+*/
+
+.instrument-page section {
+	border-top: var(--border-hairline);
+	margin-top: var(--space-lg);
+	padding-top: var(--space-lg);
+}
+
+.instrument-page section h2,
+.instrument-page .results-block h2 {
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	color: var(--color-text-secondary);
+	margin: 0 0 var(--space-md);
+}
+
+.instrument-page .mode-panel {
+	border-top: none;
+	padding-top: 0;
+	margin-top: var(--space-md);
+}
+
+.instrument-page details {
+	border: var(--border-hairline);
+	padding: var(--space-md);
+	margin-top: var(--space-md);
+}
+
+.instrument-page summary {
+	font-family: var(--font-mono);
+	font-size: 12px;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	color: var(--color-accent);
+	cursor: pointer;
+}
+
+.instrument-page .section-note {
+	color: var(--color-text-secondary);
+	margin: var(--space-sm) 0 var(--space-md);
+	font-size: 0.95rem;
+}
+
+.instrument-page form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	margin-top: var(--space-md);
+}
+
+.instrument-page .field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	flex: 1;
+}
+
+.instrument-page .field-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-md);
+	align-items: flex-end;
+}
+
+.instrument-page .field-unit {
+	flex: 0 0 8rem;
+}
+
+.instrument-page label {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	color: var(--color-text-secondary);
+}
+
+.instrument-page .optional-marker {
+	text-transform: none;
+	letter-spacing: normal;
+	color: var(--color-text-muted);
+}
+
+.instrument-page input,
+.instrument-page select {
+	background: var(--color-bg-raised);
+	border: var(--border-hairline);
+	color: var(--color-text-primary);
+	font-family: var(--font-body);
+	font-size: 0.95rem;
+	padding: var(--space-xs) var(--space-sm);
+}
+
+.instrument-page .action-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+	margin-top: var(--space-md);
+	align-items: center;
+}
+
+.instrument-page button.primary,
+.instrument-page button[type='submit'] {
+	background: var(--color-accent);
+	color: var(--color-bg);
+	border: none;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	padding: var(--space-sm) var(--space-lg);
+	cursor: pointer;
+	align-self: flex-start;
+}
+
+.instrument-page button.secondary {
+	background: var(--color-bg-raised);
+	border: var(--border-hairline);
+	color: var(--color-text-primary);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	padding: var(--space-xs) var(--space-md);
+	cursor: pointer;
+}
+
+.instrument-page button:disabled {
+	color: var(--color-text-muted);
+	cursor: not-allowed;
+}
+
+.instrument-page .issue-box {
+	border: var(--border-hairline);
+	padding: var(--space-sm) var(--space-md);
+	margin-top: var(--space-md);
+	color: var(--color-text-primary);
+}
+
+.instrument-page .issue-box ul {
+	margin: 0;
+	padding-left: 1.2em;
+}
+
+.instrument-page .counts-line {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	color: var(--color-text-secondary);
+	border: var(--border-hairline);
+	padding: var(--space-xs) var(--space-sm);
+	display: inline-block;
+	margin: var(--space-md) 0 0;
+}
+
+.instrument-page .mapping-box {
+	margin-top: var(--space-md);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.instrument-page .mapping-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.instrument-page .mapping-row label {
+	min-width: 160px;
+}
+
+.instrument-page .table-wrap {
+	overflow-x: auto;
+	border: var(--border-hairline);
+	margin-top: var(--space-md);
+}
+
+.instrument-page .table-wrap table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.instrument-page .table-wrap th,
+.instrument-page .table-wrap td {
+	border-bottom: var(--border-hairline);
+	padding: var(--space-xs) var(--space-sm);
+	text-align: left;
+	font-size: 0.9rem;
+	white-space: nowrap;
+}
+
+.instrument-page .table-wrap th {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-text-tertiary);
+}
+
+.instrument-page .table-wrap input {
+	min-width: 6rem;
+}
+
+.instrument-page .result-set {
+	border: var(--border-hairline);
+	padding: var(--space-md);
+	margin-top: var(--space-md);
+}
+
+.instrument-page .result-set h3,
+.instrument-page .card h3 {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	color: var(--color-text-tertiary);
+	margin: 0 0 var(--space-sm);
+}
+
+.instrument-page .result-set ul,
+.instrument-page .result-set ol {
+	margin: 0;
+	padding-left: 1.2em;
+	color: var(--color-text-primary);
+}
+
+.instrument-page .result-item-name {
+	font-family: var(--font-mono);
+	font-size: 12px;
+	letter-spacing: var(--tracking-kicker);
+	text-transform: uppercase;
+	color: var(--color-accent);
+	margin: 0 0 var(--space-sm);
+}
+
+.instrument-page .cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: var(--space-sm);
+}
+
+.instrument-page .card {
+	border: var(--border-hairline);
+	padding: var(--space-md);
+}
+
+.instrument-page .card-value {
+	font-family: var(--font-display);
+	font-style: italic;
+	font-size: 1.8rem;
+	color: var(--color-accent);
+	margin: 0 0 var(--space-xs);
+}
+
+.instrument-page .card-note {
+	color: var(--color-text-secondary);
+	margin: 0 0 var(--space-xs);
+	font-size: 0.95rem;
+}
+
+.instrument-page .card dl {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-xs);
+	margin: 0;
+}
+
+.instrument-page .card dt {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-text-tertiary);
+}
+
+.instrument-page .card dd {
+	margin: 0 0 var(--space-xs);
+	color: var(--color-text-primary);
+}
+
+.instrument-page .planned-tag {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.instrument-page .related ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-md);
+}
+
+.instrument-page .related a {
+	color: var(--color-accent);
+	text-decoration: none;
+	border-bottom: 1px solid var(--color-accent);
+	padding-bottom: 2px;
+}

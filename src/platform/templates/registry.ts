@@ -3,6 +3,8 @@
 
 import { arrivalAdvancedTemplate } from '../../tools/arrival-collision-detector/modes/advanced/template.ts';
 import { arrivalQuickTemplate } from '../../tools/arrival-collision-detector/modes/quick/template.ts';
+import { deadStockAdvancedTemplate } from '../../tools/dead-stock-scanner/modes/advanced/template.ts';
+import { deadStockQuickTemplate } from '../../tools/dead-stock-scanner/modes/quick/template.ts';
 import { advancedCsvTemplate } from '../../tools/inventory-buffer-check/modes/advanced/template.ts';
 import { quickCsvTemplate } from '../../tools/inventory-buffer-check/modes/quick/template.ts';
 import type { CsvTemplateDefinition } from './types.ts';
@@ -12,6 +14,8 @@ export const csvTemplates: readonly CsvTemplateDefinition[] = [
 	advancedCsvTemplate,
 	arrivalQuickTemplate,
 	arrivalAdvancedTemplate,
+	deadStockQuickTemplate,
+	deadStockAdvancedTemplate,
 ];
 
 export function findTemplateById(templateId: string): CsvTemplateDefinition | undefined {

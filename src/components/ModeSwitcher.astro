@@ -1,0 +1,89 @@
+---
+// Shared mode switcher — renders one button per mode contract. Wiring
+// happens client-side via initModeSwitcher() (src/shared/instrument-ui.ts):
+// buttons carry data-mode, panels carry id="panel-{modeId}".
+import type { ModeContract } from '../platform/modes';
+
+interface Props {
+	modes: readonly ModeContract[];
+}
+
+const { modes } = Astro.props;
+---
+
+<section class="mode-switch" aria-label="Mode">
+	<h2>Mode</h2>
+	<div class="mode-buttons">
+		{modes.map((mode, index) => (
+			<button
+				type="button"
+				class="mode-btn"
+				id={`mode-btn-${mode.modeId}`}
+				data-mode={mode.modeId}
+				aria-pressed={index === 0 ? 'true' : 'false'}
+			>
+				<span class="mode-label">{mode.label}</span>
+				<span class="mode-desc">{mode.description}</span>
+			</button>
+		))}
+	</div>
+</section>
+
+<style>
+	section {
+		border-top: var(--border-hairline);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+	}
+
+	h2 {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-md);
+	}
+
+	.mode-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-sm);
+	}
+
+	.mode-btn {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-secondary);
+		padding: var(--space-sm) var(--space-md);
+		cursor: pointer;
+		text-align: left;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		max-width: 320px;
+	}
+
+	.mode-btn[aria-pressed='true'] {
+		border-color: var(--color-accent);
+		color: var(--color-text-primary);
+	}
+
+	.mode-label {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+	}
+
+	.mode-btn[aria-pressed='true'] .mode-label {
+		color: var(--color-accent);
+	}
+
+	.mode-desc {
+		font-size: 0.85rem;
+		color: var(--color-text-tertiary);
+	}
+</style>

@@ -1,11 +1,14 @@
 ---
-// Arrival Collision Detector — second instrument, built entirely on the
-// shared platform architecture: catalog metadata, execution-registry
-// gating, shared intake UI, template registry, adapters, one engine.
-// UI priority this sprint is operability, not visual polish.
-import StatusTag from '../../components/StatusTag.astro';
+// Arrival Collision Detector — refactored onto the shared instrument UI
+// (Sprint 005): InstrumentHeader, CapabilityPanel, ModeSwitcher, shared
+// instrument.css, setupRowTable, setupCsvIntake. Business logic and
+// behavior unchanged from Sprint 004.
+import '../../shared/instrument.css';
+import CapabilityPanel from '../../components/CapabilityPanel.astro';
+import InstrumentHeader from '../../components/InstrumentHeader.astro';
+import ModeSwitcher from '../../components/ModeSwitcher.astro';
 import PlatformShell from '../../layouts/PlatformShell.astro';
-import { ALL_CAPABILITIES, CAPABILITY_LABELS, findById } from '../../platform/catalog';
+import { findById } from '../../platform/catalog';
 import { instruments } from '../../platform/instruments';
 import { platformRegistry } from '../../platform/registry';
 import { arrivalAdvancedContract } from '../../tools/arrival-collision-detector/modes/advanced/contract';
@@ -19,57 +22,10 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 
 <PlatformShell title={`${entry?.displayName ?? 'Instrument'} · WTLab`} section="instruments">
 	{available && entry ? (
-		<article>
-			<header class="tool-header">
-				<p class="kicker">Instrument · {entry.layer}</p>
-				<h1>{entry.displayName}</h1>
-				<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} />
-				<dl class="tool-meta">
-					<dt>Version</dt>
-					<dd>{entry.version}</dd>
-					<dt>Core question</dt>
-					<dd>{entry.coreQuestion}</dd>
-					<dt>Description</dt>
-					<dd>{entry.description}</dd>
-				</dl>
-				<nav class="tool-nav" aria-label="Instrument">
-					<a href="/instruments">← Instrument Library</a>
-					<a href="/command">Command Center</a>
-				</nav>
-			</header>
-
-			<section class="capabilities" aria-labelledby="capabilities-heading">
-				<h2 id="capabilities-heading">Capabilities</h2>
-				<ul>
-					{ALL_CAPABILITIES.map((capability) => {
-						const present = entry.capabilities.includes(capability);
-						return (
-							<li class:list={['capability', present ? 'present' : 'future']}>
-								{CAPABILITY_LABELS[capability]}
-								{!present && <span class="future-tag">Future</span>}
-							</li>
-						);
-					})}
-				</ul>
-			</section>
-
-			<section class="mode-switch" aria-label="Mode">
-				<h2>Mode</h2>
-				<div class="mode-buttons">
-					{modes.map((mode, index) => (
-						<button
-							type="button"
-							class="mode-btn"
-							id={`mode-btn-${mode.modeId}`}
-							data-mode={mode.modeId}
-							aria-pressed={index === 0 ? 'true' : 'false'}
-						>
-							<span class="mode-label">{mode.label}</span>
-							<span class="mode-desc">{mode.description}</span>
-						</button>
-					))}
-				</div>
-			</section>
+		<article class="instrument-page">
+			<InstrumentHeader entry={entry} />
+			<CapabilityPanel capabilities={entry.capabilities} />
+			<ModeSwitcher modes={modes} />
 
 			<!-- ============ QUICK ============ -->
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
@@ -88,7 +44,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 						</table>
 					</div>
 					<div class="action-row">
-						<button type="button" id="quick-run">Run Quick Check</button>
+						<button type="button" class="primary" id="quick-run">Run Quick Check</button>
 						<button type="button" class="secondary" id="quick-download-input">Download Input CSV</button>
 						<button type="button" class="secondary" id="quick-download-template">Download Blank Template</button>
 					</div>
@@ -104,7 +60,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 					<div id="quick-intake"></div>
 				</details>
 
-				<div id="quick-results-block" hidden>
+				<div id="quick-results-block" class="results-block" hidden>
 					<h2>Results</h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
@@ -136,7 +92,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 						</table>
 					</div>
 					<div class="action-row">
-						<button type="button" id="adv-run">Run Planning Analysis</button>
+						<button type="button" class="primary" id="adv-run">Run Planning Analysis</button>
 						<button type="button" class="secondary" id="adv-download-input">Download Input CSV</button>
 						<button type="button" class="secondary" id="adv-download-template">Download Blank Template</button>
 					</div>
@@ -152,7 +108,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 					<div id="advanced-intake"></div>
 				</details>
 
-				<div id="adv-results-block" hidden>
+				<div id="adv-results-block" class="results-block" hidden>
 					<h2>Planning Results</h2>
 					<div id="adv-results" aria-live="polite"></div>
 					<div class="action-row">
@@ -165,14 +121,14 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 				<h2 id="related-heading">Related</h2>
 				<ul>
 					<li><a href="/tools/inventory-buffer-check">Water Level Checker</a></li>
+					<li><a href="/instruments/dead-stock-scanner">Dead Stock Scanner</a></li>
 					<li><a href="/workspace/data-intake">Data Intake Workspace</a></li>
 					<li><a href="/command">Command Center</a></li>
-					<li><a href="/continuity">Continuity</a></li>
 				</ul>
 			</section>
 		</article>
 	) : (
-		<article>
+		<article class="instrument-page">
 			<p class="kicker">WTLab</p>
 			<h1>This tool is not currently available.</h1>
 			<p><a href="/instruments">← Back to Instrument Library</a></p>
@@ -185,6 +141,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
+	import { initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { arrivalAdvancedAdapter } from '../../platform/adapters/arrival-collision/advanced-adapter.ts';
 	import { arrivalQuickAdapter } from '../../platform/adapters/arrival-collision/quick-adapter.ts';
@@ -199,67 +156,14 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import type { ArrivalAnalysis } from '../../tools/arrival-collision-detector/types.ts';
 	import { validateArrivalInput } from '../../tools/arrival-collision-detector/validate.ts';
 
-	// ---------- mode switching ----------
+	initModeSwitcher();
 
-	const panels: Record<string, HTMLElement | null> = {
-		quick: document.getElementById('panel-quick'),
-		advanced: document.getElementById('panel-advanced'),
-	};
-	for (const button of document.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
-		button.addEventListener('click', () => {
-			for (const other of document.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
-				other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
-			}
-			for (const [modeId, panel] of Object.entries(panels)) {
-				if (panel) panel.hidden = modeId !== button.dataset.mode;
-			}
-		});
-	}
-
-	// ---------- shared arrival-row table (used by both modes) ----------
-
-	const ROW_FIELDS = ['arrivalDate', 'quantity', 'container', 'supplier'] as const;
-
-	function setupArrivalTable(bodyId: string) {
-		const body = document.getElementById(bodyId);
-
-		function addRow(values?: Partial<Record<(typeof ROW_FIELDS)[number], string>>) {
-			if (!body) return;
-			const row = el('tr');
-			for (const field of ROW_FIELDS) {
-				const cell = el('td');
-				const input = el('input');
-				input.type = 'text';
-				input.dataset.field = field;
-				input.value = values?.[field] ?? '';
-				input.setAttribute('aria-label', field);
-				if (field === 'arrivalDate') input.placeholder = 'YYYY-MM-DD';
-				cell.appendChild(input);
-				row.appendChild(cell);
-			}
-			const removeCell = el('td');
-			const removeBtn = el('button', 'secondary', 'Remove');
-			removeBtn.type = 'button';
-			removeBtn.addEventListener('click', () => row.remove());
-			removeCell.appendChild(removeBtn);
-			row.appendChild(removeCell);
-			body.appendChild(row);
-		}
-
-		function rows(): Array<Record<string, string>> {
-			if (!body) return [];
-			return Array.from(body.querySelectorAll('tr')).map((row) => {
-				const values: Record<string, string> = {};
-				for (const input of row.querySelectorAll<HTMLInputElement>('input')) {
-					values[input.dataset.field ?? ''] = input.value;
-				}
-				return values;
-			});
-		}
-
-		addRow();
-		return { addRow, rows };
-	}
+	const ROW_FIELDS = [
+		{ id: 'arrivalDate', placeholder: 'YYYY-MM-DD' },
+		{ id: 'quantity' },
+		{ id: 'container' },
+		{ id: 'supplier' },
+	];
 
 	// ---------- one result pipeline for both modes ----------
 
@@ -336,7 +240,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 
 	// ---------- QUICK ----------
 
-	const quickTable = setupArrivalTable('quick-body');
+	const quickTable = setupRowTable('quick-body', ROW_FIELDS);
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	let lastQuickAnalysis: ArrivalAnalysis | null = null;
 
@@ -382,7 +286,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 
 	// ---------- ADVANCED ----------
 
-	const advTable = setupArrivalTable('adv-body');
+	const advTable = setupRowTable('adv-body', ROW_FIELDS);
 	const advManualIssues = document.getElementById('adv-manual-issues');
 	let lastAdvAnalysis: ArrivalAnalysis | null = null;
 
@@ -454,317 +358,9 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 		margin: 0 0 var(--space-sm);
 	}
 
-	.tool-meta {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-xs) var(--space-md);
-		margin: var(--space-md) 0 0;
-	}
-
-	.tool-meta dt {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-text-tertiary);
-	}
-
-	.tool-meta dd {
-		margin: 0;
-		color: var(--color-text-primary);
-	}
-
-	.tool-nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-md);
-		margin-top: var(--space-md);
-	}
-
-	.tool-nav a {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-accent);
-		text-decoration: none;
-	}
-
-	section {
-		border-top: var(--border-hairline);
-		margin-top: var(--space-lg);
-		padding-top: var(--space-lg);
-	}
-
-	h2,
-	:global(#quick-results-block h2),
-	:global(#adv-results-block h2) {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-weight: 500;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-text-secondary);
-		margin: 0 0 var(--space-md);
-	}
-
-	.capabilities ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-xs);
-	}
-
-	.capability {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		border: var(--border-hairline);
-		padding: 4px 10px;
-		display: flex;
-		align-items: center;
-		gap: var(--space-xs);
-	}
-
-	.capability.present {
-		color: var(--color-accent);
-		border-color: var(--color-accent);
-	}
-
-	.capability.future {
-		color: var(--color-text-muted);
-	}
-
-	.future-tag {
-		font-size: 9px;
-		color: var(--color-text-muted);
-		border: var(--border-hairline);
-		padding: 1px 6px;
-	}
-
-	.mode-buttons {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-sm);
-	}
-
-	.mode-btn {
-		background: var(--color-bg-raised);
-		border: var(--border-hairline);
-		color: var(--color-text-secondary);
-		padding: var(--space-sm) var(--space-md);
-		cursor: pointer;
-		text-align: left;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		max-width: 320px;
-	}
-
-	.mode-btn[aria-pressed='true'] {
-		border-color: var(--color-accent);
-		color: var(--color-text-primary);
-	}
-
-	.mode-label {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-weight: 600;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-	}
-
-	.mode-btn[aria-pressed='true'] .mode-label {
-		color: var(--color-accent);
-	}
-
-	.mode-desc {
-		font-size: 0.85rem;
-		color: var(--color-text-tertiary);
-	}
-
-	.mode-panel {
-		border-top: none;
-		padding-top: 0;
-		margin-top: var(--space-md);
-	}
-
-	details {
-		border: var(--border-hairline);
-		padding: var(--space-md);
-		margin-top: var(--space-md);
-	}
-
-	summary {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-accent);
-		cursor: pointer;
-	}
-
-	.section-note {
-		color: var(--color-text-secondary);
-		margin: var(--space-sm) 0 var(--space-md);
-		font-size: 0.95rem;
-	}
-
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-xs);
-	}
-
 	.capacity-field {
 		max-width: 20rem;
 		margin-top: var(--space-md);
-	}
-
-	:global(#panel-quick label),
-	:global(#panel-advanced label),
-	:global(.mapping-row label) {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-text-secondary);
-	}
-
-	.optional-marker {
-		text-transform: none;
-		letter-spacing: normal;
-		color: var(--color-text-muted);
-	}
-
-	:global(#panel-quick input),
-	:global(#panel-quick select),
-	:global(#panel-advanced input),
-	:global(#panel-advanced select) {
-		background: var(--color-bg-raised);
-		border: var(--border-hairline);
-		color: var(--color-text-primary);
-		font-family: var(--font-body);
-		font-size: 0.95rem;
-		padding: var(--space-xs) var(--space-sm);
-	}
-
-	.action-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-sm);
-		margin-top: var(--space-md);
-		align-items: center;
-	}
-
-	:global(#quick-run),
-	:global(#adv-run),
-	:global(#quick-intake > button),
-	:global(#advanced-intake > button) {
-		background: var(--color-accent);
-		color: var(--color-bg);
-		border: none;
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-weight: 600;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		padding: var(--space-sm) var(--space-lg);
-		cursor: pointer;
-	}
-
-	:global(button.secondary) {
-		background: var(--color-bg-raised);
-		border: var(--border-hairline);
-		color: var(--color-text-primary);
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		padding: var(--space-xs) var(--space-md);
-		cursor: pointer;
-	}
-
-	:global(button:disabled) {
-		color: var(--color-text-muted) !important;
-		cursor: not-allowed !important;
-	}
-
-	:global(.issue-box) {
-		border: var(--border-hairline);
-		padding: var(--space-sm) var(--space-md);
-		margin-top: var(--space-md);
-		color: var(--color-text-primary);
-	}
-
-	:global(.issue-box ul) {
-		margin: 0;
-		padding-left: 1.2em;
-	}
-
-	:global(.counts-line) {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: 0.1em;
-		color: var(--color-text-secondary);
-		border: var(--border-hairline);
-		padding: var(--space-xs) var(--space-sm);
-		display: inline-block;
-		margin: var(--space-md) 0 0;
-	}
-
-	:global(.mapping-box) {
-		margin-top: var(--space-md);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-	}
-
-	:global(.mapping-row) {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-sm);
-	}
-
-	:global(.mapping-row label) {
-		min-width: 160px;
-	}
-
-	.table-wrap,
-	:global(.table-wrap) {
-		overflow-x: auto;
-		border: var(--border-hairline);
-		margin-top: var(--space-md);
-	}
-
-	:global(#panel-quick table),
-	:global(#panel-advanced table) {
-		border-collapse: collapse;
-		width: 100%;
-	}
-
-	:global(#panel-quick th),
-	:global(#panel-quick td),
-	:global(#panel-advanced th),
-	:global(#panel-advanced td) {
-		border-bottom: var(--border-hairline);
-		padding: var(--space-xs) var(--space-sm);
-		text-align: left;
-		font-size: 0.9rem;
-		white-space: nowrap;
-	}
-
-	:global(#panel-quick th),
-	:global(#panel-advanced th) {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-text-tertiary);
 	}
 
 	:global(.cell-peak) {
@@ -774,56 +370,5 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	:global(.cell-over) {
 		color: var(--color-accent-strong);
 		font-weight: 600;
-	}
-
-	:global(.result-set) {
-		border: var(--border-hairline);
-		padding: var(--space-md);
-		margin-top: var(--space-md);
-	}
-
-	:global(.result-set h3) {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		color: var(--color-text-tertiary);
-		margin: 0 0 var(--space-sm);
-	}
-
-	:global(.card-value) {
-		font-family: var(--font-display);
-		font-style: italic;
-		font-size: 1.8rem;
-		color: var(--color-accent);
-		margin: 0 0 var(--space-xs);
-	}
-
-	:global(.card-note) {
-		color: var(--color-text-secondary);
-		margin: 0 0 var(--space-xs);
-		font-size: 0.95rem;
-	}
-
-	:global(.result-set ul) {
-		margin: 0;
-		padding-left: 1.2em;
-		color: var(--color-text-primary);
-	}
-
-	.related ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-md);
-	}
-
-	.related a {
-		color: var(--color-accent);
-		text-decoration: none;
-		border-bottom: 1px solid var(--color-accent);
-		padding-bottom: 2px;
 	}
 </style>

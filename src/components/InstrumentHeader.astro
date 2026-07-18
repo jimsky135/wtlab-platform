@@ -1,0 +1,103 @@
+---
+// Shared instrument page header (Sprint 005 third-instance promotion).
+// Everything displayed comes from the catalog entry — no instrument
+// names are known here.
+import type { InstrumentEntry } from '../platform/catalog';
+import StatusTag from './StatusTag.astro';
+
+interface Props {
+	entry: InstrumentEntry;
+	/** Optional secondary title (e.g. a localized display name). */
+	subtitle?: string;
+}
+
+const { entry, subtitle } = Astro.props;
+---
+
+<header class="instrument-header">
+	<p class="kicker">Instrument · {entry.layer}</p>
+	<h1>
+		{entry.displayName}
+		{subtitle && <span class="subtitle">{subtitle}</span>}
+	</h1>
+	<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} />
+	<dl class="meta">
+		<dt>Version</dt>
+		<dd>{entry.version}</dd>
+		<dt>Core question</dt>
+		<dd>{entry.coreQuestion}</dd>
+		<dt>Description</dt>
+		<dd>{entry.description}</dd>
+	</dl>
+	<nav class="instrument-nav" aria-label="Instrument">
+		<a href="/instruments">← Instrument Library</a>
+		<a href="/command">Command Center</a>
+	</nav>
+</header>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-sm);
+	}
+
+	.subtitle {
+		font-family: var(--font-body);
+		font-style: normal;
+		font-size: 1rem;
+		color: var(--color-text-secondary);
+	}
+
+	.meta {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: var(--space-md) 0 0;
+	}
+
+	.meta dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.meta dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.instrument-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+		margin-top: var(--space-md);
+	}
+
+	.instrument-nav a {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+</style>
