@@ -1,37 +1,44 @@
 ---
-// Shared instrument page header (Sprint 005 third-instance promotion).
-// Everything displayed comes from the catalog entry — no instrument
-// names are known here.
+// Shared instrument page header (Sprint 005 third-instance promotion;
+// Sprint 005.5 made it locale-aware). Machine metadata (id, layer,
+// version, status) comes from the catalog entry; presentation text
+// (displayName/description/coreQuestion) comes from the i18n
+// `instruments` dictionary keyed by entry.id — the catalog's own
+// strings are fallback content only.
+import { getDictionary, localizePath, type Locale } from '../i18n';
 import type { InstrumentEntry } from '../platform/catalog';
 import StatusTag from './StatusTag.astro';
 
 interface Props {
 	entry: InstrumentEntry;
-	/** Optional secondary title (e.g. a localized display name). */
+	locale?: Locale;
+	/** Optional secondary title (e.g. a localized brand subtitle). */
 	subtitle?: string;
 }
 
-const { entry, subtitle } = Astro.props;
+const { entry, locale = 'en', subtitle } = Astro.props;
+const t = getDictionary(locale);
+const text = t.instruments[entry.id] ?? entry;
 ---
 
 <header class="instrument-header">
-	<p class="kicker">Instrument · {entry.layer}</p>
+	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {entry.layer}</p>
 	<h1>
-		{entry.displayName}
+		{text.displayName}
 		{subtitle && <span class="subtitle">{subtitle}</span>}
 	</h1>
-	<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} />
+	<StatusTag status={entry.status} implementationState={entry.implementationState} enabled={entry.enabled} locale={locale} />
 	<dl class="meta">
-		<dt>Version</dt>
+		<dt>{t.common.versionLabel}</dt>
 		<dd>{entry.version}</dd>
-		<dt>Core question</dt>
-		<dd>{entry.coreQuestion}</dd>
-		<dt>Description</dt>
-		<dd>{entry.description}</dd>
+		<dt>{t.instrumentsPage.coreQuestionLabel}</dt>
+		<dd>{text.coreQuestion}</dd>
+		<dt>{t.instrumentPlaceholder.purposeLabel}</dt>
+		<dd>{text.description}</dd>
 	</dl>
 	<nav class="instrument-nav" aria-label="Instrument">
-		<a href="/instruments">← Instrument Library</a>
-		<a href="/command">Command Center</a>
+		<a href={localizePath(locale, '/instruments')}>← {t.instrumentsPage.kicker}</a>
+		<a href={localizePath(locale, '/command')}>{t.nav.items.today}</a>
 	</nav>
 </header>
 

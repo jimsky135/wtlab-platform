@@ -1,7 +1,7 @@
 ---
-// Thin English route wrapper — view logic lives in WorkspacePlaceholderView.
-import WorkspacePlaceholderView from '../../views/WorkspacePlaceholderView.astro';
-import { workspaces } from '../../platform/workspaces';
+// Thin Traditional Chinese route wrapper — same shared view as English.
+import WorkspacePlaceholderView from '../../../views/WorkspacePlaceholderView.astro';
+import { workspaces } from '../../../platform/workspaces';
 
 export function getStaticPaths() {
 	return workspaces
@@ -15,4 +15,4 @@ export function getStaticPaths() {
 const { workspace } = Astro.props;
 ---
 
-<WorkspacePlaceholderView workspace={workspace} locale="en" />
+<WorkspacePlaceholderView workspace={workspace} locale="zh-TW" />

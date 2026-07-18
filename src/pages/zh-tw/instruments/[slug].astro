@@ -1,7 +1,7 @@
 ---
-// Thin English route wrapper — view logic lives in InstrumentPlaceholderView.
-import InstrumentPlaceholderView from '../../views/InstrumentPlaceholderView.astro';
-import { instruments } from '../../platform/instruments';
+// Thin Traditional Chinese route wrapper — same shared view as English.
+import InstrumentPlaceholderView from '../../../views/InstrumentPlaceholderView.astro';
+import { instruments } from '../../../platform/instruments';
 
 export function getStaticPaths() {
 	return instruments
@@ -15,4 +15,4 @@ export function getStaticPaths() {
 const { instrument } = Astro.props;
 ---
 
-<InstrumentPlaceholderView instrument={instrument} locale="en" />
+<InstrumentPlaceholderView instrument={instrument} locale="zh-TW" />

@@ -6,13 +6,18 @@
 // for this). Instead this does a minimal, maintainable static check: read
 // the homepage source and confirm it calls the Registry's availability
 // API and never hardcodes the tool's display name as literal markup.
+//
+// Sprint 005.5 update: src/pages/index.astro is now a thin locale
+// wrapper (`<HomeView locale="en" />`) — the actual registry call lives
+// in the shared src/views/HomeView.astro that both locale routes render,
+// so this test now points there instead.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const indexAstroPath = fileURLToPath(new URL('../pages/index.astro', import.meta.url));
+const indexAstroPath = fileURLToPath(new URL('../views/HomeView.astro', import.meta.url));
 const source = readFileSync(indexAstroPath, 'utf-8');
 
 test('Task 006 Case 3 — homepage reads tools from platformRegistry.getAvailable()', () => {

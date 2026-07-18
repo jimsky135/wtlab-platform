@@ -4,11 +4,23 @@
 // Instrument-agnostic: everything is driven by the intake schema passed
 // in. This module is DOM code — never import it from Node tests.
 
+import type { CommonText } from '../i18n/types.ts';
 import { canConfirm, confirmIntake } from '../platform/intake/confirm.ts';
 import { parseCsv, type CsvParseResult } from '../platform/intake/csv.ts';
 import { applyMapping, suggestMapping, validateMapping, type ColumnMapping } from '../platform/intake/mapping.ts';
 import type { ConfirmedIntake, IntakeIssue, IntakeSchema, IntakeValidationResult } from '../platform/intake/types.ts';
 import { validateRecords } from '../platform/intake/validate.ts';
+
+/** Locale-specific labels for setupCsvIntake(), sourced by each caller from getDictionary(locale).common.csvIntake. */
+export type CsvIntakeLabels = CommonText['csvIntake'];
+
+function formatCountsLine(template: string, counts: { imported: number; valid: number; warnings: number; errors: number }): string {
+	return template
+		.replace('{imported}', String(counts.imported))
+		.replace('{valid}', String(counts.valid))
+		.replace('{warnings}', String(counts.warnings))
+		.replace('{errors}', String(counts.errors));
+}
 
 export function download(filename: string, mime: string, content: string) {
 	const blob = new Blob([content], { type: mime });
@@ -20,14 +32,14 @@ export function download(filename: string, mime: string, content: string) {
 	URL.revokeObjectURL(url);
 }
 
-export function issueText(issue: IntakeIssue): string {
-	const location = issue.row !== undefined ? `Row ${issue.row + 1}` : null;
+export function issueText(issue: IntakeIssue, rowPrefix = 'Row'): string {
+	const location = issue.row !== undefined ? `${rowPrefix} ${issue.row + 1}` : null;
 	const field = issue.field ? `“${issue.field}”` : null;
 	const prefix = [location, field].filter(Boolean).join(' · ');
 	return `${issue.severity.toUpperCase()} — ${prefix ? `${prefix}: ` : ''}${issue.message}`;
 }
 
-export function renderIssues(target: HTMLElement | null, issues: IntakeIssue[]) {
+export function renderIssues(target: HTMLElement | null, issues: IntakeIssue[], rowPrefix = 'Row') {
 	if (!target) return;
 	target.innerHTML = '';
 	if (issues.length === 0) {
@@ -37,7 +49,7 @@ export function renderIssues(target: HTMLElement | null, issues: IntakeIssue[]) 
 	const list = document.createElement('ul');
 	for (const issue of issues) {
 		const item = document.createElement('li');
-		item.textContent = issueText(issue);
+		item.textContent = issueText(issue, rowPrefix);
 		list.appendChild(item);
 	}
 	target.appendChild(list);
@@ -63,13 +75,14 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 export function setupCsvIntake(
 	containerId: string,
 	schema: IntakeSchema,
-	onConfirmed: (confirmed: ConfirmedIntake) => void
+	onConfirmed: (confirmed: ConfirmedIntake) => void,
+	labels: CsvIntakeLabels
 ) {
 	const container = document.getElementById(containerId);
 	if (!container) return;
 
 	const fileField = el('div', 'field');
-	const fileLabel = el('label', undefined, 'CSV file');
+	const fileLabel = el('label', undefined, labels.fileLabel);
 	const fileInput = el('input');
 	fileInput.type = 'file';
 	fileInput.accept = '.csv,text/csv';
@@ -85,7 +98,7 @@ export function setupCsvIntake(
 	countsLine.hidden = true;
 	const validationIssues = el('div', 'issue-box');
 	validationIssues.hidden = true;
-	const confirmBtn = el('button', 'primary', 'Confirm & Run');
+	const confirmBtn = el('button', 'primary', labels.confirmRun);
 	confirmBtn.type = 'button';
 	confirmBtn.hidden = true;
 	container.append(fileField, parseIssues, mappingBox, countsLine, validationIssues, confirmBtn);
@@ -101,7 +114,7 @@ export function setupCsvIntake(
 		}
 		const mappingIssues = validateMapping(mapping, schema);
 		if (mappingIssues.some((issue) => issue.severity === 'error')) {
-			renderIssues(validationIssues, mappingIssues);
+			renderIssues(validationIssues, mappingIssues, labels.rowPrefix);
 			countsLine.hidden = true;
 			confirmBtn.hidden = true;
 			return;
@@ -113,9 +126,14 @@ export function setupCsvIntake(
 		const errorRows = new Set(
 			result.issues.filter((issue) => issue.severity === 'error' && issue.row !== undefined).map((issue) => issue.row)
 		).size;
-		countsLine.textContent = `Imported rows: ${imported} · Valid rows: ${imported - errorRows} · Warnings: ${result.warningCount} · Errors: ${result.errorCount}`;
+		countsLine.textContent = formatCountsLine(labels.countsLine, {
+			imported,
+			valid: imported - errorRows,
+			warnings: result.warningCount,
+			errors: result.errorCount,
+		});
 		countsLine.hidden = false;
-		renderIssues(validationIssues, result.issues.filter((issue) => issue.severity !== 'info'));
+		renderIssues(validationIssues, result.issues.filter((issue) => issue.severity !== 'info'), labels.rowPrefix);
 		confirmBtn.hidden = false;
 		confirmBtn.disabled = !canConfirm(result);
 	}
@@ -128,16 +146,14 @@ export function setupCsvIntake(
 		countsLine.hidden = true;
 		validationIssues.hidden = true;
 		currentParse = parseCsv(await file.text(), file.name);
-		renderIssues(parseIssues, currentParse.issues.filter((issue) => issue.severity === 'error'));
+		renderIssues(parseIssues, currentParse.issues.filter((issue) => issue.severity === 'error'), labels.rowPrefix);
 		mappingBox.innerHTML = '';
 		if (!currentParse.ok) {
 			mappingBox.hidden = true;
 			return;
 		}
 		const suggested = suggestMapping(currentParse.headers, schema);
-		mappingBox.appendChild(
-			el('p', 'section-note', 'Column mapping — exact matches are pre-selected. Review, then apply.')
-		);
+		mappingBox.appendChild(el('p', 'section-note', labels.mappingNote));
 		currentParse.headers.forEach((header, index) => {
 			const row = el('div', 'mapping-row');
 			const label = el('label', undefined, header);
@@ -146,7 +162,7 @@ export function setupCsvIntake(
 			const select = el('select');
 			select.id = selectId;
 			select.dataset.header = header;
-			const none = el('option', undefined, '— keep as unknown —');
+			const none = el('option', undefined, labels.keepAsUnknown);
 			none.value = '';
 			select.appendChild(none);
 			for (const field of schema.fields) {
@@ -158,7 +174,7 @@ export function setupCsvIntake(
 			row.append(label, select);
 			mappingBox.appendChild(row);
 		});
-		const applyBtn = el('button', 'secondary', 'Apply Mapping & Review');
+		const applyBtn = el('button', 'secondary', labels.applyMapping);
 		applyBtn.type = 'button';
 		applyBtn.addEventListener('click', reviewMapping);
 		mappingBox.appendChild(applyBtn);

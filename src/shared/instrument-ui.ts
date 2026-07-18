@@ -36,7 +36,7 @@ export interface RowTableField {
  * period-matrix table is a different responsibility and stays
  * instrument-specific.)
  */
-export function setupRowTable(bodyId: string, fields: readonly RowTableField[]) {
+export function setupRowTable(bodyId: string, fields: readonly RowTableField[], removeLabel = 'Remove') {
 	const body = document.getElementById(bodyId);
 
 	function addRow(values?: Partial<Record<string, string>>) {
@@ -54,7 +54,7 @@ export function setupRowTable(bodyId: string, fields: readonly RowTableField[]) 
 			row.appendChild(cell);
 		}
 		const removeCell = el('td');
-		const removeBtn = el('button', 'secondary', 'Remove');
+		const removeBtn = el('button', 'secondary', removeLabel);
 		removeBtn.type = 'button';
 		removeBtn.addEventListener('click', () => row.remove());
 		removeCell.appendChild(removeBtn);

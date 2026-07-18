@@ -2,17 +2,27 @@
 // Shared mode switcher — renders one button per mode contract. Wiring
 // happens client-side via initModeSwitcher() (src/shared/instrument-ui.ts):
 // buttons carry data-mode, panels carry id="panel-{modeId}".
+// Locale-safe: mode label/description come from the i18n `modes`
+// dictionary (keyed `${instrumentId}.${modeId}`), not from ModeContract
+// itself — ModeContract.label/description stay as internal fallback
+// content, never shown directly once a locale entry exists.
+import { getDictionary, type Locale } from '../i18n';
 import type { ModeContract } from '../platform/modes';
 
 interface Props {
 	modes: readonly ModeContract[];
+	instrumentId: string;
+	locale?: Locale;
 }
 
-const { modes } = Astro.props;
+const { modes, instrumentId, locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const heading = t.common.modeHeading;
+const text = (mode: ModeContract) => t.modes[`${instrumentId}.${mode.modeId}`] ?? mode;
 ---
 
 <section class="mode-switch" aria-label="Mode">
-	<h2>Mode</h2>
+	<h2>{heading}</h2>
 	<div class="mode-buttons">
 		{modes.map((mode, index) => (
 			<button
@@ -22,8 +32,8 @@ const { modes } = Astro.props;
 				data-mode={mode.modeId}
 				aria-pressed={index === 0 ? 'true' : 'false'}
 			>
-				<span class="mode-label">{mode.label}</span>
-				<span class="mode-desc">{mode.description}</span>
+				<span class="mode-label">{text(mode).label}</span>
+				<span class="mode-desc">{text(mode).description}</span>
 			</button>
 		))}
 	</div>

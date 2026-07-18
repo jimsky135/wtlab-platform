@@ -1,0 +1,102 @@
+---
+// Workspaces index — registry-driven. Presentation text comes from the
+// i18n `workspaces` dictionary; routes are locale-prefixed.
+import StatusTag from '../components/StatusTag.astro';
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { getDictionary, localizePath, type Locale } from '../i18n';
+import { workspaces } from '../platform/workspaces';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+---
+
+<PlatformShell title={`${t.workspacesPage.heading} · ${t.seo.titleSuffix}`} section="workspaces" locale={locale}>
+	<p class="kicker">{t.workspacesPage.kicker}</p>
+	<h1>{t.workspacesPage.heading}</h1>
+	<p class="lede">{t.workspacesPage.lede}</p>
+
+	<ul class="workspace-list">
+		{workspaces.map((workspace) => {
+			const text = t.workspaces[workspace.id] ?? workspace;
+			return (
+				<li class="workspace">
+					<h2><a href={localizePath(locale, workspace.route)}>{text.displayName}</a></h2>
+					<p class="description">{text.description}</p>
+					<StatusTag
+						status={workspace.status}
+						implementationState={workspace.implementationState}
+						enabled={workspace.enabled}
+						locale={locale}
+					/>
+				</li>
+			);
+		})}
+	</ul>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xl);
+	}
+
+	.workspace-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.workspace {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.3rem;
+		margin: 0;
+	}
+
+	h2 a {
+		color: var(--color-text-primary);
+		text-decoration: none;
+	}
+
+	h2 a:hover {
+		color: var(--color-accent);
+	}
+
+	.description {
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+</style>

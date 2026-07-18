@@ -1,27 +1,46 @@
 ---
 // Shared platform shell: header, primary navigation, main slot, footer.
-// Pages pass `title` and `section` (which nav item is current).
+// Locale-aware: nav labels, lang attribute, hreflang/canonical, and the
+// language switcher all derive from `locale` + the current URL. Pages
+// pass `title` (already localized by the caller) and `section`.
 import '../shared/global.css';
+import { equivalentPath, getDictionary, localizePath, type Locale } from '../i18n';
 
 interface Props {
 	title: string;
 	section?: 'today' | 'instruments' | 'workspaces' | 'continuity' | 'about';
 	/** Wide pages (Command Center) can opt into the wide content width. */
 	wide?: boolean;
+	locale?: Locale;
+	/** Optional localized meta description; falls back to the brand tagline. */
+	description?: string;
 }
 
-const { title, section, wide = false } = Astro.props;
+const { title, section, wide = false, locale = 'en', description } = Astro.props;
+const t = getDictionary(locale);
+
+const currentPath = Astro.url.pathname;
+const enPath = equivalentPath(currentPath, 'en');
+const zhPath = equivalentPath(currentPath, 'zh-TW');
+const canonicalPath = locale === 'en' ? enPath : zhPath;
+const siteOrigin = Astro.site ?? new URL('https://www.wtlab.co');
+const absolute = (path: string) => new URL(path, siteOrigin).toString();
 
 const navItems = [
-	{ id: 'today', label: 'Today', href: '/command' },
-	{ id: 'instruments', label: 'Instruments', href: '/instruments' },
-	{ id: 'workspaces', label: 'Workspaces', href: '/workspaces' },
-	{ id: 'continuity', label: 'Continuity', href: '/continuity' },
-	{ id: 'about', label: 'About', href: '/about' },
+	{ id: 'today', label: t.nav.items.today, href: localizePath(locale, '/command') },
+	{ id: 'instruments', label: t.nav.items.instruments, href: localizePath(locale, '/instruments') },
+	{ id: 'workspaces', label: t.nav.items.workspaces, href: localizePath(locale, '/workspaces') },
+	{ id: 'continuity', label: t.nav.items.continuity, href: localizePath(locale, '/continuity') },
+	{ id: 'about', label: t.nav.items.about, href: localizePath(locale, '/about') },
 ] as const;
+
+const languageLinks = [
+	{ code: 'en' as const, label: t.nav.languageSwitcher.en, href: enPath },
+	{ code: 'zh-TW' as const, label: t.nav.languageSwitcher.zhTW, href: zhPath },
+];
 ---
 
-<html lang="en">
+<html lang={t.htmlLang}>
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -29,6 +48,11 @@ const navItems = [
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<meta name="description" content={description ?? t.common.brandTagline} />
+		<link rel="canonical" href={absolute(canonicalPath)} />
+		<link rel="alternate" hreflang="en" href={absolute(enPath)} />
+		<link rel="alternate" hreflang="zh-TW" href={absolute(zhPath)} />
+		<link rel="alternate" hreflang="x-default" href={absolute(enPath)} />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
@@ -39,7 +63,7 @@ const navItems = [
 	<body>
 		<header class="shell-header">
 			<div class="shell-header-inner" data-wide={wide}>
-				<a class="brand" href="/">WT<span>Lab</span></a>
+				<a class="brand" href={localizePath(locale, '/')}>WT<span>{t.nav.brandSuffix}</span></a>
 				<nav aria-label="Primary">
 					<ul>
 						{navItems.map((item) => (
@@ -51,7 +75,17 @@ const navItems = [
 						))}
 					</ul>
 				</nav>
-				<p class="header-note" aria-hidden="true">Save / Export — planned</p>
+				<nav class="lang-switch" aria-label="Language">
+					{languageLinks.map((link, index) => (
+						<>
+							{index > 0 && <span aria-hidden="true"> | </span>}
+							<a href={link.href} aria-current={locale === link.code ? 'true' : undefined}>
+								{link.label}
+							</a>
+						</>
+					))}
+				</nav>
+				<p class="header-note" aria-hidden="true">{t.nav.headerNote}</p>
 			</div>
 		</header>
 
@@ -60,7 +94,7 @@ const navItems = [
 		</main>
 
 		<footer class="shell-footer" data-wide={wide}>
-			<p>WTLab — instruments for operational judgment.</p>
+			<p>{t.common.footer}</p>
 		</footer>
 	</body>
 </html>
@@ -132,6 +166,27 @@ const navItems = [
 	}
 
 	nav a:hover {
+		color: var(--color-text-primary);
+	}
+
+	.lang-switch {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		color: var(--color-text-tertiary);
+	}
+
+	.lang-switch a {
+		color: var(--color-text-tertiary);
+		text-decoration: none;
+		padding: var(--space-xs) 0;
+	}
+
+	.lang-switch a[aria-current='true'] {
+		color: var(--color-accent);
+	}
+
+	.lang-switch a:hover {
 		color: var(--color-text-primary);
 	}
 

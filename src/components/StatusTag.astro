@@ -1,36 +1,26 @@
 ---
 // Status is always communicated with a text label (never color alone).
+// Locale-safe: labels come from the shared dictionary, never hardcoded.
+import { getDictionary, type Locale } from '../i18n';
 import type { CatalogStatus, ImplementationState } from '../platform/catalog';
 
 interface Props {
 	status: CatalogStatus;
 	implementationState: ImplementationState;
 	enabled: boolean;
+	locale?: Locale;
 }
 
-const { status, implementationState, enabled } = Astro.props;
-
-const STATUS_LABEL: Record<CatalogStatus, string> = {
-	draft: 'Draft',
-	prototype: 'Prototype',
-	beta: 'Beta',
-	available: 'Available',
-	archived: 'Archived',
-};
-
-const IMPLEMENTATION_LABEL: Record<ImplementationState, string> = {
-	placeholder: 'Placeholder',
-	partial: 'Partial build',
-	implemented: 'Implemented',
-};
+const { status, implementationState, enabled, locale = 'en' } = Astro.props;
+const t = getDictionary(locale).common.statusTag;
 ---
 
 <p class="status-tags">
 	<span class:list={['tag', enabled && status === 'available' ? 'tag-live' : undefined]}>
-		{STATUS_LABEL[status]}
+		{t.status[status]}
 	</span>
-	<span class="tag">{IMPLEMENTATION_LABEL[implementationState]}</span>
-	{!enabled && <span class="tag tag-muted">Disabled</span>}
+	<span class="tag">{t.implementationState[implementationState]}</span>
+	{!enabled && <span class="tag tag-muted">{t.disabled}</span>}
 </p>
 
 <style>

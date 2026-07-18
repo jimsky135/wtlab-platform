@@ -1,0 +1,104 @@
+---
+// Registry-driven placeholder for instruments known in the architecture
+// but not implemented yet. Shared by both locale route files
+// (src/pages/instruments/[slug].astro, src/pages/zh-tw/instruments/[slug].astro).
+import StatusTag from '../components/StatusTag.astro';
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { getDictionary, localizePath, type Locale } from '../i18n';
+import type { InstrumentEntry } from '../platform/catalog';
+
+interface Props {
+	instrument: InstrumentEntry;
+	locale?: Locale;
+}
+const { instrument, locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const text = t.instruments[instrument.id] ?? instrument;
+---
+
+<PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
+	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {instrument.layer}</p>
+	<h1>{text.displayName}</h1>
+	<StatusTag
+		status={instrument.status}
+		implementationState={instrument.implementationState}
+		enabled={instrument.enabled}
+		locale={locale}
+	/>
+
+	<dl class="facts">
+		<dt>{t.instrumentPlaceholder.purposeLabel}</dt>
+		<dd>{text.description}</dd>
+		<dt>{t.instrumentPlaceholder.coreQuestionLabel}</dt>
+		<dd>{text.coreQuestion}</dd>
+		<dt>{t.instrumentPlaceholder.categoryLabel}</dt>
+		<dd>{instrument.category}</dd>
+		{instrument.prototypeRefs.length > 0 && (
+			<>
+				<dt>{t.instrumentPlaceholder.relatedPrototypesLabel}</dt>
+				<dd>{instrument.prototypeRefs.join(', ')} {t.instrumentPlaceholder.relatedPrototypesNote}</dd>
+			</>
+		)}
+	</dl>
+
+	<p class="notice">{t.instrumentPlaceholder.notice}</p>
+
+	<p class="back"><a href={localizePath(locale, '/instruments')}>{t.instrumentPlaceholder.backLink}</a></p>
+</PlatformShell>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.facts {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: var(--space-lg) 0 0;
+		border-top: var(--border-hairline);
+		padding-top: var(--space-lg);
+	}
+
+	.facts dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.facts dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.notice {
+		margin: var(--space-lg) 0 0;
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		color: var(--color-text-secondary);
+	}
+
+	.back {
+		margin: var(--space-lg) 0 0;
+	}
+
+	.back a {
+		color: var(--color-accent);
+	}
+</style>

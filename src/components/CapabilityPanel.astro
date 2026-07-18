@@ -1,24 +1,28 @@
 ---
 // Shared capability badge panel — iterates the platform capability list
-// and marks entries the instrument doesn't declare as Future.
-import { ALL_CAPABILITIES, CAPABILITY_LABELS, type Capability } from '../platform/catalog';
+// and marks entries the instrument doesn't declare as Future. Locale-safe:
+// heading/labels come from the dictionary, never hardcoded.
+import { ALL_CAPABILITIES, type Capability } from '../platform/catalog';
+import { getDictionary, type Locale } from '../i18n';
 
 interface Props {
 	capabilities: readonly Capability[];
+	locale?: Locale;
 }
 
-const { capabilities } = Astro.props;
+const { capabilities, locale = 'en' } = Astro.props;
+const t = getDictionary(locale).common.capabilityPanel;
 ---
 
 <section class="capabilities" aria-labelledby="capabilities-heading">
-	<h2 id="capabilities-heading">Capabilities</h2>
+	<h2 id="capabilities-heading">{t.heading}</h2>
 	<ul>
 		{ALL_CAPABILITIES.map((capability) => {
 			const present = capabilities.includes(capability);
 			return (
 				<li class:list={['capability', present ? 'present' : 'future']}>
-					{CAPABILITY_LABELS[capability]}
-					{!present && <span class="future-tag">Future</span>}
+					{t.labels[capability]}
+					{!present && <span class="future-tag">{t.future}</span>}
 				</li>
 			);
 		})}

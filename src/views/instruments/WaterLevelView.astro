@@ -1,0 +1,661 @@
+---
+// Water Level Checker — one instrument, two modes (Quick Check /
+// Advanced Planning), one shared implementation across both locales.
+// Thin route wrappers (src/pages/tools/… and src/pages/zh-tw/tools/…)
+// pass `locale`; business logic, engine, and adapters never fork.
+import '../../shared/instrument.css';
+import CapabilityPanel from '../../components/CapabilityPanel.astro';
+import InstrumentHeader from '../../components/InstrumentHeader.astro';
+import ModeSwitcher from '../../components/ModeSwitcher.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { getDictionary, localizePath, type Locale } from '../../i18n';
+import { findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
+import { platformRegistry } from '../../platform/registry';
+import { advancedModeContract } from '../../tools/inventory-buffer-check/modes/advanced/contract';
+import { quickModeContract } from '../../tools/inventory-buffer-check/modes/quick/contract';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const rt = t.results.inventoryBufferCheck;
+
+const TOOL_ID = 'inventory-buffer-check';
+const available = platformRegistry.isAvailable(TOOL_ID);
+const entry = findById(instruments, TOOL_ID);
+const modes = [quickModeContract, advancedModeContract];
+
+const relatedLinks = [
+	{ label: t.workspaces['data-intake'].displayName, href: localizePath(locale, '/workspace/data-intake') },
+	{ label: t.workspaces['decision-priority'].displayName, href: localizePath(locale, '/workspace/decision-priority') },
+	{ label: t.nav.items.today, href: localizePath(locale, '/command') },
+	{ label: t.nav.items.continuity, href: localizePath(locale, '/continuity') },
+];
+---
+
+<PlatformShell title={`${entry ? t.instruments[entry.id]?.displayName ?? entry.displayName : 'Instrument'} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
+	{available && entry ? (
+		<article class="instrument-page">
+			<InstrumentHeader entry={entry} locale={locale} subtitle="庫存水位檢查器" />
+			<CapabilityPanel capabilities={entry.capabilities} locale={locale} />
+			<ModeSwitcher modes={modes} instrumentId={TOOL_ID} locale={locale} />
+
+			<!-- ============ QUICK CHECK ============ -->
+			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
+				<details open>
+					<summary>{rt.headings.manualEntry}</summary>
+					<form id="quick-form">
+						<div class="field">
+							<label for="itemName">{rt.fields.itemName.label} <span class="optional-marker">({rt.fields.itemName.optional})</span></label>
+							<input id="itemName" name="itemName" type="text" />
+						</div>
+						<div class="field">
+							<label for="currentStock">{rt.fields.currentStock.label}</label>
+							<input id="currentStock" name="currentStock" type="text" inputmode="decimal" required />
+						</div>
+						<div class="field">
+							<label for="monthlyConsumption">{rt.fields.monthlyConsumption.label}</label>
+							<input id="monthlyConsumption" name="monthlyConsumption" type="text" inputmode="decimal" required />
+						</div>
+						<div class="field-row">
+							<div class="field">
+								<label for="leadTime">{rt.fields.leadTime.label}</label>
+								<input id="leadTime" name="leadTime" type="text" inputmode="decimal" required />
+							</div>
+							<div class="field field-unit">
+								<label for="leadTimeUnit">{rt.fields.unit.label}</label>
+								<select id="leadTimeUnit" name="leadTimeUnit">
+									<option value="month">month</option>
+									<option value="day">day</option>
+								</select>
+							</div>
+						</div>
+						<div class="field-row">
+							<div class="field">
+								<label for="safetyBuffer">{rt.fields.safetyBuffer.label}</label>
+								<input id="safetyBuffer" name="safetyBuffer" type="text" inputmode="decimal" required />
+							</div>
+							<div class="field field-unit">
+								<label for="safetyBufferUnit">{rt.fields.unit.label}</label>
+								<select id="safetyBufferUnit" name="safetyBufferUnit">
+									<option value="month">month</option>
+									<option value="day">day</option>
+								</select>
+							</div>
+						</div>
+						<div class="field">
+							<label for="inTransitQuantity">{rt.fields.inTransitQuantity.label} <span class="optional-marker">({rt.fields.inTransitQuantity.optional})</span></label>
+							<input id="inTransitQuantity" name="inTransitQuantity" type="text" inputmode="decimal" />
+						</div>
+						<div class="field-row">
+							<div class="field">
+								<label for="arrivalTime">{rt.fields.arrivalTime.label} <span class="optional-marker">({rt.fields.arrivalTime.optional})</span></label>
+								<input id="arrivalTime" name="arrivalTime" type="text" inputmode="decimal" />
+							</div>
+							<div class="field field-unit">
+								<label for="arrivalTimeUnit">{rt.fields.unit.label}</label>
+								<select id="arrivalTimeUnit" name="arrivalTimeUnit">
+									<option value="month">month</option>
+									<option value="day">day</option>
+								</select>
+							</div>
+						</div>
+						<div class="action-row">
+							<button type="submit">{rt.buttons.runQuick}</button>
+							<button type="button" class="secondary" id="quick-download-input">{rt.buttons.downloadInput}</button>
+							<button type="button" class="secondary" id="quick-download-template">{rt.buttons.downloadTemplate}</button>
+						</div>
+					</form>
+					<div id="quick-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>{rt.headings.uploadCsv}</summary>
+					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'water-level-quick-input.csv')}</p>
+					<div id="quick-intake"></div>
+				</details>
+
+				<div id="quick-results-block" class="results-block" hidden>
+					<h2>{rt.headings.results}</h2>
+					<div id="quick-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="quick-download-result-csv">{rt.buttons.downloadResultCsv}</button>
+						<button type="button" class="secondary" id="quick-download-result-json">{rt.buttons.downloadResultJson}</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============ ADVANCED PLANNING ============ -->
+			<section id="panel-advanced" class="mode-panel" aria-label="Advanced Planning" hidden>
+				<details open>
+					<summary>{rt.headings.manualTable}</summary>
+					<p class="section-note">{rt.labels.manualTableNote}</p>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-add-item">{rt.buttons.addItem}</button>
+						<button type="button" class="secondary" id="adv-add-period">{rt.buttons.addPeriod}</button>
+						<button type="button" class="secondary" id="adv-remove-period">{rt.buttons.removePeriod}</button>
+					</div>
+					<div class="table-wrap">
+						<table id="adv-table">
+							<thead id="adv-head"></thead>
+							<tbody id="adv-body"></tbody>
+						</table>
+					</div>
+					<div class="action-row">
+						<button type="button" class="primary" id="adv-run">{rt.buttons.runAdvanced}</button>
+						<button type="button" class="secondary" id="adv-download-input">{rt.buttons.downloadInput}</button>
+						<button type="button" class="secondary" id="adv-download-template">{rt.buttons.downloadTemplate}</button>
+					</div>
+					<div id="adv-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<details>
+					<summary>{rt.headings.uploadCsv}</summary>
+					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'water-level-advanced-input.csv')}</p>
+					<div id="advanced-intake"></div>
+				</details>
+
+				<div id="adv-results-block" class="results-block" hidden>
+					<h2>{rt.headings.projectionResults}</h2>
+					<div id="adv-results" aria-live="polite"></div>
+					<div class="action-row">
+						<button type="button" class="secondary" id="adv-download-result-csv">{rt.buttons.downloadResultCsv}</button>
+					</div>
+				</div>
+			</section>
+
+			<section class="continuity" aria-labelledby="continuity-heading">
+				<h2 id="continuity-heading">{t.common.continuity.heading}</h2>
+				<p class="section-note">{t.common.continuity.note}</p>
+				<div class="continuity-actions planned-actions">
+					<button type="button" disabled>{t.common.continuity.actions['ai-handoff'].label}</button>
+					<span class="planned-tag">{t.common.continuity.planned}</span>
+					<button type="button" disabled>{t.common.continuity.actions['email-copy'].label}</button>
+					<span class="planned-tag">{t.common.continuity.planned}</span>
+					<button type="button" disabled>{t.common.continuity.actions.save.label}</button>
+					<span class="planned-tag">{t.common.continuity.planned}</span>
+				</div>
+			</section>
+
+			<section class="related" aria-labelledby="related-heading">
+				<h2 id="related-heading">{t.common.relatedHeading}</h2>
+				<ul>
+					{relatedLinks.map((link) => (
+						<li><a href={link.href}>{link.label}</a></li>
+					))}
+				</ul>
+			</section>
+		</article>
+	) : (
+		<article class="instrument-page">
+			<p class="kicker">{t.common.unavailable.kicker}</p>
+			<h1>{t.common.unavailable.heading}</h1>
+			<p><a href={localizePath(locale, '/instruments')}>{t.common.unavailable.backLink}</a></p>
+		</article>
+	)}
+</PlatformShell>
+
+<script define:vars={{ locale }}>
+	window.__WTLAB_LOCALE__ = locale;
+</script>
+
+<script>
+	import { confirmIntake } from '../../platform/intake/confirm.ts';
+	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
+	import { validateRecords } from '../../platform/intake/validate.ts';
+	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
+	import { initModeSwitcher } from '../../shared/instrument-ui.ts';
+	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
+	import { advancedAdapter } from '../../platform/adapters/water-level/advanced-adapter.ts';
+	import { quickAdapter } from '../../platform/adapters/water-level/quick-adapter.ts';
+	import { calculateInventoryBuffer } from '../../tools/inventory-buffer-check/calculate.ts';
+	import { projectionToCsv, quickResultsToCsv } from '../../tools/inventory-buffer-check/export.ts';
+	import { advancedModeContract } from '../../tools/inventory-buffer-check/modes/advanced/contract.ts';
+	import { advancedIntakeSchema } from '../../tools/inventory-buffer-check/modes/advanced/schema.ts';
+	import { advancedCsvTemplate } from '../../tools/inventory-buffer-check/modes/advanced/template.ts';
+	import { quickModeContract } from '../../tools/inventory-buffer-check/modes/quick/contract.ts';
+	import { quickIntakeSchema } from '../../tools/inventory-buffer-check/modes/quick/schema.ts';
+	import { quickCsvTemplate } from '../../tools/inventory-buffer-check/modes/quick/template.ts';
+	import { computeRollingProjection } from '../../tools/inventory-buffer-check/projection.ts';
+	import type { ProjectionResult } from '../../tools/inventory-buffer-check/modes/advanced/types.ts';
+	import type { InventoryBufferOutput } from '../../tools/inventory-buffer-check/types.ts';
+	import { validateInventoryBufferInput } from '../../tools/inventory-buffer-check/validate.ts';
+	import { getDictionary, type Locale } from '../../i18n/index.ts';
+
+	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
+	const rt = getDictionary(locale).results.inventoryBufferCheck;
+	const csvLabels = getDictionary(locale).common.csvIntake;
+
+	initModeSwitcher();
+
+	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	const quickManualIssues = document.getElementById('quick-manual-issues');
+	const quickResultsBlock = document.getElementById('quick-results-block');
+	const quickResults = document.getElementById('quick-results');
+	let lastQuickResults: Array<{ itemName: string; output: InventoryBufferOutput }> = [];
+
+	function formatMonths(value: number): string {
+		return `${value.toFixed(1)} ${rt.labels.monthsUnit}`;
+	}
+	function formatQuantity(value: number): string {
+		return String(Math.round(value * 100) / 100);
+	}
+
+	function depletionDateText(coverageMonths: number): string {
+		const days = Math.round(coverageMonths * 30);
+		const date = new Date();
+		date.setDate(date.getDate() + days);
+		return `${date.toISOString().slice(0, 10)} (~${days} ${rt.labels.daysUnit})`;
+	}
+
+	function renderQuickResults(results: Array<{ itemName: string; output: InventoryBufferOutput }>, failures: Array<{ itemName: string; errors: string[] }>) {
+		if (!quickResults || !quickResultsBlock) return;
+		lastQuickResults = results;
+		quickResults.innerHTML = '';
+
+		for (const failure of failures) {
+			const box = el('div', 'issue-box');
+			box.appendChild(el('p', 'result-item-name', failure.itemName));
+			const list = el('ul');
+			for (const message of failure.errors) list.appendChild(el('li', undefined, message));
+			box.appendChild(list);
+			box.hidden = false;
+			quickResults.appendChild(box);
+		}
+
+		for (const { itemName, output } of results) {
+			const wrap = el('div', 'result-set');
+			wrap.appendChild(el('p', 'result-item-name', itemName));
+			const cards = el('div', 'cards');
+
+			const status = el('div', 'card');
+			status.appendChild(el('h3', undefined, rt.headings.inventoryStatus));
+			const risk = rt.riskStatus[output.riskStatus];
+			status.appendChild(el('p', 'card-value', risk.label));
+			status.appendChild(el('p', 'card-note', risk.description));
+			cards.appendChild(status);
+
+			const coverage = el('div', 'card');
+			coverage.appendChild(el('h3', undefined, rt.headings.coverage));
+			const coverageDl = el('dl');
+			coverageDl.append(
+				el('dt', undefined, rt.labels.currentCoverage),
+				el('dd', undefined, formatMonths(output.currentCoverageMonths)),
+				el('dt', undefined, rt.labels.totalCoverage),
+				el('dd', undefined, output.totalCoverageMonths === undefined ? rt.labels.notProvided : formatMonths(output.totalCoverageMonths)),
+				el('dt', undefined, rt.labels.estimatedDepletion),
+				el('dd', undefined, depletionDateText(output.currentCoverageMonths))
+			);
+			coverage.appendChild(coverageDl);
+			cards.appendChild(coverage);
+
+			const rec = el('div', 'card');
+			rec.appendChild(el('h3', undefined, rt.headings.recommendation));
+			const recDl = el('dl');
+			recDl.append(
+				el('dt', undefined, rt.labels.minSafetyStock),
+				el('dd', undefined, formatQuantity(output.minimumSafetyStock)),
+				el('dt', undefined, rt.labels.reorderPoint),
+				el('dd', undefined, formatQuantity(output.reorderPoint))
+			);
+			rec.appendChild(recDl);
+			cards.appendChild(rec);
+
+			const evidence = el('div', 'card');
+			evidence.appendChild(el('h3', undefined, rt.headings.evidenceNotes));
+			const evDl = el('dl');
+			evDl.append(el('dt', undefined, rt.labels.arrivalRiskLabel), el('dd', undefined, rt.arrivalRisk[output.arrivalRisk]));
+			evidence.appendChild(evDl);
+			cards.appendChild(evidence);
+
+			wrap.appendChild(cards);
+			quickResults.appendChild(wrap);
+		}
+
+		quickResultsBlock.hidden = results.length === 0 && failures.length === 0;
+		quickResultsBlock.scrollIntoView({ block: 'nearest' });
+	}
+
+	/** One result pipeline: adapter items → instrument validate/calculate → cards. */
+	function runQuick(confirmed: ConfirmedIntake) {
+		const adapted = quickAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(quickManualIssues, adapted.issues);
+			return;
+		}
+		const results: Array<{ itemName: string; output: InventoryBufferOutput }> = [];
+		const failures: Array<{ itemName: string; errors: string[] }> = [];
+		for (const item of adapted.data) {
+			const validated = validateInventoryBufferInput(item.input);
+			if (validated.valid) {
+				results.push({ itemName: item.itemName, output: calculateInventoryBuffer(validated.data) });
+			} else {
+				failures.push({ itemName: item.itemName, errors: validated.errors });
+			}
+		}
+		renderQuickResults(results, failures);
+	}
+
+	function toMonthsRaw(value: string, unit: string): string {
+		const trimmed = value.trim();
+		if (trimmed === '' || unit !== 'day') return trimmed;
+		const parsed = Number(trimmed);
+		return Number.isFinite(parsed) ? String(parsed / 30) : trimmed;
+	}
+
+	function quickFormRow(): Record<string, string> {
+		const value = (name: string) => {
+			const field = quickForm?.elements.namedItem(name);
+			return field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value : '';
+		};
+		return {
+			itemName: value('itemName').trim() === '' ? 'item-1' : value('itemName').trim(),
+			currentStock: value('currentStock'),
+			monthlyConsumption: value('monthlyConsumption'),
+			leadTimeMonths: toMonthsRaw(value('leadTime'), value('leadTimeUnit')),
+			safetyBufferMonths: toMonthsRaw(value('safetyBuffer'), value('safetyBufferUnit')),
+			inTransitQuantity: value('inTransitQuantity').trim(),
+			arrivalTimeMonths: toMonthsRaw(value('arrivalTime'), value('arrivalTimeUnit')),
+		};
+	}
+
+	if (quickForm) {
+		quickForm.addEventListener('submit', (event) => {
+			event.preventDefault();
+			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+			const result = validateRecords([record], quickIntakeSchema);
+			if (result.errorCount > 0) {
+				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+				return;
+			}
+			renderIssues(quickManualIssues, []);
+			const outcome = confirmIntake(quickIntakeSchema, result);
+			if (outcome.confirmed) runQuick(outcome.data);
+		});
+	}
+
+	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		download(quickModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(quickCsvTemplate, [quickFormRow()]));
+	});
+	document.getElementById('quick-download-template')?.addEventListener('click', () => {
+		download('water-level-quick-template.csv', 'text/csv', generateBlankTemplateCsv(quickCsvTemplate));
+	});
+	document.getElementById('quick-download-result-csv')?.addEventListener('click', () => {
+		if (lastQuickResults.length > 0) {
+			download(quickModeContract.exportProfile.resultFilename, 'text/csv', quickResultsToCsv(lastQuickResults));
+		}
+	});
+	document.getElementById('quick-download-result-json')?.addEventListener('click', () => {
+		if (lastQuickResults.length > 0) {
+			download(
+				'water-level-quick-result.json',
+				'application/json',
+				JSON.stringify({ tool: 'inventory-buffer-check', mode: 'quick', results: lastQuickResults }, null, 2)
+			);
+		}
+	});
+
+	setupCsvIntake('quick-intake', quickIntakeSchema, runQuick, csvLabels);
+
+	// ---------- ADVANCED MODE ----------
+
+	const advHead = document.getElementById('adv-head');
+	const advBody = document.getElementById('adv-body');
+	const advManualIssues = document.getElementById('adv-manual-issues');
+	const advResultsBlock = document.getElementById('adv-results-block');
+	const advResults = document.getElementById('adv-results');
+	let advPeriods = 3;
+	let advItemSeq = 0;
+	let lastProjection: ProjectionResult | null = null;
+
+	function advRenderHead() {
+		if (!advHead) return;
+		advHead.innerHTML = '';
+		const row = el('tr');
+		row.append(el('th', undefined, rt.fields.itemName.label), el('th', undefined, rt.fields.beginningInventory.label), el('th', undefined, rt.fields.bufferMonths.label));
+		for (let p = 1; p <= advPeriods; p++) {
+			row.append(el('th', undefined, `P${p} ${rt.labels.consumption}`), el('th', undefined, `P${p} ${rt.labels.arrivals}`));
+		}
+		row.append(el('th', undefined, ''));
+		advHead.appendChild(row);
+	}
+
+	function advAddItemRow(prefill?: Record<string, string>) {
+		if (!advBody) return;
+		advItemSeq += 1;
+		const row = el('tr');
+		const mkCell = (name: string, value = '') => {
+			const cell = el('td');
+			const input = el('input') as HTMLInputElement;
+			input.type = 'text';
+			input.dataset.field = name;
+			input.value = value;
+			input.setAttribute('aria-label', name);
+			cell.appendChild(input);
+			return cell;
+		};
+		row.appendChild(mkCell('itemName', prefill?.itemName ?? `item-${advItemSeq}`));
+		row.appendChild(mkCell('beginningInventory', prefill?.beginningInventory ?? ''));
+		row.appendChild(mkCell('safetyBufferMonths', prefill?.safetyBufferMonths ?? ''));
+		for (let p = 1; p <= advPeriods; p++) {
+			row.appendChild(mkCell(`consumption-${p}`));
+			row.appendChild(mkCell(`arrival-${p}`));
+		}
+		const removeCell = el('td');
+		const removeBtn = el('button', 'secondary', rt.buttons.remove) as HTMLButtonElement;
+		removeBtn.type = 'button';
+		removeBtn.addEventListener('click', () => row.remove());
+		removeCell.appendChild(removeBtn);
+		row.appendChild(removeCell);
+		advBody.appendChild(row);
+	}
+
+	function advSetPeriods(count: number) {
+		const previous: Array<Record<string, string>> = advCollectCells();
+		advPeriods = Math.max(1, count);
+		advRenderHead();
+		if (advBody) advBody.innerHTML = '';
+		advItemSeq = 0;
+		if (previous.length === 0) {
+			advAddItemRow();
+		} else {
+			for (const cells of previous) {
+				advAddItemRow(cells);
+				const row = advBody?.lastElementChild;
+				if (row) {
+					for (const input of row.querySelectorAll<HTMLInputElement>('input')) {
+						const key = input.dataset.field ?? '';
+						if (cells[key] !== undefined) input.value = cells[key];
+					}
+				}
+			}
+		}
+	}
+
+	function advCollectCells(): Array<Record<string, string>> {
+		if (!advBody) return [];
+		return Array.from(advBody.querySelectorAll('tr')).map((row) => {
+			const cells: Record<string, string> = {};
+			for (const input of row.querySelectorAll<HTMLInputElement>('input')) {
+				cells[input.dataset.field ?? ''] = input.value;
+			}
+			return cells;
+		});
+	}
+
+	/** Manual table → long-format rows (same contract as the CSV). */
+	function advLongRows(): Array<Record<string, string>> {
+		return advCollectCells().flatMap((cells) => {
+			const rows: Array<Record<string, string>> = [];
+			for (let p = 1; p <= advPeriods; p++) {
+				rows.push({
+					itemName: cells['itemName'] ?? '',
+					period: String(p),
+					beginningInventory: p === 1 ? (cells['beginningInventory'] ?? '') : '',
+					safetyBufferMonths: p === 1 ? (cells['safetyBufferMonths'] ?? '') : '',
+					consumption: cells[`consumption-${p}`] ?? '',
+					arrivalQuantity: cells[`arrival-${p}`] ?? '',
+				});
+			}
+			return rows;
+		});
+	}
+
+	function renderProjection(projection: ProjectionResult) {
+		if (!advResults || !advResultsBlock) return;
+		lastProjection = projection;
+		advResults.innerHTML = '';
+
+		const ranking = el('div', 'result-set');
+		ranking.appendChild(el('h3', undefined, rt.headings.riskPriority));
+		const rankList = el('ol');
+		for (const name of projection.riskRanking) {
+			const item = projection.items.find((candidate) => candidate.name === name);
+			const label =
+				item?.riskLevel === 'shortage'
+					? `${name} — ${rt.labels.shortage} (${rt.labels.period} ${item.firstShortagePeriod})`
+					: item?.riskLevel === 'buffer-breach'
+						? `${name} — ${rt.labels.belowBuffer} (${rt.labels.period} ${item.firstBufferBreachPeriod})`
+						: `${name} — ${rt.labels.ok}`;
+			rankList.appendChild(el('li', undefined, label));
+		}
+		ranking.appendChild(rankList);
+		advResults.appendChild(ranking);
+
+		for (const item of projection.items) {
+			const wrap = el('div', 'result-set');
+			wrap.appendChild(el('p', 'result-item-name', `${item.name} · begin ${item.beginningInventory}${item.bufferStock !== undefined ? ` · buffer stock ${formatQuantity(item.bufferStock)}` : ''}`));
+			const tableWrap = el('div', 'table-wrap');
+			const table = el('table');
+			const thead = el('thead');
+			const headRow = el('tr');
+			headRow.append(
+				el('th', undefined, rt.labels.period),
+				el('th', undefined, rt.labels.arrivals),
+				el('th', undefined, rt.labels.consumption),
+				el('th', undefined, rt.labels.endingBalance),
+				el('th', undefined, rt.labels.status)
+			);
+			thead.appendChild(headRow);
+			table.appendChild(thead);
+			const tbody = el('tbody');
+			for (const period of item.periods) {
+				const tr = el('tr');
+				const status = period.shortage ? rt.labels.shortage : period.belowBuffer ? rt.labels.belowBuffer : rt.labels.ok;
+				tr.append(
+					el('td', undefined, String(period.period)),
+					el('td', undefined, String(period.arrivalQuantity)),
+					el('td', undefined, String(period.consumption)),
+					el('td', undefined, formatQuantity(period.endingBalance)),
+					el('td', period.shortage ? 'cell-shortage' : period.belowBuffer ? 'cell-breach' : undefined, status)
+				);
+				tbody.appendChild(tr);
+			}
+			table.appendChild(tbody);
+			tableWrap.appendChild(table);
+			wrap.appendChild(tableWrap);
+			advResults.appendChild(wrap);
+		}
+
+		advResultsBlock.hidden = false;
+		advResultsBlock.scrollIntoView({ block: 'nearest' });
+	}
+
+	/** One advanced pipeline: confirmed rows → adapter → projection. */
+	function runAdvanced(confirmed: ConfirmedIntake) {
+		const adapted = advancedAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(advManualIssues, adapted.issues);
+			return;
+		}
+		renderIssues(advManualIssues, []);
+		renderProjection(computeRollingProjection(adapted.data));
+	}
+
+	document.getElementById('adv-add-item')?.addEventListener('click', () => advAddItemRow());
+	document.getElementById('adv-add-period')?.addEventListener('click', () => advSetPeriods(advPeriods + 1));
+	document.getElementById('adv-remove-period')?.addEventListener('click', () => advSetPeriods(advPeriods - 1));
+
+	document.getElementById('adv-run')?.addEventListener('click', () => {
+		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
+		const result = validateRecords(records, advancedIntakeSchema);
+		if (result.errorCount > 0) {
+			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'));
+			return;
+		}
+		const outcome = confirmIntake(advancedIntakeSchema, result);
+		if (outcome.confirmed) runAdvanced(outcome.data);
+	});
+
+	document.getElementById('adv-download-input')?.addEventListener('click', () => {
+		download(advancedModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(advancedCsvTemplate, advLongRows()));
+	});
+	document.getElementById('adv-download-template')?.addEventListener('click', () => {
+		download('water-level-advanced-template.csv', 'text/csv', generateBlankTemplateCsv(advancedCsvTemplate));
+	});
+	document.getElementById('adv-download-result-csv')?.addEventListener('click', () => {
+		if (lastProjection) {
+			download(advancedModeContract.exportProfile.resultFilename, 'text/csv', projectionToCsv(lastProjection));
+		}
+	});
+
+	setupCsvIntake('advanced-intake', advancedIntakeSchema, runAdvanced, csvLabels);
+
+	// Initial advanced table state.
+	advRenderHead();
+	advAddItemRow();
+</script>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	:global(#adv-table input) {
+		min-width: 6rem;
+	}
+
+	:global(.cell-shortage) {
+		color: var(--color-accent-strong);
+		font-weight: 600;
+	}
+
+	:global(.cell-breach) {
+		color: var(--color-accent);
+	}
+
+	.continuity-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.continuity-actions button {
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: not-allowed;
+	}
+</style>

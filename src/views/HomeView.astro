@@ -1,0 +1,200 @@
+---
+// MVP homepage — visual foundation migrated from WTLab Foundations v3
+// (confirmed Design Source). Deliberately its own minimal shell, not
+// PlatformShell (confirmed decision, Sprint 002/005) — so it gets its
+// own small language switcher rather than the shared nav.
+import '../shared/global.css';
+import { equivalentPath, getDictionary, localizePath, type Locale } from '../i18n';
+import { findById } from '../platform/catalog';
+import { instruments } from '../platform/instruments';
+import { platformRegistry } from '../platform/registry';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+
+// Tools shown here are never hardcoded — only what the Registry currently
+// reports as platform-available (status:active + enabled:true) is listed.
+// Routes come from the catalog entry; presentation text from the i18n
+// `instruments` overlay keyed by id.
+const availableTools = platformRegistry.getAvailable().map((tool) => {
+	const entry = findById(instruments, tool.metadata.id);
+	const text = t.instruments[tool.metadata.id] ?? tool.metadata;
+	return {
+		route: entry ? localizePath(locale, entry.route) : localizePath(locale, `/tools/${tool.metadata.id}`),
+		displayName: text.displayName,
+		description: text.description,
+		category: tool.metadata.category,
+	};
+});
+
+const currentPath = Astro.url.pathname;
+const enPath = equivalentPath(currentPath, 'en');
+const zhPath = equivalentPath(currentPath, 'zh-TW');
+const siteOrigin = Astro.site ?? new URL('https://www.wtlab.co');
+const absolute = (path: string) => new URL(path, siteOrigin).toString();
+---
+
+<html lang={t.htmlLang}>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{t.seo.titleSuffix}</title>
+		<meta name="description" content={t.common.brandTagline} />
+		<link rel="canonical" href={absolute(locale === 'en' ? enPath : zhPath)} />
+		<link rel="alternate" hreflang="en" href={absolute(enPath)} />
+		<link rel="alternate" hreflang="zh-TW" href={absolute(zhPath)} />
+		<link rel="alternate" hreflang="x-default" href={absolute(enPath)} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<main>
+			<nav class="lang-switch" aria-label="Language">
+				<a href={enPath} aria-current={locale === 'en' ? 'true' : undefined}>{t.nav.languageSwitcher.en}</a>
+				<span aria-hidden="true"> | </span>
+				<a href={zhPath} aria-current={locale === 'zh-TW' ? 'true' : undefined}>{t.nav.languageSwitcher.zhTW}</a>
+			</nav>
+			<h1 class="wordmark">WT<span>{t.nav.brandSuffix}</span></h1>
+			<p class="tagline">{t.home.tagline}</p>
+
+			<section class="tools">
+				<p class="kicker">{t.home.toolsKicker}</p>
+				{availableTools.length === 0 ? (
+					<p class="empty-state">{t.home.emptyState}</p>
+				) : (
+					<ul class="tool-list">
+						{availableTools.map((tool) => (
+							<li class="tool-card">
+								<a href={tool.route}>
+									<h3>{tool.displayName}</h3>
+									<p class="tool-description">{tool.description}</p>
+									<p class="tool-category">{tool.category}</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				)}
+			</section>
+		</main>
+	</body>
+</html>
+
+<style>
+	main {
+		max-width: var(--content-width-narrow);
+		margin: 0 auto;
+		padding: var(--space-xl) var(--space-md);
+	}
+
+	.lang-switch {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		color: var(--color-text-tertiary);
+		margin: 0 0 var(--space-lg);
+	}
+
+	.lang-switch a {
+		color: var(--color-text-tertiary);
+		text-decoration: none;
+	}
+
+	.lang-switch a[aria-current='true'] {
+		color: var(--color-accent);
+	}
+
+	.lang-switch a:hover {
+		color: var(--color-text-primary);
+	}
+
+	.wordmark {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2.5rem, 6vw, 4rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.wordmark span {
+		color: var(--color-accent);
+	}
+
+	.tagline {
+		color: var(--color-text-secondary);
+		font-size: 1.1rem;
+		margin: 0 0 var(--space-xl);
+	}
+
+	.tools {
+		border-top: var(--border-hairline);
+		padding-top: var(--space-lg);
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.empty-state {
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+
+	.tool-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.tool-card {
+		border: var(--border-hairline);
+	}
+
+	.tool-card a {
+		display: block;
+		padding: var(--space-md);
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.tool-card h3 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.4rem;
+		margin: 0 0 var(--space-xs);
+		color: var(--color-text-primary);
+	}
+
+	.tool-description {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-xs);
+	}
+
+	.tool-category {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: 0;
+	}
+</style>
