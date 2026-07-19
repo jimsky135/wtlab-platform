@@ -27,6 +27,14 @@ import { deadStockAdvancedSchema } from '../tools/dead-stock-scanner/modes/advan
 import { deadStockAdvancedTemplate } from '../tools/dead-stock-scanner/modes/advanced/template.ts';
 import { deadStockQuickSchema } from '../tools/dead-stock-scanner/modes/quick/schema.ts';
 import { deadStockQuickTemplate } from '../tools/dead-stock-scanner/modes/quick/template.ts';
+import { leadTimeGapAdvancedSchema } from '../tools/lead-time-gap-checker/modes/advanced/schema.ts';
+import { leadTimeGapAdvancedTemplate } from '../tools/lead-time-gap-checker/modes/advanced/template.ts';
+import { leadTimeGapQuickSchema } from '../tools/lead-time-gap-checker/modes/quick/schema.ts';
+import { leadTimeGapQuickTemplate } from '../tools/lead-time-gap-checker/modes/quick/template.ts';
+import { bufferDriftAdvancedSchema } from '../tools/buffer-drift-monitor/modes/advanced/schema.ts';
+import { bufferDriftAdvancedTemplate } from '../tools/buffer-drift-monitor/modes/advanced/template.ts';
+import { bufferDriftQuickSchema } from '../tools/buffer-drift-monitor/modes/quick/schema.ts';
+import { bufferDriftQuickTemplate } from '../tools/buffer-drift-monitor/modes/quick/template.ts';
 
 const INSTRUMENTS: Array<{
 	name: string;
@@ -77,6 +85,30 @@ const INSTRUMENTS: Array<{
 		schema: deadStockAdvancedSchema,
 		template: deadStockAdvancedTemplate,
 		expectedFieldIds: ['item', 'currentStock', 'recentMonthlyConsumption', 'monthsSinceLastMovement', 'futureDemand', 'unitCost', 'category', 'note'],
+	},
+	{
+		name: 'Lead Time Gap Checker — quick',
+		schema: leadTimeGapQuickSchema,
+		template: leadTimeGapQuickTemplate,
+		expectedFieldIds: ['itemName', 'currentStock', 'monthlyConsumption', 'leadTimeMonths', 'safetyBufferMonths', 'currentDate'],
+	},
+	{
+		name: 'Lead Time Gap Checker — advanced',
+		schema: leadTimeGapAdvancedSchema,
+		template: leadTimeGapAdvancedTemplate,
+		expectedFieldIds: ['itemName', 'period', 'beginningInventory', 'supplierLeadTimeMonths', 'safetyBufferMonths', 'consumption', 'arrivalQuantity'],
+	},
+	{
+		name: 'Buffer Drift Monitor — quick',
+		schema: bufferDriftQuickSchema,
+		template: bufferDriftQuickTemplate,
+		expectedFieldIds: ['itemName', 'monthlyConsumption', 'intendedBufferMonths', 'actualBufferQuantity'],
+	},
+	{
+		name: 'Buffer Drift Monitor — advanced',
+		schema: bufferDriftAdvancedSchema,
+		template: bufferDriftAdvancedTemplate,
+		expectedFieldIds: ['itemName', 'period', 'intendedBufferMonths', 'monthlyConsumption', 'actualBufferQuantity'],
 	},
 ];
 

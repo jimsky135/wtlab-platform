@@ -28,6 +28,8 @@ const LOCALE_BLIND_DIRS = [
 	'tools/arrival-collision-detector',
 	'tools/dead-stock-scanner',
 	'tools/inventory-buffer-check',
+	'tools/lead-time-gap-checker',
+	'tools/buffer-drift-monitor',
 ];
 
 function listTsFiles(dir: string): string[] {

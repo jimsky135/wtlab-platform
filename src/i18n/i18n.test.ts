@@ -122,12 +122,14 @@ test('dictionaries report their own locale and a distinct html lang', () => {
 	assert.equal(getDictionary('zh-TW').htmlLang, 'zh-Hant-TW');
 });
 
-test('per-instrument result dictionaries exist for all three production instruments in both locales', () => {
+test('per-instrument result dictionaries exist for all five production instruments in both locales', () => {
 	for (const locale of SUPPORTED_LOCALES) {
 		const results = getDictionary(locale).results;
 		assert.ok(results.inventoryBufferCheck);
 		assert.ok(results.arrivalCollisionDetector);
 		assert.ok(results.deadStockScanner);
+		assert.ok(results.leadTimeGapChecker);
+		assert.ok(results.bufferDriftMonitor);
 	}
 });
 

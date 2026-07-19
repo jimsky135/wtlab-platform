@@ -6,6 +6,10 @@ import { deadStockAdvancedSchema } from '../../tools/dead-stock-scanner/modes/ad
 import { deadStockQuickSchema } from '../../tools/dead-stock-scanner/modes/quick/schema.ts';
 import { advancedIntakeSchema } from '../../tools/inventory-buffer-check/modes/advanced/schema.ts';
 import { quickIntakeSchema } from '../../tools/inventory-buffer-check/modes/quick/schema.ts';
+import { leadTimeGapAdvancedSchema } from '../../tools/lead-time-gap-checker/modes/advanced/schema.ts';
+import { leadTimeGapQuickSchema } from '../../tools/lead-time-gap-checker/modes/quick/schema.ts';
+import { bufferDriftAdvancedSchema } from '../../tools/buffer-drift-monitor/modes/advanced/schema.ts';
+import { bufferDriftQuickSchema } from '../../tools/buffer-drift-monitor/modes/quick/schema.ts';
 import { parseCsv } from '../intake/csv.ts';
 import { suggestMapping, validateMapping } from '../intake/mapping.ts';
 import type { IntakeSchema } from '../intake/types.ts';
@@ -20,6 +24,10 @@ const schemaByTemplate: Record<string, IntakeSchema> = {
 	'arrival-collision-advanced-input': arrivalAdvancedSchema,
 	'dead-stock-quick-input': deadStockQuickSchema,
 	'dead-stock-advanced-input': deadStockAdvancedSchema,
+	'lead-time-gap-quick-input': leadTimeGapQuickSchema,
+	'lead-time-gap-advanced-input': leadTimeGapAdvancedSchema,
+	'buffer-drift-quick-input': bufferDriftQuickSchema,
+	'buffer-drift-advanced-input': bufferDriftAdvancedSchema,
 };
 
 test('template ids and filenames are unique', () => {

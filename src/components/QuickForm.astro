@@ -1,0 +1,65 @@
+---
+// Schema-driven single-item manual entry form (Sprint 008 Instrument
+// Factory extraction — see src/platform/quick-form.ts). Renders exactly
+// the markup shape Water Level, Dead Stock, and Lead Time Gap Checker
+// used to hand-roll: a `.field` per plain input, or a `.field-row` of
+// two `.field`s when a day/month unit toggle is declared. Consolidates
+// the two "optional" text conventions those three instruments had
+// drifted into: `fieldText[id].optional` is always just the HINT (e.g.
+// "0 = no recent consumption"), never the word "optional" itself — this
+// component composes `(optionalWord)` or `(optionalWord — hint)` for
+// fields not required on the form, and `(hint)` for required fields that
+// still carry a hint (e.g. "0 = no recent consumption" on a required
+// field). Shared components never know instrument names — this one only
+// takes config, text, and a schema-agnostic id.
+import type { QuickFormFieldConfig } from '../platform/quick-form';
+
+interface FieldText {
+	label: string;
+	optional?: string;
+}
+
+interface Props {
+	fields: readonly QuickFormFieldConfig[];
+	fieldText: Record<string, FieldText>;
+	optionalWord: string;
+	unitLabel: string;
+}
+
+const { fields, fieldText, optionalWord, unitLabel } = Astro.props;
+
+function text(id: string): FieldText {
+	return fieldText[id] ?? { label: id };
+}
+---
+
+{fields.map((field) => {
+	const t = text(field.id);
+	const inputId = `q-${field.id}`;
+	return field.unitFieldId ? (
+		<div class="field-row">
+			<div class="field">
+				<label for={inputId}>{t.label}</label>
+				<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} />
+			</div>
+			<div class="field field-unit">
+				<label for={`q-${field.unitFieldId}`}>{unitLabel}</label>
+				<select id={`q-${field.unitFieldId}`} name={field.unitFieldId}>
+					<option value="month">month</option>
+					<option value="day">day</option>
+				</select>
+			</div>
+		</div>
+	) : (
+		<div class="field">
+			<label for={inputId}>
+				{t.label}
+				{!field.requiredOnForm && (
+					<span class="optional-marker"> ({optionalWord}{t.optional ? ` — ${t.optional}` : ''})</span>
+				)}
+				{field.requiredOnForm && t.optional && <span class="optional-marker"> ({t.optional})</span>}
+			</label>
+			<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} />
+		</div>
+	);
+})}

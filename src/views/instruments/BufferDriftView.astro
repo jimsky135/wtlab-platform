@@ -1,8 +1,8 @@
 ---
-// Water Level Checker — one instrument, two modes (Quick Check /
-// Advanced Planning), one shared implementation across both locales.
-// Thin route wrappers (src/pages/tools/… and src/pages/zh-tw/tools/…)
-// pass `locale`; business logic, engine, and adapters never fork.
+// Buffer Drift Monitor — fifth production instrument (Sprint 008), one
+// shared implementation across both locales. The first instrument built
+// entirely on the mature factory including the Quick Form Generator
+// (QuickForm.astro) — no hand-rolled form markup here at all.
 import '../../shared/instrument.css';
 import CapabilityPanel from '../../components/CapabilityPanel.astro';
 import InstrumentHeader from '../../components/InstrumentHeader.astro';
@@ -14,52 +14,42 @@ import { findById } from '../../platform/catalog';
 import { instruments } from '../../platform/instruments';
 import type { QuickFormFieldConfig } from '../../platform/quick-form';
 import { platformRegistry } from '../../platform/registry';
-import { advancedModeContract } from '../../tools/inventory-buffer-check/modes/advanced/contract';
-import { quickModeContract } from '../../tools/inventory-buffer-check/modes/quick/contract';
+import { bufferDriftAdvancedContract } from '../../tools/buffer-drift-monitor/modes/advanced/contract';
+import { bufferDriftQuickContract } from '../../tools/buffer-drift-monitor/modes/quick/contract';
 
 interface Props {
 	locale?: Locale;
 }
 const { locale = 'en' } = Astro.props;
 const t = getDictionary(locale);
-const rt = t.results.inventoryBufferCheck;
+const rt = t.results.bufferDriftMonitor;
 
-const TOOL_ID = 'inventory-buffer-check';
+const TOOL_ID = 'buffer-drift-monitor';
 const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
-const modes = [quickModeContract, advancedModeContract];
+const modes = [bufferDriftQuickContract, bufferDriftAdvancedContract];
 
 const quickFields: QuickFormFieldConfig[] = [
 	{ id: 'itemName', numeric: false, requiredOnForm: false },
-	{ id: 'currentStock', numeric: true, requiredOnForm: true },
 	{ id: 'monthlyConsumption', numeric: true, requiredOnForm: true },
-	{ id: 'leadTime', numeric: true, requiredOnForm: true, unitFieldId: 'leadTimeUnit' },
-	{ id: 'safetyBuffer', numeric: true, requiredOnForm: true, unitFieldId: 'safetyBufferUnit' },
-	{ id: 'inTransitQuantity', numeric: true, requiredOnForm: false },
-	{ id: 'arrivalTime', numeric: true, requiredOnForm: false, unitFieldId: 'arrivalTimeUnit' },
-];
-
-const relatedLinks = [
-	{ label: t.workspaces['data-intake'].displayName, href: localizePath(locale, '/workspace/data-intake') },
-	{ label: t.workspaces['decision-priority'].displayName, href: localizePath(locale, '/workspace/decision-priority') },
-	{ label: t.nav.items.today, href: localizePath(locale, '/command') },
-	{ label: t.nav.items.continuity, href: localizePath(locale, '/continuity') },
+	{ id: 'intendedBufferMonths', numeric: true, requiredOnForm: true },
+	{ id: 'actualBufferQuantity', numeric: true, requiredOnForm: true },
 ];
 ---
 
 <PlatformShell title={`${entry ? t.instruments[entry.id]?.displayName ?? entry.displayName : 'Instrument'} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
 	{available && entry ? (
 		<article class="instrument-page">
-			<InstrumentHeader entry={entry} locale={locale} subtitle="庫存水位檢查器" />
+			<InstrumentHeader entry={entry} locale={locale} />
 			<CapabilityPanel capabilities={entry.capabilities} locale={locale} />
 			<ModeSwitcher modes={modes} instrumentId={TOOL_ID} locale={locale} />
 
-			<!-- ============ QUICK CHECK ============ -->
+			<!-- ============ QUICK ============ -->
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
 					<form id="quick-form">
-						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel={rt.fields.unit.label} />
+						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
 							<button type="submit">{rt.buttons.runQuick}</button>
 							<button type="button" class="secondary" id="quick-download-input">{rt.buttons.downloadInput}</button>
@@ -71,7 +61,7 @@ const relatedLinks = [
 
 				<details>
 					<summary>{rt.headings.uploadCsv}</summary>
-					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'water-level-quick-input.csv')}</p>
+					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'buffer-drift-quick-input.csv')}</p>
 					<div id="quick-intake"></div>
 				</details>
 
@@ -79,14 +69,13 @@ const relatedLinks = [
 					<h2>{rt.headings.results}</h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
-						<button type="button" class="secondary" id="quick-download-result-csv">{rt.buttons.downloadResultCsv}</button>
-						<button type="button" class="secondary" id="quick-download-result-json">{rt.buttons.downloadResultJson}</button>
+						<button type="button" class="secondary" id="quick-download-result">{rt.buttons.downloadResult}</button>
 					</div>
 				</div>
 			</section>
 
-			<!-- ============ ADVANCED PLANNING ============ -->
-			<section id="panel-advanced" class="mode-panel" aria-label="Advanced Planning" hidden>
+			<!-- ============ ADVANCED ============ -->
+			<section id="panel-advanced" class="mode-panel" aria-label="Advanced Tracking" hidden>
 				<details open>
 					<summary>{rt.headings.manualTable}</summary>
 					<p class="section-note">{rt.labels.manualTableNote}</p>
@@ -111,38 +100,27 @@ const relatedLinks = [
 
 				<details>
 					<summary>{rt.headings.uploadCsv}</summary>
-					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'water-level-advanced-input.csv')}</p>
+					<p class="section-note">{rt.labels.uploadCsvNote.replace('{filename}', 'buffer-drift-advanced-input.csv')}</p>
 					<div id="advanced-intake"></div>
 				</details>
 
 				<div id="adv-results-block" class="results-block" hidden>
-					<h2>{rt.headings.projectionResults}</h2>
+					<h2>{rt.headings.trackingResults}</h2>
 					<div id="adv-results" aria-live="polite"></div>
 					<div class="action-row">
-						<button type="button" class="secondary" id="adv-download-result-csv">{rt.buttons.downloadResultCsv}</button>
+						<button type="button" class="secondary" id="adv-download-result">{rt.buttons.downloadResult}</button>
 					</div>
-				</div>
-			</section>
-
-			<section class="continuity" aria-labelledby="continuity-heading">
-				<h2 id="continuity-heading">{t.common.continuity.heading}</h2>
-				<p class="section-note">{t.common.continuity.note}</p>
-				<div class="continuity-actions planned-actions">
-					<button type="button" disabled>{t.common.continuity.actions['ai-handoff'].label}</button>
-					<span class="planned-tag">{t.common.continuity.planned}</span>
-					<button type="button" disabled>{t.common.continuity.actions['email-copy'].label}</button>
-					<span class="planned-tag">{t.common.continuity.planned}</span>
-					<button type="button" disabled>{t.common.continuity.actions.save.label}</button>
-					<span class="planned-tag">{t.common.continuity.planned}</span>
 				</div>
 			</section>
 
 			<section class="related" aria-labelledby="related-heading">
 				<h2 id="related-heading">{t.common.relatedHeading}</h2>
 				<ul>
-					{relatedLinks.map((link) => (
-						<li><a href={link.href}>{link.label}</a></li>
-					))}
+					<li><a href={localizePath(locale, '/tools/inventory-buffer-check')}>{t.instruments['inventory-buffer-check'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/instruments/lead-time-gap-checker')}>{t.instruments['lead-time-gap-checker'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/instruments/dead-stock-scanner')}>{t.instruments['dead-stock-scanner'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/workspace/data-intake')}>{t.workspaces['data-intake'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/command')}>{t.nav.items.today}</a></li>
 				</ul>
 			</section>
 		</article>
@@ -164,54 +142,52 @@ const relatedLinks = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, toMonthsRaw } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
-	import { advancedAdapter } from '../../platform/adapters/water-level/advanced-adapter.ts';
-	import { quickAdapter } from '../../platform/adapters/water-level/quick-adapter.ts';
-	import { calculateInventoryBuffer } from '../../tools/inventory-buffer-check/calculate.ts';
-	import { projectionToCsv, quickResultsToCsv } from '../../tools/inventory-buffer-check/export.ts';
-	import { advancedModeContract } from '../../tools/inventory-buffer-check/modes/advanced/contract.ts';
-	import { advancedIntakeSchema } from '../../tools/inventory-buffer-check/modes/advanced/schema.ts';
-	import { advancedCsvTemplate } from '../../tools/inventory-buffer-check/modes/advanced/template.ts';
-	import { quickModeContract } from '../../tools/inventory-buffer-check/modes/quick/contract.ts';
-	import { quickIntakeSchema } from '../../tools/inventory-buffer-check/modes/quick/schema.ts';
-	import { quickCsvTemplate } from '../../tools/inventory-buffer-check/modes/quick/template.ts';
-	import { computeRollingProjection } from '../../tools/inventory-buffer-check/projection.ts';
-	import type { ProjectionResult } from '../../tools/inventory-buffer-check/modes/advanced/types.ts';
-	import type { InventoryBufferOutput } from '../../tools/inventory-buffer-check/types.ts';
-	import { validateInventoryBufferInput } from '../../tools/inventory-buffer-check/validate.ts';
+	import { bufferDriftAdvancedAdapter } from '../../platform/adapters/buffer-drift/advanced-adapter.ts';
+	import { bufferDriftQuickAdapter } from '../../platform/adapters/buffer-drift/quick-adapter.ts';
+	import { analyzeBufferDrift } from '../../tools/buffer-drift-monitor/analyze.ts';
+	import { validateBufferDriftInput } from '../../tools/buffer-drift-monitor/validate.ts';
+	import { bufferDriftProjectionToCsv, bufferDriftQuickResultsToCsv } from '../../tools/buffer-drift-monitor/export.ts';
+	import { bufferDriftAdvancedContract } from '../../tools/buffer-drift-monitor/modes/advanced/contract.ts';
+	import { bufferDriftAdvancedSchema } from '../../tools/buffer-drift-monitor/modes/advanced/schema.ts';
+	import { bufferDriftAdvancedTemplate } from '../../tools/buffer-drift-monitor/modes/advanced/template.ts';
+	import { bufferDriftQuickContract } from '../../tools/buffer-drift-monitor/modes/quick/contract.ts';
+	import { bufferDriftQuickSchema } from '../../tools/buffer-drift-monitor/modes/quick/schema.ts';
+	import { bufferDriftQuickTemplate } from '../../tools/buffer-drift-monitor/modes/quick/template.ts';
+	import { computeBufferDriftProjection } from '../../tools/buffer-drift-monitor/projection.ts';
+	import type { BufferDriftProjectionResult } from '../../tools/buffer-drift-monitor/modes/advanced/types.ts';
+	import type { BufferDriftOutput } from '../../tools/buffer-drift-monitor/types.ts';
 	import type { ValidationMessage } from '../../platform/message-codes.ts';
 	import { getDictionary, resolveMessage, type Locale } from '../../i18n/index.ts';
 
 	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
-	const rt = getDictionary(locale).results.inventoryBufferCheck;
+	const rt = getDictionary(locale).results.bufferDriftMonitor;
 	const csvLabels = getDictionary(locale).common.csvIntake;
 	const fieldLabels = Object.fromEntries(Object.entries(rt.fields).map(([id, field]) => [id, field.label]));
 
 	initModeSwitcher();
 
+	function fmt(value: number): string {
+		return String(Math.round(value * 100) / 100);
+	}
+
+	function validationMessageText(e: ValidationMessage): string {
+		const rawField = typeof e.params?.field === 'string' ? e.params.field : undefined;
+		const params = { ...e.params, ...(rawField !== undefined ? { field: fieldLabels[rawField] ?? rawField } : {}) };
+		return resolveMessage(locale, e.code, params);
+	}
+
+	// ---------- QUICK ----------
+
 	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	const quickResultsBlock = document.getElementById('quick-results-block');
 	const quickResults = document.getElementById('quick-results');
-	let lastQuickResults: Array<{ itemName: string; output: InventoryBufferOutput }> = [];
-
-	function formatMonths(value: number): string {
-		return `${value.toFixed(1)} ${rt.labels.monthsUnit}`;
-	}
-	function formatQuantity(value: number): string {
-		return String(Math.round(value * 100) / 100);
-	}
-
-	function depletionDateText(coverageMonths: number): string {
-		const days = Math.round(coverageMonths * 30);
-		const date = new Date();
-		date.setDate(date.getDate() + days);
-		return `${date.toISOString().slice(0, 10)} (~${days} ${rt.labels.daysUnit})`;
-	}
+	let lastQuickResults: Array<{ itemName: string; output: BufferDriftOutput }> = [];
 
 	function renderQuickResults(
-		results: Array<{ itemName: string; output: InventoryBufferOutput }>,
+		results: Array<{ itemName: string; output: BufferDriftOutput }>,
 		failures: Array<{ itemName: string; errors: ValidationMessage[] }>
 	) {
 		if (!quickResults || !quickResultsBlock) return;
@@ -222,11 +198,7 @@ const relatedLinks = [
 			const box = el('div', 'issue-box');
 			box.appendChild(el('p', 'result-item-name', failure.itemName));
 			const list = el('ul');
-			for (const e of failure.errors) {
-				const field = typeof e.params?.field === 'string' ? fieldLabels[e.params.field] ?? e.params.field : undefined;
-				const text = resolveMessage(locale, e.code, { ...e.params, ...(field !== undefined ? { field } : {}) });
-				list.appendChild(el('li', undefined, text));
-			}
+			for (const e of failure.errors) list.appendChild(el('li', undefined, validationMessageText(e)));
 			box.appendChild(list);
 			box.hidden = false;
 			quickResults.appendChild(box);
@@ -237,45 +209,40 @@ const relatedLinks = [
 			wrap.appendChild(el('p', 'result-item-name', itemName));
 			const cards = el('div', 'cards');
 
-			const status = el('div', 'card');
-			status.appendChild(el('h3', undefined, rt.headings.inventoryStatus));
-			const risk = rt.riskStatus[output.riskStatus];
-			status.appendChild(el('p', 'card-value', risk.label));
-			status.appendChild(el('p', 'card-note', risk.description));
-			cards.appendChild(status);
+			const statusCard = el('div', 'card');
+			statusCard.appendChild(el('h3', undefined, rt.headings.driftAssessment));
+			const status = rt.status[output.status];
+			statusCard.appendChild(el('p', 'card-value', status.label));
+			statusCard.appendChild(el('p', 'card-note', status.description));
+			if (output.primaryWarningCode) statusCard.appendChild(el('p', 'card-note', resolveMessage(locale, output.primaryWarningCode)));
+			statusCard.appendChild(el('p', 'card-note', resolveMessage(locale, output.recommendedActionCode)));
+			cards.appendChild(statusCard);
 
-			const coverage = el('div', 'card');
-			coverage.appendChild(el('h3', undefined, rt.headings.coverage));
-			const coverageDl = el('dl');
-			coverageDl.append(
-				el('dt', undefined, rt.labels.currentCoverage),
-				el('dd', undefined, formatMonths(output.currentCoverageMonths)),
-				el('dt', undefined, rt.labels.totalCoverage),
-				el('dd', undefined, output.totalCoverageMonths === undefined ? rt.labels.notProvided : formatMonths(output.totalCoverageMonths)),
-				el('dt', undefined, rt.labels.estimatedDepletion),
-				el('dd', undefined, depletionDateText(output.currentCoverageMonths))
+			const numbers = el('div', 'card');
+			numbers.appendChild(el('h3', undefined, rt.headings.numbers));
+			const dl = el('dl');
+			dl.append(
+				el('dt', undefined, rt.labels.intendedQuantity),
+				el('dd', undefined, fmt(output.intendedBufferQuantity)),
+				el('dt', undefined, rt.labels.actualMonths),
+				el('dd', undefined, output.actualBufferMonths === undefined ? rt.labels.noConsumption : fmt(output.actualBufferMonths)),
+				el('dt', undefined, rt.labels.driftMonths),
+				el('dd', undefined, output.driftMonths === undefined ? rt.labels.notApplicable : fmt(output.driftMonths)),
+				el('dt', undefined, rt.labels.driftQuantity),
+				el('dd', undefined, fmt(output.driftQuantity)),
+				el('dt', undefined, rt.labels.driftPercent),
+				el('dd', undefined, output.driftPercent === undefined ? rt.labels.notApplicable : `${fmt(output.driftPercent)}%`)
 			);
-			coverage.appendChild(coverageDl);
-			cards.appendChild(coverage);
+			numbers.appendChild(dl);
+			cards.appendChild(numbers);
 
-			const rec = el('div', 'card');
-			rec.appendChild(el('h3', undefined, rt.headings.recommendation));
-			const recDl = el('dl');
-			recDl.append(
-				el('dt', undefined, rt.labels.minSafetyStock),
-				el('dd', undefined, formatQuantity(output.minimumSafetyStock)),
-				el('dt', undefined, rt.labels.reorderPoint),
-				el('dd', undefined, formatQuantity(output.reorderPoint))
-			);
-			rec.appendChild(recDl);
-			cards.appendChild(rec);
-
-			const evidence = el('div', 'card');
-			evidence.appendChild(el('h3', undefined, rt.headings.evidenceNotes));
-			const evDl = el('dl');
-			evDl.append(el('dt', undefined, rt.labels.arrivalRiskLabel), el('dd', undefined, rt.arrivalRisk[output.arrivalRisk]));
-			evidence.appendChild(evDl);
-			cards.appendChild(evidence);
+			const reasons = el('div', 'card');
+			reasons.appendChild(el('h3', undefined, rt.labels.reasons));
+			const list = el('ul');
+			// Reason codes are stable machine codes — never translated.
+			for (const code of output.reasonCodes) list.appendChild(el('li', undefined, code));
+			reasons.appendChild(list);
+			cards.appendChild(reasons);
 
 			wrap.appendChild(cards);
 			quickResults.appendChild(wrap);
@@ -285,19 +252,18 @@ const relatedLinks = [
 		quickResultsBlock.scrollIntoView({ block: 'nearest' });
 	}
 
-	/** One result pipeline: adapter items → instrument validate/calculate → cards. */
 	function runQuick(confirmed: ConfirmedIntake) {
-		const adapted = quickAdapter(confirmed);
+		const adapted = bufferDriftQuickAdapter(confirmed);
 		if (!adapted.ok) {
 			renderIssues(quickManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
-		const results: Array<{ itemName: string; output: InventoryBufferOutput }> = [];
+		const results: Array<{ itemName: string; output: BufferDriftOutput }> = [];
 		const failures: Array<{ itemName: string; errors: ValidationMessage[] }> = [];
 		for (const item of adapted.data) {
-			const validated = validateInventoryBufferInput(item.input);
+			const validated = validateBufferDriftInput(item.input);
 			if (validated.valid) {
-				results.push({ itemName: item.itemName, output: calculateInventoryBuffer(validated.data) });
+				results.push({ itemName: item.itemName, output: analyzeBufferDrift(validated.data) });
 			} else {
 				failures.push({ itemName: item.itemName, errors: validated.errors });
 			}
@@ -307,26 +273,12 @@ const relatedLinks = [
 
 	function quickFormRow(): Record<string, string> {
 		if (!quickForm) return {};
-		const values = collectFormValues(quickForm, [
-			'itemName',
-			'currentStock',
-			'monthlyConsumption',
-			'leadTime',
-			'leadTimeUnit',
-			'safetyBuffer',
-			'safetyBufferUnit',
-			'inTransitQuantity',
-			'arrivalTime',
-			'arrivalTimeUnit',
-		]);
+		const values = collectFormValues(quickForm, ['itemName', 'monthlyConsumption', 'intendedBufferMonths', 'actualBufferQuantity']);
 		return {
 			itemName: values.itemName === '' ? 'item-1' : values.itemName,
-			currentStock: values.currentStock,
 			monthlyConsumption: values.monthlyConsumption,
-			leadTimeMonths: toMonthsRaw(values.leadTime, values.leadTimeUnit),
-			safetyBufferMonths: toMonthsRaw(values.safetyBuffer, values.safetyBufferUnit),
-			inTransitQuantity: values.inTransitQuantity,
-			arrivalTimeMonths: toMonthsRaw(values.arrivalTime, values.arrivalTimeUnit),
+			intendedBufferMonths: values.intendedBufferMonths,
+			actualBufferQuantity: values.actualBufferQuantity,
 		};
 	}
 
@@ -334,39 +286,30 @@ const relatedLinks = [
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
 			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
-			const result = validateRecords([record], quickIntakeSchema);
+			const result = validateRecords([record], bufferDriftQuickSchema);
 			if (result.errorCount > 0) {
 				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 				return;
 			}
 			renderIssues(quickManualIssues, [], locale, fieldLabels);
-			const outcome = confirmIntake(quickIntakeSchema, result);
+			const outcome = confirmIntake(bufferDriftQuickSchema, result);
 			if (outcome.confirmed) runQuick(outcome.data);
 		});
 	}
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
-		download(quickModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(quickCsvTemplate, [quickFormRow()]));
+		download(bufferDriftQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(bufferDriftQuickTemplate, [quickFormRow()]));
 	});
 	document.getElementById('quick-download-template')?.addEventListener('click', () => {
-		download('water-level-quick-template.csv', 'text/csv', generateBlankTemplateCsv(quickCsvTemplate));
+		download('buffer-drift-quick-template.csv', 'text/csv', generateBlankTemplateCsv(bufferDriftQuickTemplate));
 	});
-	document.getElementById('quick-download-result-csv')?.addEventListener('click', () => {
+	document.getElementById('quick-download-result')?.addEventListener('click', () => {
 		if (lastQuickResults.length > 0) {
-			download(quickModeContract.exportProfile.resultFilename, 'text/csv', quickResultsToCsv(lastQuickResults));
-		}
-	});
-	document.getElementById('quick-download-result-json')?.addEventListener('click', () => {
-		if (lastQuickResults.length > 0) {
-			download(
-				'water-level-quick-result.json',
-				'application/json',
-				JSON.stringify({ tool: 'inventory-buffer-check', mode: 'quick', results: lastQuickResults }, null, 2)
-			);
+			download(bufferDriftQuickContract.exportProfile.resultFilename, 'text/csv', bufferDriftQuickResultsToCsv(lastQuickResults));
 		}
 	});
 
-	setupCsvIntake('quick-intake', quickIntakeSchema, runQuick, csvLabels, locale, fieldLabels);
+	setupCsvIntake('quick-intake', bufferDriftQuickSchema, runQuick, csvLabels, locale, fieldLabels);
 
 	// ---------- ADVANCED MODE ----------
 
@@ -377,15 +320,15 @@ const relatedLinks = [
 	const advResults = document.getElementById('adv-results');
 	let advPeriods = 3;
 	let advItemSeq = 0;
-	let lastProjection: ProjectionResult | null = null;
+	let lastProjection: BufferDriftProjectionResult | null = null;
 
 	function advRenderHead() {
 		if (!advHead) return;
 		advHead.innerHTML = '';
 		const row = el('tr');
-		row.append(el('th', undefined, rt.fields.itemName.label), el('th', undefined, rt.fields.beginningInventory.label), el('th', undefined, rt.fields.bufferMonths.label));
+		row.append(el('th', undefined, rt.fields.itemName.label), el('th', undefined, rt.fields.intendedBufferMonths.label));
 		for (let p = 1; p <= advPeriods; p++) {
-			row.append(el('th', undefined, `P${p} ${rt.labels.consumption}`), el('th', undefined, `P${p} ${rt.labels.arrivals}`));
+			row.append(el('th', undefined, `P${p} ${rt.fields.monthlyConsumption.label}`), el('th', undefined, `P${p} ${rt.fields.actualBufferQuantity.label}`));
 		}
 		row.append(el('th', undefined, ''));
 		advHead.appendChild(row);
@@ -406,11 +349,10 @@ const relatedLinks = [
 			return cell;
 		};
 		row.appendChild(mkCell('itemName', prefill?.itemName ?? `item-${advItemSeq}`));
-		row.appendChild(mkCell('beginningInventory', prefill?.beginningInventory ?? ''));
-		row.appendChild(mkCell('safetyBufferMonths', prefill?.safetyBufferMonths ?? ''));
+		row.appendChild(mkCell('intendedBufferMonths', prefill?.intendedBufferMonths ?? ''));
 		for (let p = 1; p <= advPeriods; p++) {
 			row.appendChild(mkCell(`consumption-${p}`));
-			row.appendChild(mkCell(`arrival-${p}`));
+			row.appendChild(mkCell(`buffer-${p}`));
 		}
 		const removeCell = el('td');
 		const removeBtn = el('button', 'secondary', rt.buttons.remove) as HTMLButtonElement;
@@ -462,17 +404,16 @@ const relatedLinks = [
 				rows.push({
 					itemName: cells['itemName'] ?? '',
 					period: String(p),
-					beginningInventory: p === 1 ? (cells['beginningInventory'] ?? '') : '',
-					safetyBufferMonths: p === 1 ? (cells['safetyBufferMonths'] ?? '') : '',
-					consumption: cells[`consumption-${p}`] ?? '',
-					arrivalQuantity: cells[`arrival-${p}`] ?? '',
+					intendedBufferMonths: p === 1 ? (cells['intendedBufferMonths'] ?? '') : '',
+					monthlyConsumption: cells[`consumption-${p}`] ?? '',
+					actualBufferQuantity: cells[`buffer-${p}`] ?? '',
 				});
 			}
 			return rows;
 		});
 	}
 
-	function renderProjection(projection: ProjectionResult) {
+	function renderProjection(projection: BufferDriftProjectionResult) {
 		if (!advResults || !advResultsBlock) return;
 		lastProjection = projection;
 		advResults.innerHTML = '';
@@ -482,12 +423,7 @@ const relatedLinks = [
 		const rankList = el('ol');
 		for (const name of projection.riskRanking) {
 			const item = projection.items.find((candidate) => candidate.name === name);
-			const label =
-				item?.riskLevel === 'shortage'
-					? `${name} — ${rt.labels.shortage} (${rt.labels.period} ${item.firstShortagePeriod})`
-					: item?.riskLevel === 'buffer-breach'
-						? `${name} — ${rt.labels.belowBuffer} (${rt.labels.period} ${item.firstBufferBreachPeriod})`
-						: `${name} — ${rt.labels.ok}`;
+			const label = item ? `${name} — ${rt.status[item.latestStatus].label} (${rt.labels.trend}: ${rt.trend[item.trend]})` : name;
 			rankList.appendChild(el('li', undefined, label));
 		}
 		ranking.appendChild(rankList);
@@ -495,16 +431,16 @@ const relatedLinks = [
 
 		for (const item of projection.items) {
 			const wrap = el('div', 'result-set');
-			wrap.appendChild(el('p', 'result-item-name', `${item.name} · begin ${item.beginningInventory}${item.bufferStock !== undefined ? ` · buffer stock ${formatQuantity(item.bufferStock)}` : ''}`));
+			wrap.appendChild(el('p', 'result-item-name', `${item.name} · ${rt.fields.intendedBufferMonths.label} ${fmt(item.intendedBufferMonths)} · ${rt.labels.trend}: ${rt.trend[item.trend]}`));
 			const tableWrap = el('div', 'table-wrap');
 			const table = el('table');
 			const thead = el('thead');
 			const headRow = el('tr');
 			headRow.append(
 				el('th', undefined, rt.labels.period),
-				el('th', undefined, rt.labels.arrivals),
-				el('th', undefined, rt.labels.consumption),
-				el('th', undefined, rt.labels.endingBalance),
+				el('th', undefined, rt.fields.monthlyConsumption.label),
+				el('th', undefined, rt.fields.actualBufferQuantity.label),
+				el('th', undefined, rt.labels.driftPercent),
 				el('th', undefined, rt.labels.status)
 			);
 			thead.appendChild(headRow);
@@ -512,13 +448,14 @@ const relatedLinks = [
 			const tbody = el('tbody');
 			for (const period of item.periods) {
 				const tr = el('tr');
-				const status = period.shortage ? rt.labels.shortage : period.belowBuffer ? rt.labels.belowBuffer : rt.labels.ok;
+				const severe = period.status === 'severely-under-buffered' || period.status === 'severely-over-buffered';
+				const moderate = period.status === 'under-buffered' || period.status === 'over-buffered';
 				tr.append(
 					el('td', undefined, String(period.period)),
-					el('td', undefined, String(period.arrivalQuantity)),
-					el('td', undefined, String(period.consumption)),
-					el('td', undefined, formatQuantity(period.endingBalance)),
-					el('td', period.shortage ? 'cell-shortage' : period.belowBuffer ? 'cell-breach' : undefined, status)
+					el('td', undefined, String(period.monthlyConsumption)),
+					el('td', undefined, String(period.actualBufferQuantity)),
+					el('td', undefined, period.driftPercent === undefined ? rt.labels.notApplicable : `${fmt(period.driftPercent)}%`),
+					el('td', severe ? 'cell-shortage' : moderate ? 'cell-breach' : undefined, rt.status[period.status].label)
 				);
 				tbody.appendChild(tr);
 			}
@@ -532,15 +469,14 @@ const relatedLinks = [
 		advResultsBlock.scrollIntoView({ block: 'nearest' });
 	}
 
-	/** One advanced pipeline: confirmed rows → adapter → projection. */
 	function runAdvanced(confirmed: ConfirmedIntake) {
-		const adapted = advancedAdapter(confirmed);
+		const adapted = bufferDriftAdvancedAdapter(confirmed);
 		if (!adapted.ok) {
 			renderIssues(advManualIssues, adapted.issues, locale, fieldLabels);
 			return;
 		}
 		renderIssues(advManualIssues, [], locale, fieldLabels);
-		renderProjection(computeRollingProjection(adapted.data));
+		renderProjection(computeBufferDriftProjection(adapted.data));
 	}
 
 	document.getElementById('adv-add-item')?.addEventListener('click', () => advAddItemRow());
@@ -549,28 +485,28 @@ const relatedLinks = [
 
 	document.getElementById('adv-run')?.addEventListener('click', () => {
 		const records: RawIntakeRecord[] = advLongRows().map((values) => ({ values, unknown: {} }));
-		const result = validateRecords(records, advancedIntakeSchema);
+		const result = validateRecords(records, bufferDriftAdvancedSchema);
 		if (result.errorCount > 0) {
 			renderIssues(advManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
 			return;
 		}
-		const outcome = confirmIntake(advancedIntakeSchema, result);
+		const outcome = confirmIntake(bufferDriftAdvancedSchema, result);
 		if (outcome.confirmed) runAdvanced(outcome.data);
 	});
 
 	document.getElementById('adv-download-input')?.addEventListener('click', () => {
-		download(advancedModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(advancedCsvTemplate, advLongRows()));
+		download(bufferDriftAdvancedContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(bufferDriftAdvancedTemplate, advLongRows()));
 	});
 	document.getElementById('adv-download-template')?.addEventListener('click', () => {
-		download('water-level-advanced-template.csv', 'text/csv', generateBlankTemplateCsv(advancedCsvTemplate));
+		download('buffer-drift-advanced-template.csv', 'text/csv', generateBlankTemplateCsv(bufferDriftAdvancedTemplate));
 	});
-	document.getElementById('adv-download-result-csv')?.addEventListener('click', () => {
+	document.getElementById('adv-download-result')?.addEventListener('click', () => {
 		if (lastProjection) {
-			download(advancedModeContract.exportProfile.resultFilename, 'text/csv', projectionToCsv(lastProjection));
+			download(bufferDriftAdvancedContract.exportProfile.resultFilename, 'text/csv', bufferDriftProjectionToCsv(lastProjection));
 		}
 	});
 
-	setupCsvIntake('advanced-intake', advancedIntakeSchema, runAdvanced, csvLabels, locale, fieldLabels);
+	setupCsvIntake('advanced-intake', bufferDriftAdvancedSchema, runAdvanced, csvLabels, locale, fieldLabels);
 
 	// Initial advanced table state.
 	advRenderHead();
@@ -607,24 +543,5 @@ const relatedLinks = [
 
 	:global(.cell-breach) {
 		color: var(--color-accent);
-	}
-
-	.continuity-actions {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-sm);
-	}
-
-	.continuity-actions button {
-		background: var(--color-bg-raised);
-		border: var(--border-hairline);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
-		font-size: 11px;
-		letter-spacing: var(--tracking-kicker);
-		text-transform: uppercase;
-		padding: var(--space-xs) var(--space-md);
-		cursor: not-allowed;
 	}
 </style>

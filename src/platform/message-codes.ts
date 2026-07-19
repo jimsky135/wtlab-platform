@@ -43,6 +43,7 @@ export const MESSAGE_CODES = [
 	'ROW_MISSING_ITEM_OR_PERIOD',
 	'DUPLICATE_PERIOD_FOR_ITEM',
 	'ITEM_MISSING_BEGINNING_INVENTORY',
+	'ITEM_MISSING_INTENDED_BUFFER',
 
 	// --- Mode schema validateRecord (instrument-specific intake rules) ---
 	'ARRIVAL_DATE_INVALID_ISO',
@@ -86,6 +87,30 @@ export const MESSAGE_CODES = [
 	'DEAD_STOCK_ACTION_DORMANT',
 	'DEAD_STOCK_ACTION_DEAD_STOCK',
 	'DEAD_STOCK_ACTION_EXCESS_EXPOSURE',
+
+	// --- Lead Time Gap Checker: mode schema / tool validator (Sprint 007) ---
+	'LEAD_TIME_CURRENT_DATE_DEFAULTED',
+	'LEAD_TIME_CURRENT_DATE_INVALID_ISO',
+
+	// --- Lead Time Gap Checker engine narratives (src/tools/lead-time-gap-checker/analyze.ts) ---
+	'LEAD_TIME_WARNING_THIN_MARGIN',
+	'LEAD_TIME_WARNING_GAP_RISK',
+	'LEAD_TIME_WARNING_CRITICAL_GAP',
+	'LEAD_TIME_ACTION_SAFE',
+	'LEAD_TIME_ACTION_WARNING',
+	'LEAD_TIME_ACTION_GAP_RISK',
+	'LEAD_TIME_ACTION_CRITICAL_GAP',
+
+	// --- Buffer Drift Monitor engine narratives (src/tools/buffer-drift-monitor/analyze.ts) ---
+	'BUFFER_DRIFT_WARNING_UNDER',
+	'BUFFER_DRIFT_WARNING_SEVERE_UNDER',
+	'BUFFER_DRIFT_WARNING_OVER',
+	'BUFFER_DRIFT_WARNING_SEVERE_OVER',
+	'BUFFER_DRIFT_ACTION_ON_TARGET',
+	'BUFFER_DRIFT_ACTION_UNDER',
+	'BUFFER_DRIFT_ACTION_SEVERE_UNDER',
+	'BUFFER_DRIFT_ACTION_OVER',
+	'BUFFER_DRIFT_ACTION_SEVERE_OVER',
 ] as const;
 
 export type MessageCode = (typeof MESSAGE_CODES)[number];

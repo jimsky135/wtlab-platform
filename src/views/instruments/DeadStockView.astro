@@ -9,10 +9,12 @@ import '../../shared/instrument.css';
 import CapabilityPanel from '../../components/CapabilityPanel.astro';
 import InstrumentHeader from '../../components/InstrumentHeader.astro';
 import ModeSwitcher from '../../components/ModeSwitcher.astro';
+import QuickForm from '../../components/QuickForm.astro';
 import PlatformShell from '../../layouts/PlatformShell.astro';
 import { getDictionary, localizePath, type Locale } from '../../i18n';
 import { findById } from '../../platform/catalog';
 import { instruments } from '../../platform/instruments';
+import type { QuickFormFieldConfig } from '../../platform/quick-form';
 import { platformRegistry } from '../../platform/registry';
 import { deadStockAdvancedContract } from '../../tools/dead-stock-scanner/modes/advanced/contract';
 import { deadStockQuickContract } from '../../tools/dead-stock-scanner/modes/quick/contract';
@@ -29,21 +31,15 @@ const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
 const modes = [deadStockQuickContract, deadStockAdvancedContract];
 
-const quickFieldOrder = [
-	'item',
-	'currentStock',
-	'recentMonthlyConsumption',
-	'monthsSinceLastMovement',
-	'futureDemand',
-	'unitCost',
-	'thresholdMonths',
-] as const;
-const requiredFields = new Set(['item', 'currentStock', 'recentMonthlyConsumption']);
-const quickFields = quickFieldOrder.map((id) => ({
-	id,
-	required: requiredFields.has(id),
-	...rt.fields[id],
-}));
+const quickFields: QuickFormFieldConfig[] = [
+	{ id: 'item', numeric: false, requiredOnForm: true },
+	{ id: 'currentStock', numeric: true, requiredOnForm: true },
+	{ id: 'recentMonthlyConsumption', numeric: true, requiredOnForm: true },
+	{ id: 'monthsSinceLastMovement', numeric: true, requiredOnForm: false },
+	{ id: 'futureDemand', numeric: true, requiredOnForm: false },
+	{ id: 'unitCost', numeric: true, requiredOnForm: false },
+	{ id: 'thresholdMonths', numeric: true, requiredOnForm: false },
+];
 ---
 
 <PlatformShell title={`${entry ? t.instruments[entry.id]?.displayName ?? entry.displayName : 'Instrument'} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
@@ -58,16 +54,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
 					<form id="quick-form">
-						{quickFields.map((field) => (
-							<div class="field">
-								<label for={`q-${field.id}`}>
-									{field.label}
-									{field.required ? '' : <span class="optional-marker"> ({t.common.optionalWord}{field.optional ? ` — ${field.optional}` : ''})</span>}
-									{field.required && field.optional ? <span class="optional-marker"> ({field.optional})</span> : ''}
-								</label>
-								<input id={`q-${field.id}`} name={field.id} type="text" inputmode={field.id === 'item' ? undefined : 'decimal'} required={field.required} />
-							</div>
-						))}
+						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
 							<button type="submit">{rt.buttons.runQuick}</button>
 							<button type="button" class="secondary" id="quick-download-input">{rt.buttons.downloadInput}</button>
@@ -161,7 +148,7 @@ const quickFields = quickFieldOrder.map((id) => ({
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { deadStockAdvancedAdapter } from '../../platform/adapters/dead-stock/advanced-adapter.ts';
 	import { deadStockQuickAdapter } from '../../platform/adapters/dead-stock/quick-adapter.ts';
@@ -274,19 +261,16 @@ const quickFields = quickFieldOrder.map((id) => ({
 	}
 
 	function quickFormRow(): Record<string, string> {
-		const value = (name: string) => {
-			const field = quickForm?.elements.namedItem(name);
-			return field instanceof HTMLInputElement ? field.value : '';
-		};
-		return {
-			item: value('item'),
-			currentStock: value('currentStock'),
-			recentMonthlyConsumption: value('recentMonthlyConsumption'),
-			monthsSinceLastMovement: value('monthsSinceLastMovement'),
-			futureDemand: value('futureDemand'),
-			unitCost: value('unitCost'),
-			thresholdMonths: value('thresholdMonths'),
-		};
+		if (!quickForm) return {};
+		return collectFormValues(quickForm, [
+			'item',
+			'currentStock',
+			'recentMonthlyConsumption',
+			'monthsSinceLastMovement',
+			'futureDemand',
+			'unitCost',
+			'thresholdMonths',
+		]);
 	}
 
 	if (quickForm) {

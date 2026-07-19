@@ -221,6 +221,18 @@ export interface ResultsText {
 		/** Sprint 006 Task 012 finding: priority was rendered raw/untranslated. */
 		priority: Record<'high' | 'medium' | 'low', string>;
 	};
+	/** Fourth production instrument (Sprint 007) — validates the Instrument Factory. */
+	leadTimeGapChecker: InstrumentResultText & {
+		risk: Record<'safe' | 'warning' | 'gap-risk' | 'critical-gap', { label: string; description: string }>;
+	};
+	/** Fifth production instrument (Sprint 008) — first built on the Quick Form Generator. */
+	bufferDriftMonitor: InstrumentResultText & {
+		status: Record<
+			'on-target' | 'under-buffered' | 'severely-under-buffered' | 'over-buffered' | 'severely-over-buffered',
+			{ label: string; description: string }
+		>;
+		trend: Record<'widening' | 'narrowing' | 'stable', string>;
+	};
 }
 
 export interface Dictionary {

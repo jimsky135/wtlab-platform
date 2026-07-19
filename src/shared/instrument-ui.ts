@@ -76,3 +76,31 @@ export function setupRowTable(bodyId: string, fields: readonly RowTableField[], 
 	addRow();
 	return { addRow, rows };
 }
+
+/**
+ * Reads named form controls (input or select) into a plain record,
+ * trimmed. Pairs with QuickForm.astro (Sprint 008): callers pass the same
+ * field id list used to render the form. Missing/unsupported controls
+ * read as ''.
+ */
+export function collectFormValues(form: HTMLFormElement, fieldIds: readonly string[]): Record<string, string> {
+	const values: Record<string, string> = {};
+	for (const id of fieldIds) {
+		const field = form.elements.namedItem(id);
+		values[id] = field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value.trim() : '';
+	}
+	return values;
+}
+
+/**
+ * Converts a raw numeric string to months when `unit` is 'day' (1 month
+ * = 30 days, the platform's fixed convention — CSV/intake contracts are
+ * always months, never a unit column). Non-numeric or blank values pass
+ * through unchanged so schema-level validation reports the real problem.
+ */
+export function toMonthsRaw(value: string, unit: string): string {
+	const trimmed = value.trim();
+	if (trimmed === '' || unit !== 'day') return trimmed;
+	const parsed = Number(trimmed);
+	return Number.isFinite(parsed) ? String(parsed / 30) : trimmed;
+}
