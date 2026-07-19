@@ -233,6 +233,14 @@ export interface ResultsText {
 		>;
 		trend: Record<'widening' | 'narrowing' | 'stable', string>;
 	};
+	/** Sixth production instrument (Sprint 009) — Supplier × Material dependency modeling. */
+	supplierDependencyRadar: InstrumentResultText & {
+		overallRisk: Record<'low' | 'moderate' | 'high' | 'critical', { label: string; description: string }>;
+		supplierDependencyLevel: Record<'low' | 'moderate' | 'high' | 'critical', string>;
+		qualificationDependencyLevel: Record<'low' | 'moderate' | 'high' | 'critical', string>;
+		switchingReadiness: Record<'immediate' | 'within-1-month' | 'within-3-months' | 'six-plus-months' | 'unknown', string>;
+		supplyDependencyCondition: Record<'multi-source' | 'single-source' | 'qualified-single-source' | 'critical-single-source', string>;
+	};
 }
 
 export interface Dictionary {

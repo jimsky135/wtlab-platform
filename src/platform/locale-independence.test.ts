@@ -15,6 +15,9 @@ import type { ArrivalAnalysisInput } from '../tools/arrival-collision-detector/t
 import { analyzeDeadStock } from '../tools/dead-stock-scanner/analyze.ts';
 import { validateDeadStockInput } from '../tools/dead-stock-scanner/validate.ts';
 import { DEFAULT_THRESHOLDS, type DeadStockAnalysisInput } from '../tools/dead-stock-scanner/types.ts';
+import { analyzeSupplierDependency } from '../tools/supplier-dependency-radar/analyze.ts';
+import { validateSupplierDependencyQuickInput } from '../tools/supplier-dependency-radar/validate.ts';
+import type { SupplierDependencyQuickRawInput } from '../tools/supplier-dependency-radar/types.ts';
 import { parseCsv } from './intake/csv.ts';
 import { validateRecords } from './intake/validate.ts';
 import type { IntakeSchema } from './intake/types.ts';
@@ -30,6 +33,7 @@ const LOCALE_BLIND_DIRS = [
 	'tools/inventory-buffer-check',
 	'tools/lead-time-gap-checker',
 	'tools/buffer-drift-monitor',
+	'tools/supplier-dependency-radar',
 ];
 
 function listTsFiles(dir: string): string[] {
@@ -168,6 +172,57 @@ const SCHEMA: IntakeSchema = {
 	title: 'Fixture',
 	fields: [{ id: 'quantity', label: 'Quantity', type: 'number', required: true, min: 0 }],
 };
+
+function supplierDependencyInput(): SupplierDependencyQuickRawInput {
+	return {
+		supplierName: 'acme',
+		materialCount: '5',
+		criticalMaterialCount: '2',
+		supplierSharePercent: '90',
+		singleSourceMaterialCount: '2',
+		qualifiedSingleSourceMaterialCount: '1',
+		alternativeSupplierAvailable: 'true',
+		qualifiedAlternativeAvailable: 'false',
+		qualificationRequired: 'true',
+		qualificationLeadTimeMonths: '9',
+		customerApprovalRequired: 'true',
+		trialProductionRequired: '',
+		averageLeadTimeDays: '45',
+		averageDelayDays: '5',
+		deliveryReliabilityPercent: '92',
+		agreementCancellationCount: '0',
+		annualExposureValue: '250000',
+		estimatedSwitchingTime: '',
+		notes: '',
+	};
+}
+
+test('supplier dependency engine: two runs of the same input produce identical reason/action codes (no hidden locale state)', () => {
+	const validatedA = validateSupplierDependencyQuickInput(supplierDependencyInput());
+	const validatedB = validateSupplierDependencyQuickInput(supplierDependencyInput());
+	assert.equal(validatedA.valid, true);
+	assert.equal(validatedB.valid, true);
+	if (validatedA.valid && validatedB.valid) {
+		const a = analyzeSupplierDependency(validatedA.data);
+		const b = analyzeSupplierDependency(validatedB.data);
+		assert.deepEqual(a, b);
+		assert.equal(a.overallRisk, 'critical');
+		for (const code of a.reasonCodes) assert.match(code, /^[A-Z_]+$/, 'codes are a stable SCREAMING_SNAKE_CASE vocabulary, not prose');
+	}
+});
+
+test('supplier dependency validator: same invalid input produces the same error codes', () => {
+	const bad = supplierDependencyInput();
+	bad.supplierName = '';
+	bad.supplierSharePercent = '-5';
+	const first = validateSupplierDependencyQuickInput(bad);
+	const second = validateSupplierDependencyQuickInput(bad);
+	assert.equal(first.valid, false);
+	assert.equal(second.valid, false);
+	if (!first.valid && !second.valid) {
+		assert.deepEqual(first.errors.map((e) => e.code).sort(), second.errors.map((e) => e.code).sort());
+	}
+});
 
 test('Shared Intake validation issues carry a stable code and are unaffected by locale (no locale param exists)', () => {
 	const result = validateRecords([{ values: {}, unknown: {} }], SCHEMA);

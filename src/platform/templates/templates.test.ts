@@ -10,6 +10,8 @@ import { leadTimeGapAdvancedSchema } from '../../tools/lead-time-gap-checker/mod
 import { leadTimeGapQuickSchema } from '../../tools/lead-time-gap-checker/modes/quick/schema.ts';
 import { bufferDriftAdvancedSchema } from '../../tools/buffer-drift-monitor/modes/advanced/schema.ts';
 import { bufferDriftQuickSchema } from '../../tools/buffer-drift-monitor/modes/quick/schema.ts';
+import { supplierDependencyAdvancedSchema } from '../../tools/supplier-dependency-radar/modes/advanced/schema.ts';
+import { supplierDependencyQuickSchema } from '../../tools/supplier-dependency-radar/modes/quick/schema.ts';
 import { parseCsv } from '../intake/csv.ts';
 import { suggestMapping, validateMapping } from '../intake/mapping.ts';
 import type { IntakeSchema } from '../intake/types.ts';
@@ -28,6 +30,8 @@ const schemaByTemplate: Record<string, IntakeSchema> = {
 	'lead-time-gap-advanced-input': leadTimeGapAdvancedSchema,
 	'buffer-drift-quick-input': bufferDriftQuickSchema,
 	'buffer-drift-advanced-input': bufferDriftAdvancedSchema,
+	'supplier-dependency-quick-input': supplierDependencyQuickSchema,
+	'supplier-dependency-advanced-input': supplierDependencyAdvancedSchema,
 };
 
 test('template ids and filenames are unique', () => {

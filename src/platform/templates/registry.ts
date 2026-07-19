@@ -11,6 +11,8 @@ import { advancedCsvTemplate } from '../../tools/inventory-buffer-check/modes/ad
 import { quickCsvTemplate } from '../../tools/inventory-buffer-check/modes/quick/template.ts';
 import { leadTimeGapAdvancedTemplate } from '../../tools/lead-time-gap-checker/modes/advanced/template.ts';
 import { leadTimeGapQuickTemplate } from '../../tools/lead-time-gap-checker/modes/quick/template.ts';
+import { supplierDependencyAdvancedTemplate } from '../../tools/supplier-dependency-radar/modes/advanced/template.ts';
+import { supplierDependencyQuickTemplate } from '../../tools/supplier-dependency-radar/modes/quick/template.ts';
 import type { CsvTemplateDefinition } from './types.ts';
 
 export const csvTemplates: readonly CsvTemplateDefinition[] = [
@@ -24,6 +26,8 @@ export const csvTemplates: readonly CsvTemplateDefinition[] = [
 	leadTimeGapAdvancedTemplate,
 	bufferDriftQuickTemplate,
 	bufferDriftAdvancedTemplate,
+	supplierDependencyQuickTemplate,
+	supplierDependencyAdvancedTemplate,
 ];
 
 export function findTemplateById(templateId: string): CsvTemplateDefinition | undefined {

@@ -35,6 +35,10 @@ import { bufferDriftAdvancedSchema } from '../tools/buffer-drift-monitor/modes/a
 import { bufferDriftAdvancedTemplate } from '../tools/buffer-drift-monitor/modes/advanced/template.ts';
 import { bufferDriftQuickSchema } from '../tools/buffer-drift-monitor/modes/quick/schema.ts';
 import { bufferDriftQuickTemplate } from '../tools/buffer-drift-monitor/modes/quick/template.ts';
+import { supplierDependencyAdvancedSchema } from '../tools/supplier-dependency-radar/modes/advanced/schema.ts';
+import { supplierDependencyAdvancedTemplate } from '../tools/supplier-dependency-radar/modes/advanced/template.ts';
+import { supplierDependencyQuickSchema } from '../tools/supplier-dependency-radar/modes/quick/schema.ts';
+import { supplierDependencyQuickTemplate } from '../tools/supplier-dependency-radar/modes/quick/template.ts';
 
 const INSTRUMENTS: Array<{
 	name: string;
@@ -109,6 +113,58 @@ const INSTRUMENTS: Array<{
 		schema: bufferDriftAdvancedSchema,
 		template: bufferDriftAdvancedTemplate,
 		expectedFieldIds: ['itemName', 'period', 'intendedBufferMonths', 'monthlyConsumption', 'actualBufferQuantity'],
+	},
+	{
+		name: 'Supplier Dependency Radar — quick',
+		schema: supplierDependencyQuickSchema,
+		template: supplierDependencyQuickTemplate,
+		expectedFieldIds: [
+			'supplierName',
+			'materialCount',
+			'criticalMaterialCount',
+			'supplierSharePercent',
+			'singleSourceMaterialCount',
+			'qualifiedSingleSourceMaterialCount',
+			'alternativeSupplierAvailable',
+			'qualifiedAlternativeAvailable',
+			'qualificationRequired',
+			'qualificationLeadTimeMonths',
+			'customerApprovalRequired',
+			'trialProductionRequired',
+			'averageLeadTimeDays',
+			'averageDelayDays',
+			'deliveryReliabilityPercent',
+			'agreementCancellationCount',
+			'annualExposureValue',
+			'estimatedSwitchingTime',
+			'notes',
+		],
+	},
+	{
+		name: 'Supplier Dependency Radar — advanced',
+		schema: supplierDependencyAdvancedSchema,
+		template: supplierDependencyAdvancedTemplate,
+		expectedFieldIds: [
+			'supplierName',
+			'materialName',
+			'materialCategory',
+			'supplierSharePercent',
+			'criticalMaterial',
+			'singleSource',
+			'alternativeSupplierAvailable',
+			'qualifiedAlternativeAvailable',
+			'qualificationRequired',
+			'qualificationLeadTimeMonths',
+			'customerApprovalRequired',
+			'trialProductionRequired',
+			'leadTimeDays',
+			'averageDelayDays',
+			'deliveryReliabilityPercent',
+			'agreementCancellationCount',
+			'annualUsage',
+			'annualExposureValue',
+			'optionalNotes',
+		],
 	},
 ];
 

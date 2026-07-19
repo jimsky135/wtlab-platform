@@ -7,6 +7,7 @@ import { bufferDriftMonitorTool } from '../tools/buffer-drift-monitor/index.ts';
 import { deadStockTool } from '../tools/dead-stock-scanner/index.ts';
 import { inventoryBufferCheckTool } from '../tools/inventory-buffer-check/index.ts';
 import { leadTimeGapCheckerTool } from '../tools/lead-time-gap-checker/index.ts';
+import { supplierDependencyRadarTool } from '../tools/supplier-dependency-radar/index.ts';
 import { createToolRegistry } from './tool-registry.ts';
 
 export const platformRegistry = createToolRegistry([
@@ -15,4 +16,5 @@ export const platformRegistry = createToolRegistry([
 	deadStockTool,
 	leadTimeGapCheckerTool,
 	bufferDriftMonitorTool,
+	supplierDependencyRadarTool,
 ]);

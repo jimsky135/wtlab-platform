@@ -122,7 +122,7 @@ test('dictionaries report their own locale and a distinct html lang', () => {
 	assert.equal(getDictionary('zh-TW').htmlLang, 'zh-Hant-TW');
 });
 
-test('per-instrument result dictionaries exist for all five production instruments in both locales', () => {
+test('per-instrument result dictionaries exist for all six production instruments in both locales', () => {
 	for (const locale of SUPPORTED_LOCALES) {
 		const results = getDictionary(locale).results;
 		assert.ok(results.inventoryBufferCheck);
@@ -130,7 +130,19 @@ test('per-instrument result dictionaries exist for all five production instrumen
 		assert.ok(results.deadStockScanner);
 		assert.ok(results.leadTimeGapChecker);
 		assert.ok(results.bufferDriftMonitor);
+		assert.ok(results.supplierDependencyRadar);
 	}
+});
+
+test('supplier dependency radar: reason codes and recommended action codes are identical across locales (never translated)', () => {
+	// reasonCodes/recommendedActionCodes are raw domain vocabulary (types.ts),
+	// not part of the Dictionary — this asserts the engine itself, not i18n,
+	// which is the point: there is no locale-specific variant to compare.
+	const en = getDictionary('en').results.supplierDependencyRadar;
+	const zh = getDictionary('zh-TW').results.supplierDependencyRadar;
+	assert.deepEqual(Object.keys(en.overallRisk).sort(), Object.keys(zh.overallRisk).sort());
+	assert.deepEqual(Object.keys(en.supplyDependencyCondition).sort(), Object.keys(zh.supplyDependencyCondition).sort());
+	assert.deepEqual(Object.keys(en.switchingReadiness).sort(), Object.keys(zh.switchingReadiness).sort());
 });
 
 // ---- structured messages (Sprint 006, Task 015/016) ----
