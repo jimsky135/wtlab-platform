@@ -23,6 +23,10 @@ export const en = {
 			implementationState: { placeholder: 'Placeholder', partial: 'Partial build', implemented: 'Implemented' },
 			disabled: 'Disabled',
 		},
+		utilityStatusTag: {
+			status: { 'coming-soon': 'Coming Soon', available: 'Available', archived: 'Archived' },
+			implementationState: { placeholder: 'Placeholder', implemented: 'Implemented' },
+		},
 		capabilityPanel: {
 			heading: 'Capabilities',
 			future: 'Future',
@@ -74,7 +78,7 @@ export const en = {
 	// ---- navigation ----
 	nav: {
 		brandSuffix: 'Lab',
-		items: { today: 'Today', instruments: 'Instruments', workspaces: 'Workspaces', continuity: 'Continuity', about: 'About' },
+		items: { today: 'Today', instruments: 'Instruments', utilities: 'Utilities', workspaces: 'Workspaces', continuity: 'Continuity', about: 'About' },
 		headerNote: 'Save / Export — planned',
 		languageSwitcher: { en: 'EN', zhTW: '繁中' },
 	},
@@ -82,8 +86,9 @@ export const en = {
 	// ---- homepage ----
 	home: {
 		tagline: 'A modular platform of independent tools and widgets.',
-		toolsKicker: 'Tools',
+		decisionInstrumentsKicker: 'Decision Instruments',
 		emptyState: 'No active tools yet.',
+		utilitiesKicker: 'Utilities',
 	},
 
 	instrumentsPage: {
@@ -104,6 +109,28 @@ export const en = {
 		relatedPrototypesNote: '(visual reference only, not part of this build)',
 		notice: 'This instrument is planned but not yet implemented. Nothing on this page performs a calculation.',
 		backLink: '← Back to Instrument Library',
+	},
+
+	// ---- utilities (Sprint 010A — Utilities Platform Foundation) ----
+	utilitiesPage: {
+		kicker: 'Utilities Library',
+		heading: 'Utilities',
+		lede: 'Utilities prepare data and automate repetitive work. Unlike Decision Instruments, they never analyze or decide — input goes through a transformation and comes out the other side.',
+		openUtility: 'Open Utility',
+		comingSoon: 'Coming Soon',
+		categoryLabel: 'Category',
+		inputTypeLabel: 'Input',
+		outputTypeLabel: 'Output',
+	},
+
+	utilityPlaceholder: {
+		kickerPrefix: 'Utility',
+		purposeLabel: 'Purpose',
+		categoryLabel: 'Category',
+		inputTypeLabel: 'Input',
+		outputTypeLabel: 'Output',
+		notice: 'This utility is planned but not yet implemented. Nothing on this page performs a transformation.',
+		backLink: '← Back to Utilities Library',
 	},
 
 	workspacesPage: {
@@ -272,6 +299,14 @@ export const en = {
 			displayName: 'Buffer Drift Monitor',
 			description: 'Track how actual safety buffers drift away from their intended levels over time.',
 			coreQuestion: 'Are our safety buffers still the size we decided they should be?',
+		},
+	},
+
+	// ---- utilities (catalog presentation overlay, Sprint 010A) ----
+	utilities: {
+		'excel-preprocessor': {
+			displayName: 'Excel Preprocessor',
+			description: 'Clean, normalize, and prepare raw Excel files before they enter any downstream workflow.',
 		},
 	},
 

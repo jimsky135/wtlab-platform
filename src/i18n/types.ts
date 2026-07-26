@@ -14,6 +14,13 @@ export interface CatalogEntryText {
 	coreQuestion: string;
 }
 
+/** Utilities have no coreQuestion — they transform data, they don't pose a decision question (Sprint 010A). */
+export interface UtilityCatalogEntryText {
+	displayName: string;
+	shortName?: string;
+	description: string;
+}
+
 export interface ModeText {
 	label: string;
 	description: string;
@@ -23,6 +30,12 @@ export interface StatusTagText {
 	status: Record<'draft' | 'prototype' | 'beta' | 'available' | 'archived', string>;
 	implementationState: Record<'placeholder' | 'partial' | 'implemented', string>;
 	disabled: string;
+}
+
+/** Sprint 010A — Utilities' own, simpler status vocabulary (see platform/utility-catalog.ts). */
+export interface UtilityStatusTagText {
+	status: Record<'coming-soon' | 'available' | 'archived', string>;
+	implementationState: Record<'placeholder' | 'implemented', string>;
 }
 
 export interface CapabilityPanelText {
@@ -40,6 +53,7 @@ export interface CommonText {
 	versionLabel: string;
 	optionalWord: string;
 	statusTag: StatusTagText;
+	utilityStatusTag: UtilityStatusTagText;
 	capabilityPanel: CapabilityPanelText;
 	modeHeading: string;
 	relatedHeading: string;
@@ -73,6 +87,7 @@ export interface NavigationText {
 	items: {
 		today: string;
 		instruments: string;
+		utilities: string;
 		workspaces: string;
 		continuity: string;
 		about: string;
@@ -104,6 +119,29 @@ export interface InstrumentPlaceholderText {
 	backLink: string;
 }
 
+/** Sprint 010A — Utilities Platform Foundation. Utilities Library listing page. */
+export interface UtilitiesPageText {
+	kicker: string;
+	heading: string;
+	lede: string;
+	openUtility: string;
+	comingSoon: string;
+	categoryLabel: string;
+	inputTypeLabel: string;
+	outputTypeLabel: string;
+}
+
+/** Sprint 010A — shared chrome for any not-yet-implemented Utility (src/views/utilities/UtilityShell.astro). */
+export interface UtilityPlaceholderText {
+	kickerPrefix: string;
+	purposeLabel: string;
+	categoryLabel: string;
+	inputTypeLabel: string;
+	outputTypeLabel: string;
+	notice: string;
+	backLink: string;
+}
+
 export interface WorkspacesPageText {
 	kicker: string;
 	heading: string;
@@ -121,8 +159,10 @@ export interface WorkspacePlaceholderText {
 
 export interface HomeText {
 	tagline: string;
-	toolsKicker: string;
+	decisionInstrumentsKicker: string;
 	emptyState: string;
+	/** Sprint 010A — parallel Utilities section on the homepage. */
+	utilitiesKicker: string;
 }
 
 export interface AboutText {
@@ -262,6 +302,12 @@ export interface Dictionary {
 	instruments: Record<string, CatalogEntryText>;
 	/** Catalog presentation overlay, keyed by workspace id. */
 	workspaces: Record<string, CatalogEntryText>;
+	/** Sprint 010A — Utilities Library listing page. */
+	utilitiesPage: UtilitiesPageText;
+	/** Sprint 010A — shared not-yet-implemented Utility chrome. */
+	utilityPlaceholder: UtilityPlaceholderText;
+	/** Catalog presentation overlay, keyed by utility id (Sprint 010A). */
+	utilities: Record<string, UtilityCatalogEntryText>;
 	/** Mode presentation overlay, keyed by `${instrumentId}.${modeId}`. */
 	modes: Record<string, ModeText>;
 	results: ResultsText;

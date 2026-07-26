@@ -134,6 +134,15 @@ test('per-instrument result dictionaries exist for all six production instrument
 	}
 });
 
+test('Sprint 010A — every registered Utility has a presentation overlay entry in both locales', () => {
+	for (const locale of SUPPORTED_LOCALES) {
+		const dict = getDictionary(locale);
+		assert.ok(dict.utilities['excel-preprocessor'], `${locale} is missing the excel-preprocessor utility overlay`);
+		assert.ok(dict.nav.items.utilities.trim().length > 0);
+		assert.ok(dict.home.utilitiesKicker.trim().length > 0);
+	}
+});
+
 test('supplier dependency radar: reason codes and recommended action codes are identical across locales (never translated)', () => {
 	// reasonCodes/recommendedActionCodes are raw domain vocabulary (types.ts),
 	// not part of the Dictionary — this asserts the engine itself, not i18n,

@@ -1,0 +1,15 @@
+---
+// Thin Traditional Chinese route wrapper — same shared view as English.
+import UtilityPlaceholderView from '../../../views/UtilityPlaceholderView.astro';
+import { utilities } from '../../../platform/utilities.ts';
+
+export function getStaticPaths() {
+	return utilities
+		.filter((utility) => utility.route.startsWith('/utilities/') && utility.implementationState === 'placeholder')
+		.map((utility) => ({ params: { slug: utility.slug }, props: { utility } }));
+}
+
+const { utility } = Astro.props;
+---
+
+<UtilityPlaceholderView utility={utility} locale="zh-TW" />

@@ -8,7 +8,7 @@ import { equivalentPath, getDictionary, localizePath, type Locale } from '../i18
 
 interface Props {
 	title: string;
-	section?: 'today' | 'instruments' | 'workspaces' | 'continuity' | 'about';
+	section?: 'today' | 'instruments' | 'utilities' | 'workspaces' | 'continuity' | 'about';
 	/** Wide pages (Command Center) can opt into the wide content width. */
 	wide?: boolean;
 	locale?: Locale;
@@ -29,6 +29,7 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 const navItems = [
 	{ id: 'today', label: t.nav.items.today, href: localizePath(locale, '/command') },
 	{ id: 'instruments', label: t.nav.items.instruments, href: localizePath(locale, '/instruments') },
+	{ id: 'utilities', label: t.nav.items.utilities, href: localizePath(locale, '/utilities') },
 	{ id: 'workspaces', label: t.nav.items.workspaces, href: localizePath(locale, '/workspaces') },
 	{ id: 'continuity', label: t.nav.items.continuity, href: localizePath(locale, '/continuity') },
 	{ id: 'about', label: t.nav.items.about, href: localizePath(locale, '/about') },

@@ -21,6 +21,10 @@ export const zhTW = {
 			implementationState: { placeholder: '佔位', partial: '部分完成', implemented: '已實作' },
 			disabled: '未啟用',
 		},
+		utilityStatusTag: {
+			status: { 'coming-soon': '即將推出', available: '已上線', archived: '已封存' },
+			implementationState: { placeholder: '佔位', implemented: '已實作' },
+		},
 		capabilityPanel: {
 			heading: '功能',
 			future: '未來',
@@ -68,15 +72,16 @@ export const zhTW = {
 
 	nav: {
 		brandSuffix: 'Lab',
-		items: { today: '今日', instruments: '工具庫', workspaces: '工作區', continuity: '延續性', about: '關於' },
+		items: { today: '今日', instruments: '工具庫', utilities: '公用工具', workspaces: '工作區', continuity: '延續性', about: '關於' },
 		headerNote: '儲存／匯出 — 規劃中',
 		languageSwitcher: { en: 'EN', zhTW: '繁中' },
 	},
 
 	home: {
 		tagline: '一個由獨立工具組成的模組化平台。',
-		toolsKicker: '工具',
+		decisionInstrumentsKicker: '決策工具',
 		emptyState: '目前尚無已上線工具。',
+		utilitiesKicker: '公用工具',
 	},
 
 	instrumentsPage: {
@@ -97,6 +102,28 @@ export const zhTW = {
 		relatedPrototypesNote: '（僅供視覺參考，非本次建置內容）',
 		notice: '此工具已規劃但尚未實作。此頁面不會執行任何計算。',
 		backLink: '← 返回工具庫',
+	},
+
+	// ---- 公用工具（Sprint 010A — Utilities Platform Foundation）----
+	utilitiesPage: {
+		kicker: '公用工具庫',
+		heading: '公用工具',
+		lede: '公用工具負責整理資料與自動化重複性工作。與決策工具不同，公用工具不做任何分析或判斷——輸入經過轉換後直接產出結果。',
+		openUtility: '開啟公用工具',
+		comingSoon: '即將推出',
+		categoryLabel: '分類',
+		inputTypeLabel: '輸入',
+		outputTypeLabel: '輸出',
+	},
+
+	utilityPlaceholder: {
+		kickerPrefix: '公用工具',
+		purposeLabel: '用途',
+		categoryLabel: '分類',
+		inputTypeLabel: '輸入',
+		outputTypeLabel: '輸出',
+		notice: '此公用工具已規劃但尚未實作。此頁面不會執行任何轉換。',
+		backLink: '← 返回公用工具庫',
 	},
 
 	workspacesPage: {
@@ -260,6 +287,14 @@ export const zhTW = {
 			displayName: 'Buffer Drift Monitor',
 			description: '追蹤實際安全庫存是否逐漸偏離原先設定的水準。',
 			coreQuestion: '我們的安全庫存是否仍維持在原本決定的水準？',
+		},
+	},
+
+	// ---- 公用工具（catalog 呈現層，Sprint 010A）----
+	utilities: {
+		'excel-preprocessor': {
+			displayName: 'Excel Preprocessor',
+			description: '在原始 Excel 檔案進入任何下游流程之前，先清理、標準化並整理好資料。',
 		},
 	},
 

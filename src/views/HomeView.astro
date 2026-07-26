@@ -8,6 +8,7 @@ import { equivalentPath, getDictionary, localizePath, type Locale } from '../i18
 import { findById } from '../platform/catalog';
 import { instruments } from '../platform/instruments';
 import { platformRegistry } from '../platform/registry';
+import { utilities } from '../platform/utilities.ts';
 
 interface Props {
 	locale?: Locale;
@@ -27,6 +28,20 @@ const availableTools = platformRegistry.getAvailable().map((tool) => {
 		displayName: text.displayName,
 		description: text.description,
 		category: tool.metadata.category,
+	};
+});
+
+// Utilities are shown regardless of status (including "coming soon") — the
+// homepage previews what's on the way, unlike the Decision Instruments
+// section above which only lists what's actually usable right now.
+const homeUtilities = utilities.map((utility) => {
+	const text = t.utilities[utility.id] ?? utility;
+	return {
+		route: localizePath(locale, utility.route),
+		displayName: text.displayName,
+		description: text.description,
+		category: utility.category,
+		statusLabel: t.common.utilityStatusTag.status[utility.status],
 	};
 });
 
@@ -68,7 +83,7 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 			<p class="tagline">{t.home.tagline}</p>
 
 			<section class="tools">
-				<p class="kicker">{t.home.toolsKicker}</p>
+				<p class="kicker">{t.home.decisionInstrumentsKicker}</p>
 				{availableTools.length === 0 ? (
 					<p class="empty-state">{t.home.emptyState}</p>
 				) : (
@@ -79,6 +94,25 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 									<h3>{tool.displayName}</h3>
 									<p class="tool-description">{tool.description}</p>
 									<p class="tool-category">{tool.category}</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				)}
+			</section>
+
+			<section class="tools utilities">
+				<p class="kicker">{t.home.utilitiesKicker}</p>
+				{homeUtilities.length === 0 ? (
+					<p class="empty-state">{t.home.emptyState}</p>
+				) : (
+					<ul class="tool-list">
+						{homeUtilities.map((utility) => (
+							<li class="tool-card">
+								<a href={utility.route}>
+									<h3>{utility.displayName}</h3>
+									<p class="tool-description">{utility.description}</p>
+									<p class="tool-category">{utility.category} · {utility.statusLabel}</p>
 								</a>
 							</li>
 						))}
@@ -138,6 +172,10 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 	.tools {
 		border-top: var(--border-hairline);
 		padding-top: var(--space-lg);
+	}
+
+	.tools.utilities {
+		margin-top: var(--space-xl);
 	}
 
 	.kicker {

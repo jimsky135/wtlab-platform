@@ -1,0 +1,31 @@
+---
+// Registry-driven placeholder for utilities known in the architecture but
+// not implemented yet. Shared by both locale route files
+// (src/pages/utilities/[slug].astro, src/pages/zh-tw/utilities/[slug].astro).
+// Mirrors InstrumentPlaceholderView.astro's role but wraps content in
+// UtilityShell (Sprint 010A) rather than duplicating header/meta markup.
+import UtilityShell from './utilities/UtilityShell.astro';
+import { getDictionary, type Locale } from '../i18n';
+import type { UtilityEntry } from '../platform/utility-catalog.ts';
+
+interface Props {
+	utility: UtilityEntry;
+	locale?: Locale;
+}
+
+const { utility, locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+---
+
+<UtilityShell utility={utility} locale={locale}>
+	<p class="notice">{t.utilityPlaceholder.notice}</p>
+</UtilityShell>
+
+<style>
+	.notice {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+</style>
