@@ -69,16 +69,11 @@ test('every utility uses an allowed implementation state', () => {
 	}
 });
 
-test('Sprint 010A ships the platform only — every utility stays a placeholder', () => {
-	for (const utility of utilities) {
-		assert.equal(utility.implementationState, 'placeholder', `${utility.id} must stay unimplemented this sprint`);
-		assert.equal(utility.status, 'coming-soon', `${utility.id} must stay coming-soon this sprint`);
-	}
-});
-
-test('Excel Preprocessor is registered as the first Utility, coming in Sprint 010B', () => {
+test('Excel Preprocessor shipped its Sprint 010B Reality Validation — implemented and available', () => {
 	const entry = findUtilityById(utilities, 'excel-preprocessor');
 	assert.ok(entry, 'excel-preprocessor missing from utility catalog');
+	assert.equal(entry.implementationState, 'implemented');
+	assert.equal(entry.status, 'available');
 	assert.equal(entry.name, 'Excel Preprocessor');
 	assert.equal(entry.category, 'data-preparation');
 	assert.equal(entry.route, '/utilities/excel-preprocessor');

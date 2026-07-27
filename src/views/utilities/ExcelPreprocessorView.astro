@@ -1,0 +1,323 @@
+---
+// Excel Preprocessor — Sprint 010B Reality Validation, the first real
+// Utility. Wraps UtilityShell (Sprint 010A) with the one fixed workflow:
+// Upload → Processing Status → Transformation Summary → Download. All
+// processing is browser-local — the file never leaves this tab, same
+// privacy principle as every Instrument's CSV intake. No business logic
+// lives in this file's frontmatter; the transformation itself is in
+// src/utilities/excel-preprocessor/ (independent of the Instrument Factory).
+import UtilityShell from './UtilityShell.astro';
+import { getDictionary, type Locale } from '../../i18n';
+import { findUtilityById } from '../../platform/utility-catalog.ts';
+import { utilities } from '../../platform/utilities.ts';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const rt = t.excelPreprocessor;
+const utility = findUtilityById(utilities, 'excel-preprocessor')!;
+---
+
+<UtilityShell utility={utility} locale={locale}>
+	<div id="xlp-app">
+		<section aria-labelledby="xlp-upload-heading">
+			<h2 id="xlp-upload-heading">{rt.uploadHeading}</h2>
+			<div id="xlp-dropzone" class="dropzone" tabindex="0" role="button" aria-label={rt.chooseFileButton}>
+				<p>{rt.uploadHint}</p>
+				<button type="button" id="xlp-choose">{rt.chooseFileButton}</button>
+				<input type="file" id="xlp-file-input" accept=".mhtml,.mht" hidden />
+			</div>
+		</section>
+
+		<p id="xlp-status" class="status-line" aria-live="polite">{rt.statusLabels.idle}</p>
+
+		<div id="xlp-issues" class="issue-box" aria-live="polite" hidden></div>
+
+		<div id="xlp-summary" hidden>
+			<h2>{rt.summaryHeading}</h2>
+			<dl id="xlp-summary-body" class="summary-body"></dl>
+			<div class="action-row">
+				<button type="button" id="xlp-download">{rt.downloadButton}</button>
+				<button type="button" id="xlp-reset" class="secondary">{rt.resetButton}</button>
+			</div>
+		</div>
+	</div>
+</UtilityShell>
+
+<script define:vars={{ locale }}>
+	window.__WTLAB_LOCALE__ = locale;
+</script>
+
+<script>
+	import { getDictionary, type Locale } from '../../i18n/index.ts';
+	import { extractHtmlPart, MhtmlParseError, parseHtmlTable } from '../../utilities/excel-preprocessor/parse-mhtml.ts';
+	import { applyFixedTransformations } from '../../utilities/excel-preprocessor/transform.ts';
+	import { buildSheetData, deriveOutputFilename } from '../../utilities/excel-preprocessor/export-xlsx.ts';
+	import type { TransformResult } from '../../utilities/excel-preprocessor/types.ts';
+	import writeExcelFile from 'write-excel-file/browser';
+
+	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
+	const rt = getDictionary(locale).excelPreprocessor;
+
+	const dropzone = document.getElementById('xlp-dropzone');
+	const chooseButton = document.getElementById('xlp-choose');
+	const fileInput = document.getElementById('xlp-file-input') as HTMLInputElement | null;
+	const statusLine = document.getElementById('xlp-status');
+	const issuesBox = document.getElementById('xlp-issues');
+	const summaryBlock = document.getElementById('xlp-summary');
+	const summaryBody = document.getElementById('xlp-summary-body');
+	const downloadButton = document.getElementById('xlp-download') as HTMLButtonElement | null;
+	const resetButton = document.getElementById('xlp-reset');
+
+	let currentResult: TransformResult | null = null;
+	let currentFilename = 'inventory-report.xlsx';
+
+	function el(tag: string, className?: string, text?: string) {
+		const node = document.createElement(tag);
+		if (className) node.className = className;
+		if (text !== undefined) node.textContent = text;
+		return node;
+	}
+
+	function setStatus(key: keyof typeof rt.statusLabels) {
+		if (statusLine) statusLine.textContent = rt.statusLabels[key];
+	}
+
+	function renderIssues(issues: TransformResult['issues']) {
+		if (!issuesBox) return;
+		issuesBox.innerHTML = '';
+		const errors = issues.filter((issue) => issue.severity === 'error');
+		const warnings = issues.filter((issue) => issue.severity === 'warning');
+
+		if (errors.length > 0) {
+			issuesBox.appendChild(el('p', 'issue-group-label', rt.errorsLabel));
+			const list = el('ul');
+			for (const issue of errors) list.appendChild(el('li', 'issue-error', issue.message));
+			issuesBox.appendChild(list);
+		}
+		if (warnings.length > 0) {
+			issuesBox.appendChild(el('p', 'issue-group-label', rt.warningsLabel));
+			const list = el('ul');
+			for (const issue of warnings) list.appendChild(el('li', 'issue-warning', issue.message));
+			issuesBox.appendChild(list);
+		}
+		issuesBox.hidden = errors.length === 0 && warnings.length === 0;
+	}
+
+	function renderSummary(result: TransformResult) {
+		if (!summaryBody || !summaryBlock) return;
+		summaryBody.innerHTML = '';
+		const addRow = (label: string, value: string) => {
+			summaryBody!.append(el('dt', undefined, label), el('dd', undefined, value));
+		};
+		addRow(rt.summaryHeading, rt.rowsProcessed.replace('{count}', String(result.summary.rowCount)));
+		if (result.summary.excludedRowCount > 0) {
+			addRow('', rt.rowsExcluded.replace('{count}', String(result.summary.excludedRowCount)));
+		}
+		if (result.summary.totalInventoryColumnInserted) {
+			addRow('', rt.totalInventoryNote);
+		}
+		if (result.summary.monthsColumnsCleaned.length > 0) {
+			addRow('', rt.monthsCleanedNote.replace('{columns}', result.summary.monthsColumnsCleaned.join(', ')));
+		}
+		summaryBlock.hidden = false;
+	}
+
+	async function processFile(file: File) {
+		currentResult = null;
+		if (downloadButton) downloadButton.disabled = true;
+		if (summaryBlock) summaryBlock.hidden = true;
+		if (issuesBox) issuesBox.hidden = true;
+
+		if (!/\.(mhtml?|mht)$/i.test(file.name)) {
+			setStatus('error');
+			renderIssues([{ severity: 'error', message: rt.invalidFileTypeError }]);
+			return;
+		}
+
+		setStatus('reading');
+		let text: string;
+		try {
+			text = await file.text();
+		} catch {
+			setStatus('error');
+			renderIssues([{ severity: 'error', message: rt.readFailedError }]);
+			return;
+		}
+
+		setStatus('parsing');
+		let table;
+		try {
+			const html = extractHtmlPart(text);
+			table = parseHtmlTable(html);
+		} catch (error) {
+			setStatus('error');
+			const message = error instanceof MhtmlParseError || error instanceof Error ? error.message : String(error);
+			renderIssues([{ severity: 'error', message }]);
+			return;
+		}
+
+		setStatus('transforming');
+		const result = applyFixedTransformations(table);
+		currentResult = result;
+		currentFilename = deriveOutputFilename(file.name);
+
+		renderIssues(result.issues);
+		renderSummary(result);
+
+		const hasBlockingErrors = result.issues.some((issue) => issue.severity === 'error') || result.rows.length === 0;
+		setStatus(hasBlockingErrors ? 'error' : 'ready');
+		if (downloadButton) downloadButton.disabled = hasBlockingErrors;
+	}
+
+	chooseButton?.addEventListener('click', () => fileInput?.click());
+	dropzone?.addEventListener('click', () => fileInput?.click());
+	dropzone?.addEventListener('keydown', (event) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			fileInput?.click();
+		}
+	});
+	fileInput?.addEventListener('change', () => {
+		const file = fileInput.files?.[0];
+		if (file) void processFile(file);
+	});
+
+	dropzone?.addEventListener('dragover', (event) => {
+		event.preventDefault();
+		dropzone.classList.add('dropzone-active');
+	});
+	dropzone?.addEventListener('dragleave', () => dropzone.classList.remove('dropzone-active'));
+	dropzone?.addEventListener('drop', (event) => {
+		event.preventDefault();
+		dropzone.classList.remove('dropzone-active');
+		const file = event.dataTransfer?.files?.[0];
+		if (file) void processFile(file);
+	});
+
+	downloadButton?.addEventListener('click', async () => {
+		if (!currentResult) return;
+		const sheetData = buildSheetData(currentResult);
+		await writeExcelFile(sheetData).toFile(currentFilename);
+	});
+
+	resetButton?.addEventListener('click', () => {
+		currentResult = null;
+		if (fileInput) fileInput.value = '';
+		if (summaryBlock) summaryBlock.hidden = true;
+		if (issuesBox) issuesBox.hidden = true;
+		if (downloadButton) downloadButton.disabled = true;
+		setStatus('idle');
+	});
+</script>
+
+<style>
+	#xlp-app {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.4rem;
+		margin: 0 0 var(--space-sm);
+	}
+
+	.dropzone {
+		border: 2px dashed var(--color-border);
+		padding: var(--space-lg);
+		text-align: center;
+		cursor: pointer;
+	}
+
+	.dropzone-active {
+		border-color: var(--color-accent);
+	}
+
+	.dropzone p {
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.status-line {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.issue-box {
+		border: var(--border-hairline);
+		padding: var(--space-md);
+	}
+
+	.issue-group-label {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: var(--space-sm) 0 0;
+	}
+
+	.issue-group-label:first-child {
+		margin-top: 0;
+	}
+
+	.issue-error {
+		color: var(--color-accent-strong, var(--color-accent));
+	}
+
+	.summary-body {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-xs) var(--space-md);
+		margin: 0 0 var(--space-md);
+	}
+
+	.summary-body dt {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.summary-body dd {
+		margin: 0;
+		color: var(--color-text-primary);
+	}
+
+	.action-row {
+		display: flex;
+		gap: var(--space-sm);
+	}
+
+	button {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		border: var(--border-hairline);
+		background: none;
+		cursor: pointer;
+		color: var(--color-text-primary);
+	}
+
+	button:disabled {
+		color: var(--color-text-muted);
+		cursor: not-allowed;
+	}
+
+	button.secondary {
+		color: var(--color-text-secondary);
+	}
+</style>

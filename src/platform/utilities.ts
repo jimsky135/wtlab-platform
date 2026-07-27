@@ -1,8 +1,8 @@
-// Utility Registry data (Sprint 010A). Registry-driven pages render from
-// this list — no page hardcodes utility metadata, same discipline as
-// platform/instruments.ts. This sprint adds the platform only: every entry
-// here stays `implementationState: 'placeholder'` until its own
-// implementation sprint (Excel Preprocessor ships in Sprint 010B).
+// Utility Registry data. Registry-driven pages render from this list — no
+// page hardcodes utility metadata, same discipline as platform/instruments.ts.
+// Excel Preprocessor shipped its first Reality Validation in Sprint 010B:
+// a fixed two-step transformation for the daily SAP Inventory Report
+// export, nothing generic yet (see docs/engineering.md Sprint 010B).
 
 import type { UtilityEntry } from './utility-catalog.ts';
 
@@ -12,13 +12,13 @@ export const utilities: readonly UtilityEntry[] = [
 		slug: 'excel-preprocessor',
 		name: 'Excel Preprocessor',
 		shortName: 'Excel Preprocessor',
-		description: 'Clean, normalize, and prepare raw Excel files before they enter any downstream workflow.',
+		description: 'Turn the daily SAP Inventory Report MHTML export into a Total-Inventory-and-comparable-months Excel file, ready for the existing template.',
 		category: 'data-preparation',
-		status: 'coming-soon',
+		status: 'available',
 		route: '/utilities/excel-preprocessor',
 		icon: '📄',
-		inputType: 'Excel (.xlsx)',
-		outputType: 'Structured data (CSV / JSON)',
-		implementationState: 'placeholder',
+		inputType: 'SAP MHTML Inventory Report (.mhtml)',
+		outputType: 'Excel (.xlsx)',
+		implementationState: 'implemented',
 	},
 ];

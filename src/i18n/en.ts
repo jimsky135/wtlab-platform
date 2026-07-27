@@ -133,6 +133,33 @@ export const en = {
 		backLink: '← Back to Utilities Library',
 	},
 
+	// ---- Excel Preprocessor (Sprint 010B — first real Utility) ----
+	excelPreprocessor: {
+		uploadHeading: 'Upload',
+		uploadHint: 'Drag and drop your SAP MHTML Inventory Report export here, or choose a file. Nothing leaves this browser.',
+		chooseFileButton: 'Choose File',
+		statusLabels: {
+			idle: 'Waiting for a file',
+			reading: 'Reading file…',
+			parsing: 'Extracting the SAP export table…',
+			transforming: 'Applying fixed transformations…',
+			ready: 'Ready',
+			error: 'Could not process this file',
+		},
+		summaryHeading: 'Transformation Summary',
+		rowsProcessed: '{count} row(s) processed',
+		rowsExcluded: '{count} row(s) excluded due to errors',
+		totalInventoryNote: 'Total Inventory column added (未限制庫存 + 檢驗中庫存), same position as the existing manual template.',
+		monthsCleanedNote: 'Converted to comparable numbers: {columns}',
+		issuesHeading: 'Issues',
+		errorsLabel: 'Errors',
+		warningsLabel: 'Warnings',
+		downloadButton: 'Download Excel (.xlsx)',
+		resetButton: 'Process Another File',
+		invalidFileTypeError: 'Please choose a .mhtml or .mht file exported from SAP.',
+		readFailedError: 'Could not read this file.',
+	},
+
 	workspacesPage: {
 		kicker: 'Platform Workspaces',
 		heading: 'Workspaces',
@@ -306,7 +333,7 @@ export const en = {
 	utilities: {
 		'excel-preprocessor': {
 			displayName: 'Excel Preprocessor',
-			description: 'Clean, normalize, and prepare raw Excel files before they enter any downstream workflow.',
+			description: 'Turn the daily SAP Inventory Report MHTML export into a Total-Inventory-and-comparable-months Excel file, ready for the existing template.',
 		},
 	},
 

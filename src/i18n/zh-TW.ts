@@ -126,6 +126,33 @@ export const zhTW = {
 		backLink: '← 返回公用工具庫',
 	},
 
+	// ---- Excel Preprocessor（Sprint 010B — 第一個正式實作的公用工具）----
+	excelPreprocessor: {
+		uploadHeading: '上傳檔案',
+		uploadHint: '將 SAP 匯出的庫存報表 MHTML 檔案拖曳到此，或點選選擇檔案。資料不會離開這個瀏覽器。',
+		chooseFileButton: '選擇檔案',
+		statusLabels: {
+			idle: '等待上傳檔案',
+			reading: '讀取檔案中…',
+			parsing: '解析 SAP 匯出表格中…',
+			transforming: '套用固定轉換規則中…',
+			ready: '已完成',
+			error: '無法處理此檔案',
+		},
+		summaryHeading: '轉換摘要',
+		rowsProcessed: '已處理 {count} 筆資料',
+		rowsExcluded: '因錯誤排除 {count} 筆資料',
+		totalInventoryNote: '已新增總庫存欄位（未限制庫存 + 檢驗中庫存），位置與既有手動範本一致。',
+		monthsCleanedNote: '已轉換為可比較數值：{columns}',
+		issuesHeading: '問題清單',
+		errorsLabel: '錯誤',
+		warningsLabel: '警告',
+		downloadButton: '下載 Excel（.xlsx）',
+		resetButton: '處理下一個檔案',
+		invalidFileTypeError: '請選擇從 SAP 匯出的 .mhtml 或 .mht 檔案。',
+		readFailedError: '無法讀取此檔案。',
+	},
+
 	workspacesPage: {
 		kicker: '平台工作區',
 		heading: '工作區',
@@ -294,7 +321,7 @@ export const zhTW = {
 	utilities: {
 		'excel-preprocessor': {
 			displayName: 'Excel Preprocessor',
-			description: '在原始 Excel 檔案進入任何下游流程之前，先清理、標準化並整理好資料。',
+			description: '將每日 SAP 庫存報表 MHTML 匯出檔，轉換為含總庫存與可比較可用月數的 Excel 檔案，可直接套用既有範本。',
 		},
 	},
 

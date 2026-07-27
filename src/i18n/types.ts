@@ -131,6 +131,26 @@ export interface UtilitiesPageText {
 	outputTypeLabel: string;
 }
 
+/** Sprint 010B — Excel Preprocessor, the first real Utility. Fixed-workflow UI only, no business logic in the dictionary itself. */
+export interface ExcelPreprocessorText {
+	uploadHeading: string;
+	uploadHint: string;
+	chooseFileButton: string;
+	statusLabels: Record<'idle' | 'reading' | 'parsing' | 'transforming' | 'ready' | 'error', string>;
+	summaryHeading: string;
+	rowsProcessed: string;
+	rowsExcluded: string;
+	totalInventoryNote: string;
+	monthsCleanedNote: string;
+	issuesHeading: string;
+	errorsLabel: string;
+	warningsLabel: string;
+	downloadButton: string;
+	resetButton: string;
+	invalidFileTypeError: string;
+	readFailedError: string;
+}
+
 /** Sprint 010A — shared chrome for any not-yet-implemented Utility (src/views/utilities/UtilityShell.astro). */
 export interface UtilityPlaceholderText {
 	kickerPrefix: string;
@@ -308,6 +328,8 @@ export interface Dictionary {
 	utilityPlaceholder: UtilityPlaceholderText;
 	/** Catalog presentation overlay, keyed by utility id (Sprint 010A). */
 	utilities: Record<string, UtilityCatalogEntryText>;
+	/** Sprint 010B — Excel Preprocessor workspace UI. */
+	excelPreprocessor: ExcelPreprocessorText;
 	/** Mode presentation overlay, keyed by `${instrumentId}.${modeId}`. */
 	modes: Record<string, ModeText>;
 	results: ResultsText;
