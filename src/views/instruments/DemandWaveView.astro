@@ -133,6 +133,13 @@ const quickFields: QuickFormFieldConfig[] = [
 	 * average, and an emphasized marker on the window that produced it.
 	 * Windows the user left blank are simply absent — the wave never
 	 * interpolates across a gap, because the gap is the honest answer.
+	 *
+	 * Known limitation: these seven windows are statistical windows, not a
+	 * time series, so this line is a COMPARISON profile rather than a real
+	 * demand wave. The revision direction (monthly consumption as the base
+	 * series, these windows demoted to reference layers) is recorded in
+	 * docs/demand-wave-radar-revision.md and is on hold — do not start it
+	 * without an explicit go-ahead.
 	 */
 	function renderWave(output: DemandWaveOutput): SVGElement {
 		const W = 760;

@@ -187,3 +187,4 @@ Rule applied: shared components never know instrument names — all APIs take ca
 | Saved mapping templates | remember user column mappings (deferred from Sprint 003.5) |
 | Dead Stock category insights | category field is captured but not yet aggregated (v0.1 scope) |
 | SEO minimum pass | meta descriptions, canonical tags, Open Graph, robots.txt/sitemap (optional, not launch-blocking — from Deployment 001 audit) |
+| Demand Wave Radar revision | shipped v0.1 charts 7 summary averages as one line — a comparison, not a real wave. Direction recorded in [demand-wave-radar-revision.md](demand-wave-radar-revision.md); **HOLD until explicitly started** |
