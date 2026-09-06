@@ -133,3 +133,8 @@ How do the same-named-but-different-meaning fields converge?
 - Is `leadTimeMonths` the same thing as `supplierLeadTimeMonths`?
 
 Until these are answered, the sharing layer has nothing safe to share.
+
+**Deferred deliberately (2026-09-06):** no pointer comments were added to the
+Water Level / Lead Time Gap schemas, where §2B's divergence actually lives.
+Touching two shipped instruments for an item on hold was judged not worth it.
+Add those anchors as part of the same change that resolves §7 — not before.
