@@ -53,6 +53,7 @@ export const MESSAGE_CODES = [
 	'DEAD_STOCK_DEFAULT_THRESHOLDS_USED',
 	'WATER_LEVEL_LEAD_TIME_BLANK',
 	'WATER_LEVEL_SAFETY_BUFFER_BLANK',
+	'DEMAND_WAVE_NO_WINDOW_PROVIDED',
 
 	// --- Tool Contract validators (src/tools/*/validate.ts) ---
 	'VALIDATE_AT_LEAST_ONE_ARRIVAL',
@@ -67,6 +68,7 @@ export const MESSAGE_CODES = [
 	'VALIDATE_NUMBER_REQUIRED',
 	'VALIDATE_NUMBER_NON_NEGATIVE',
 	'VALIDATE_NUMBER_POSITIVE',
+	'VALIDATE_AT_LEAST_ONE_DEMAND_WINDOW',
 
 	// --- Arrival Collision engine narratives (src/tools/arrival-collision-detector/analyze.ts) ---
 	'ARRIVAL_CAPACITY_EXCEEDED',

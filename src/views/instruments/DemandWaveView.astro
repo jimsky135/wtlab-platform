@@ -1,0 +1,414 @@
+---
+// Demand Wave Radar — seventh production instrument (Sprint 011), one
+// shared implementation across both locales.
+//
+// Single-mode by design: the catalog declares manual-input + calculate
+// only, so there is no ModeSwitcher, no CSV template and no result
+// export here. The Shared Intake pipeline is still the entry boundary
+// (validateRecords → confirmIntake → adapter → tool.validate), exactly
+// as on every other instrument — only the CSV front door is absent.
+import '../../shared/instrument.css';
+import CapabilityPanel from '../../components/CapabilityPanel.astro';
+import InstrumentHeader from '../../components/InstrumentHeader.astro';
+import QuickForm from '../../components/QuickForm.astro';
+import PlatformShell from '../../layouts/PlatformShell.astro';
+import { getDictionary, localizePath, type Locale } from '../../i18n';
+import { findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
+import type { QuickFormFieldConfig } from '../../platform/quick-form';
+import { platformRegistry } from '../../platform/registry';
+import { DEMAND_WINDOW_IDS } from '../../tools/demand-wave-radar/types';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const rt = t.results.demandWaveRadar;
+
+const TOOL_ID = 'demand-wave-radar';
+const available = platformRegistry.isAvailable(TOOL_ID);
+const entry = findById(instruments, TOOL_ID);
+
+// Every window is optional on the form: a blank window is real data
+// ("no history for this window"), never an omission to nag about.
+const quickFields: QuickFormFieldConfig[] = [
+	{ id: 'itemName', numeric: false, requiredOnForm: false },
+	...DEMAND_WINDOW_IDS.map((window) => ({ id: window, numeric: true, requiredOnForm: false })),
+];
+---
+
+<PlatformShell title={`${entry ? t.instruments[entry.id]?.displayName ?? entry.displayName : 'Instrument'} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
+	{available && entry ? (
+		<article class="instrument-page">
+			<InstrumentHeader entry={entry} locale={locale} />
+			<CapabilityPanel capabilities={entry.capabilities} locale={locale} />
+
+			<section id="panel-quick" class="mode-panel" aria-label="Demand Wave">
+				<details open>
+					<summary>{rt.headings.manualEntry}</summary>
+					<p class="section-note">{rt.labels.manualEntryNote}</p>
+					<form id="quick-form">
+						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
+						<div class="action-row">
+							<button type="submit">{rt.buttons.runQuick}</button>
+						</div>
+					</form>
+					<div id="quick-manual-issues" class="issue-box" aria-live="polite" hidden></div>
+				</details>
+
+				<div id="quick-results-block" class="results-block" hidden>
+					<h2>{rt.headings.results}</h2>
+					<div id="quick-results" aria-live="polite"></div>
+				</div>
+			</section>
+
+			<section class="related" aria-labelledby="related-heading">
+				<h2 id="related-heading">{t.common.relatedHeading}</h2>
+				<ul>
+					<li><a href={localizePath(locale, '/tools/inventory-buffer-check')}>{t.instruments['inventory-buffer-check'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/instruments/buffer-drift-monitor')}>{t.instruments['buffer-drift-monitor'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/instruments/dead-stock-scanner')}>{t.instruments['dead-stock-scanner'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/workspace/data-intake')}>{t.workspaces['data-intake'].displayName}</a></li>
+					<li><a href={localizePath(locale, '/command')}>{t.nav.items.today}</a></li>
+				</ul>
+			</section>
+		</article>
+	) : (
+		<article class="instrument-page">
+			<p class="kicker">{t.common.unavailable.kicker}</p>
+			<h1>{t.common.unavailable.heading}</h1>
+			<p><a href={localizePath(locale, '/instruments')}>{t.common.unavailable.backLink}</a></p>
+		</article>
+	)}
+</PlatformShell>
+
+<script define:vars={{ locale }}>
+	window.__WTLAB_LOCALE__ = locale;
+</script>
+
+<script>
+	import { confirmIntake } from '../../platform/intake/confirm.ts';
+	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
+	import { validateRecords } from '../../platform/intake/validate.ts';
+	import { el, renderIssues } from '../../shared/intake-ui.ts';
+	import { collectFormValues } from '../../shared/instrument-ui.ts';
+	import { demandWaveAdapter } from '../../platform/adapters/demand-wave/adapter.ts';
+	import { analyzeDemandWave } from '../../tools/demand-wave-radar/analyze.ts';
+	import { demandWaveSchema } from '../../tools/demand-wave-radar/schema.ts';
+	import { validateDemandWaveInput } from '../../tools/demand-wave-radar/validate.ts';
+	import { DEMAND_WINDOW_IDS, type DemandWaveOutput, type DemandWindowId } from '../../tools/demand-wave-radar/types.ts';
+	import type { ValidationMessage } from '../../platform/message-codes.ts';
+	import { getDictionary, resolveMessage, type Locale } from '../../i18n/index.ts';
+
+	const locale = ((window as unknown as { __WTLAB_LOCALE__?: Locale }).__WTLAB_LOCALE__ ?? 'en') as Locale;
+	const rt = getDictionary(locale).results.demandWaveRadar;
+	const fieldLabels = Object.fromEntries(Object.entries(rt.fields).map(([id, field]) => [id, field.label]));
+
+	const FORM_FIELD_IDS = ['itemName', ...DEMAND_WINDOW_IDS];
+
+	function fmt(value: number): string {
+		return String(Math.round(value * 100) / 100);
+	}
+
+	function validationMessageText(e: ValidationMessage): string {
+		const rawField = typeof e.params?.field === 'string' ? e.params.field : undefined;
+		const params = { ...e.params, ...(rawField !== undefined ? { field: fieldLabels[rawField] ?? rawField } : {}) };
+		return resolveMessage(locale, e.code, params);
+	}
+
+	// ---------- WAVE ----------
+
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+
+	function svgEl(tag: string, attrs: Record<string, string | number>): SVGElement {
+		const node = document.createElementNS(SVG_NS, tag);
+		for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, String(value));
+		return node;
+	}
+
+	/**
+	 * Renders the provided windows as one comparable profile: a line
+	 * through every window that carried data, a dashed rule at the highest
+	 * average, and an emphasized marker on the window that produced it.
+	 * Windows the user left blank are simply absent — the wave never
+	 * interpolates across a gap, because the gap is the honest answer.
+	 */
+	function renderWave(output: DemandWaveOutput): SVGElement {
+		const W = 760;
+		const H = 260;
+		const PAD_L = 52;
+		const PAD_R = 52;
+		const PAD_T = 38;
+		const PAD_B = 44;
+		const plotW = W - PAD_L - PAD_R;
+		const plotH = H - PAD_T - PAD_B;
+		const points = output.windows;
+		const count = points.length;
+		const peak = output.highestMonthlyAverage;
+
+		const svg = svgEl('svg', {
+			viewBox: `0 0 ${W} ${H}`,
+			width: '100%',
+			preserveAspectRatio: 'xMidYMid meet',
+			role: 'img',
+			'aria-label': rt.headings.wave,
+		});
+
+		const x = (index: number) => (count === 1 ? PAD_L + plotW / 2 : PAD_L + (plotW * index) / (count - 1));
+		// 0 sits on the baseline and the peak reaches the top of the plot, so
+		// the drawn height of each window is proportional to its real value.
+		const y = (value: number) => (peak > 0 ? PAD_T + plotH - (plotH * value) / peak : PAD_T + plotH / 2);
+
+		// Baseline.
+		svg.appendChild(
+			svgEl('line', {
+				x1: PAD_L - 16,
+				y1: PAD_T + plotH,
+				x2: W - PAD_R + 16,
+				y2: PAD_T + plotH,
+				stroke: 'var(--color-border)',
+				'stroke-width': 1,
+			})
+		);
+
+		// Dashed rule at the highest average — the level defensive coverage is built on.
+		svg.appendChild(
+			svgEl('line', {
+				x1: PAD_L - 16,
+				y1: y(peak),
+				x2: W - PAD_R + 16,
+				y2: y(peak),
+				stroke: 'var(--color-accent)',
+				'stroke-width': 1,
+				'stroke-dasharray': '6 10',
+				opacity: 0.5,
+			})
+		);
+
+		// The wave itself.
+		if (count > 1) {
+			svg.appendChild(
+				svgEl('polyline', {
+					points: points.map((point, index) => `${x(index)},${y(point.monthlyAverage)}`).join(' '),
+					fill: 'none',
+					stroke: 'var(--color-accent)',
+					'stroke-width': 2,
+					'stroke-linecap': 'round',
+					'stroke-linejoin': 'round',
+				})
+			);
+		}
+
+		points.forEach((point, index) => {
+			const isPeak = point.window === output.highestWindow;
+			const px = x(index);
+			const py = y(point.monthlyAverage);
+
+			svg.appendChild(
+				svgEl('circle', {
+					cx: px,
+					cy: py,
+					r: isPeak ? 6 : 3.5,
+					fill: isPeak ? 'var(--color-accent-strong)' : 'var(--color-accent)',
+				})
+			);
+
+			const value = svgEl('text', {
+				x: px,
+				y: py - 14,
+				'text-anchor': 'middle',
+				fill: isPeak ? 'var(--color-accent-strong)' : 'var(--color-text-secondary)',
+				'font-size': 12,
+				'font-family': 'var(--font-mono)',
+			});
+			value.textContent = fmt(point.monthlyAverage);
+			svg.appendChild(value);
+
+			const tick = svgEl('text', {
+				x: px,
+				y: PAD_T + plotH + 22,
+				'text-anchor': 'middle',
+				fill: isPeak ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
+				'font-size': 10,
+				'font-family': 'var(--font-mono)',
+				'letter-spacing': '0.12em',
+			});
+			tick.textContent = rt.windowShortLabels[point.window];
+			svg.appendChild(tick);
+		});
+
+		return svg;
+	}
+
+	// ---------- RESULTS ----------
+
+	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	const quickManualIssues = document.getElementById('quick-manual-issues');
+	const quickResultsBlock = document.getElementById('quick-results-block');
+	const quickResults = document.getElementById('quick-results');
+
+	function renderResults(
+		results: Array<{ itemName: string; output: DemandWaveOutput }>,
+		failures: Array<{ itemName: string; errors: ValidationMessage[] }>
+	) {
+		if (!quickResults || !quickResultsBlock) return;
+		quickResults.innerHTML = '';
+
+		for (const failure of failures) {
+			const box = el('div', 'issue-box');
+			box.appendChild(el('p', 'result-item-name', failure.itemName));
+			const list = el('ul');
+			for (const e of failure.errors) list.appendChild(el('li', undefined, validationMessageText(e)));
+			box.appendChild(list);
+			box.hidden = false;
+			quickResults.appendChild(box);
+		}
+
+		for (const { itemName, output } of results) {
+			const wrap = el('div', 'result-set');
+			wrap.appendChild(el('p', 'result-item-name', itemName));
+
+			const cards = el('div', 'cards');
+
+			const coverage = el('div', 'card');
+			coverage.appendChild(el('h3', undefined, rt.headings.coverage));
+			coverage.appendChild(el('p', 'card-value', fmt(output.defensiveCoverage)));
+			coverage.appendChild(
+				el('p', 'card-note', rt.labels.coverageRule.replace('{months}', String(output.defensiveCoverageMonths)))
+			);
+			const coverageList = el('dl');
+			coverageList.append(
+				el('dt', undefined, rt.labels.highestAverage),
+				el('dd', undefined, fmt(output.highestMonthlyAverage)),
+				el('dt', undefined, rt.labels.highestSource),
+				el('dd', undefined, rt.windowLabels[output.highestWindow])
+			);
+			coverage.appendChild(coverageList);
+			cards.appendChild(coverage);
+
+			const windows = el('div', 'card');
+			windows.appendChild(el('h3', undefined, rt.headings.windows));
+			windows.appendChild(
+				el('p', 'card-value', rt.labels.windowCount.replace('{count}', String(output.windows.length)))
+			);
+			const windowList = el('dl');
+			for (const point of output.windows) {
+				const isPeak = point.window === output.highestWindow;
+				windowList.append(
+					el('dt', undefined, rt.windowLabels[point.window]),
+					el(
+						'dd',
+						isPeak ? 'peak-value' : undefined,
+						isPeak ? `${fmt(point.monthlyAverage)} · ${rt.labels.peakMarker}` : fmt(point.monthlyAverage)
+					)
+				);
+			}
+			windows.appendChild(windowList);
+			cards.appendChild(windows);
+
+			wrap.appendChild(cards);
+
+			const waveBlock = el('div', 'wave-block');
+			waveBlock.appendChild(el('h3', undefined, rt.headings.wave));
+			const waveWrap = el('div', 'wave-wrap');
+			waveWrap.appendChild(renderWave(output));
+			waveBlock.appendChild(waveWrap);
+			if (output.windows.length === 1) {
+				waveBlock.appendChild(el('p', 'card-note', rt.labels.singleWindowNote));
+			}
+			wrap.appendChild(waveBlock);
+
+			quickResults.appendChild(wrap);
+		}
+
+		quickResultsBlock.hidden = results.length === 0 && failures.length === 0;
+		quickResultsBlock.scrollIntoView({ block: 'nearest' });
+	}
+
+	function run(confirmed: ConfirmedIntake) {
+		const adapted = demandWaveAdapter(confirmed);
+		if (!adapted.ok) {
+			renderIssues(quickManualIssues, adapted.issues, locale, fieldLabels);
+			return;
+		}
+		const results: Array<{ itemName: string; output: DemandWaveOutput }> = [];
+		const failures: Array<{ itemName: string; errors: ValidationMessage[] }> = [];
+		for (const item of adapted.data) {
+			const validated = validateDemandWaveInput(item.input);
+			if (validated.valid) {
+				results.push({ itemName: item.itemName, output: analyzeDemandWave(validated.data) });
+			} else {
+				failures.push({ itemName: item.itemName, errors: validated.errors });
+			}
+		}
+		renderResults(results, failures);
+	}
+
+	function formRow(): Record<string, string> {
+		if (!quickForm) return {};
+		const values = collectFormValues(quickForm, FORM_FIELD_IDS);
+		const row: Record<string, string> = {
+			itemName: values.itemName === '' ? 'item-1' : values.itemName,
+		};
+		for (const window of DEMAND_WINDOW_IDS as readonly DemandWindowId[]) {
+			row[window] = values[window] ?? '';
+		}
+		return row;
+	}
+
+	if (quickForm) {
+		quickForm.addEventListener('submit', (event) => {
+			event.preventDefault();
+			const record: RawIntakeRecord = { values: formRow(), unknown: {} };
+			const result = validateRecords([record], demandWaveSchema);
+			if (result.errorCount > 0) {
+				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+				return;
+			}
+			renderIssues(quickManualIssues, [], locale, fieldLabels);
+			const outcome = confirmIntake(demandWaveSchema, result);
+			if (outcome.confirmed) run(outcome.data);
+		});
+	}
+</script>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	:global(.wave-block) {
+		margin-top: var(--space-md);
+	}
+
+	:global(.wave-wrap) {
+		overflow-x: auto;
+		border: var(--border-hairline);
+		background: var(--color-bg-inset);
+		padding: var(--space-sm) 0;
+	}
+
+	:global(.wave-wrap svg) {
+		min-width: 520px;
+		display: block;
+	}
+
+	:global(.peak-value) {
+		color: var(--color-accent-strong);
+	}
+</style>

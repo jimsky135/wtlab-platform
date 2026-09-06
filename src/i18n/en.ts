@@ -327,8 +327,8 @@ export const en = {
 		},
 		'demand-wave-radar': {
 			displayName: 'Demand Wave Radar',
-			description: 'Spot acceleration or deceleration in consumption before it breaks the replenishment rhythm.',
-			coreQuestion: 'Is demand accelerating beyond what the current buffer assumptions were built for?',
+			description: 'Compare monthly averages across time windows and size defensive coverage against the highest one.',
+			coreQuestion: 'Which time window shows the highest demand, and what coverage does defending against it require?',
 		},
 		'lead-time-gap-checker': {
 			displayName: 'Lead Time Gap Checker',
@@ -775,6 +775,60 @@ export const en = {
 				stable: 'Stable',
 			},
 		},
+		demandWaveRadar: {
+			modeLabel: {},
+			fields: {
+				itemName: { label: 'Item Name', optional: 'defaults to item-1' },
+				annual: { label: 'Annual Monthly Average' },
+				h1: { label: 'H1 Monthly Average' },
+				h2: { label: 'H2 Monthly Average' },
+				q1: { label: 'Q1 Monthly Average' },
+				q2: { label: 'Q2 Monthly Average' },
+				q3: { label: 'Q3 Monthly Average' },
+				q4: { label: 'Q4 Monthly Average' },
+			},
+			buttons: {
+				runQuick: 'Run Demand Wave',
+			},
+			headings: {
+				manualEntry: 'Manual Entry — monthly averages by window',
+				results: 'Results',
+				wave: 'Demand Wave',
+				coverage: 'Defensive Coverage',
+				windows: 'Windows Provided',
+			},
+			labels: {
+				manualEntryNote:
+					'Fill in the windows you actually have history for. A blank window is treated as no data — never as zero demand.',
+				highestAverage: 'Highest monthly average',
+				highestSource: 'Highest average source',
+				defensiveCoverage: 'Defensive coverage',
+				coverageRule: 'Highest monthly average × {months} months',
+				windowCount: '{count} of 7 windows provided',
+				monthlyAverage: 'Monthly average',
+				window: 'Window',
+				peakMarker: 'Highest',
+				singleWindowNote: 'Only one window was provided — there is no spread to compare yet.',
+			},
+			windowLabels: {
+				annual: 'Annual Monthly Average',
+				h1: 'H1 Monthly Average',
+				h2: 'H2 Monthly Average',
+				q1: 'Q1 Monthly Average',
+				q2: 'Q2 Monthly Average',
+				q3: 'Q3 Monthly Average',
+				q4: 'Q4 Monthly Average',
+			},
+			windowShortLabels: {
+				annual: 'ANNUAL',
+				h1: 'H1',
+				h2: 'H2',
+				q1: 'Q1',
+				q2: 'Q2',
+				q3: 'Q3',
+				q4: 'Q4',
+			},
+		},
 		supplierDependencyRadar: {
 			modeLabel: {},
 			fields: {
@@ -943,6 +997,8 @@ export const en = {
 			'Default thresholds used (high coverage {high} months, excess {excess}, dormant {dormant}, dead {dead}).',
 		WATER_LEVEL_LEAD_TIME_BLANK: 'Lead Time is blank — it will be treated as 0 months.',
 		WATER_LEVEL_SAFETY_BUFFER_BLANK: 'Safety Buffer is blank — it will be treated as 0 months.',
+		DEMAND_WAVE_NO_WINDOW_PROVIDED:
+			'Enter at least one monthly average — blank windows are not treated as zero demand.',
 
 		// Tool Contract validators
 		VALIDATE_AT_LEAST_ONE_ARRIVAL: 'At least one arrival is required.',
@@ -957,6 +1013,7 @@ export const en = {
 		VALIDATE_NUMBER_REQUIRED: '{field} must be a valid number.',
 		VALIDATE_NUMBER_NON_NEGATIVE: '{field} must not be negative.',
 		VALIDATE_NUMBER_POSITIVE: '{field} must be greater than 0.',
+		VALIDATE_AT_LEAST_ONE_DEMAND_WINDOW: 'Enter at least one monthly average.',
 
 		// Arrival Collision engine narratives
 		ARRIVAL_CAPACITY_EXCEEDED: '{month}: total arrivals ({total}) exceed monthly capacity ({capacity}).',

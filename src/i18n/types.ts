@@ -313,6 +313,17 @@ export interface ResultsText {
 		>;
 		trend: Record<'widening' | 'narrowing' | 'stable', string>;
 	};
+	/**
+	 * Seventh production instrument (Sprint 011). No status/risk record —
+	 * the v0.1 engine reports measured averages and derived coverage, it
+	 * passes no judgement, so there is no classification to translate.
+	 */
+	demandWaveRadar: InstrumentResultText & {
+		/** Display label per measurement window, keyed by DemandWindowId. */
+		windowLabels: Record<'annual' | 'h1' | 'h2' | 'q1' | 'q2' | 'q3' | 'q4', string>;
+		/** Short axis tick label per window — the wave has no room for full labels. */
+		windowShortLabels: Record<'annual' | 'h1' | 'h2' | 'q1' | 'q2' | 'q3' | 'q4', string>;
+	};
 	/** Sixth production instrument (Sprint 009) — Supplier × Material dependency modeling. */
 	supplierDependencyRadar: InstrumentResultText & {
 		overallRisk: Record<'low' | 'moderate' | 'high' | 'critical', { label: string; description: string }>;

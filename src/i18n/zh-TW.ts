@@ -315,8 +315,8 @@ export const zhTW = {
 		},
 		'demand-wave-radar': {
 			displayName: '需求波動雷達',
-			description: '在耗用波動打亂補貨節奏之前，及早察覺需求的加速或減緩。',
-			coreQuestion: '需求的成長是否已超出目前安全庫存假設所能負荷？',
+			description: '比較不同時間窗口的月均用量，並以其中最高者估算防禦性備覆量。',
+			coreQuestion: '哪一個時間窗口的需求最高？要防住它需要多少備覆量？',
 		},
 		'lead-time-gap-checker': {
 			displayName: '前置時間缺口檢查',
@@ -723,6 +723,59 @@ export const zhTW = {
 				stable: '穩定',
 			},
 		},
+		demandWaveRadar: {
+			modeLabel: {},
+			fields: {
+				itemName: { label: '品項名稱', optional: '預設為 item-1' },
+				annual: { label: '年度月均用量' },
+				h1: { label: '上半年月均用量' },
+				h2: { label: '下半年月均用量' },
+				q1: { label: 'Q1 月均用量' },
+				q2: { label: 'Q2 月均用量' },
+				q3: { label: 'Q3 月均用量' },
+				q4: { label: 'Q4 月均用量' },
+			},
+			buttons: {
+				runQuick: '執行需求波動分析',
+			},
+			headings: {
+				manualEntry: '手動輸入 — 各時間窗口的月均用量',
+				results: '分析結果',
+				wave: '需求波動',
+				coverage: '防禦性備覆量',
+				windows: '已提供的時間窗口',
+			},
+			labels: {
+				manualEntryNote: '只填你實際有歷史資料的窗口。空白代表沒有資料，不會被當成零需求。',
+				highestAverage: '最高月均用量',
+				highestSource: '最高值來源窗口',
+				defensiveCoverage: '防禦性備覆量',
+				coverageRule: '最高月均用量 × {months} 個月',
+				windowCount: '7 個窗口中已提供 {count} 個',
+				monthlyAverage: '月均用量',
+				window: '時間窗口',
+				peakMarker: '最高',
+				singleWindowNote: '只提供了一個窗口 — 目前還沒有可比較的落差。',
+			},
+			windowLabels: {
+				annual: '年度月均用量',
+				h1: '上半年月均用量',
+				h2: '下半年月均用量',
+				q1: 'Q1 月均用量',
+				q2: 'Q2 月均用量',
+				q3: 'Q3 月均用量',
+				q4: 'Q4 月均用量',
+			},
+			windowShortLabels: {
+				annual: '年度',
+				h1: '上半年',
+				h2: '下半年',
+				q1: 'Q1',
+				q2: 'Q2',
+				q3: 'Q3',
+				q4: 'Q4',
+			},
+		},
 		supplierDependencyRadar: {
 			modeLabel: {},
 			fields: {
@@ -887,6 +940,7 @@ export const zhTW = {
 		DEAD_STOCK_DEFAULT_THRESHOLDS_USED: '已套用預設門檻（高覆蓋 {high} 個月、超額 {excess} 個月、停滯 {dormant} 個月、呆滯 {dead} 個月）。',
 		WATER_LEVEL_LEAD_TIME_BLANK: '前置時間為空白 — 將視為 0 個月。',
 		WATER_LEVEL_SAFETY_BUFFER_BLANK: '安全緩衝為空白 — 將視為 0 個月。',
+		DEMAND_WAVE_NO_WINDOW_PROVIDED: '請至少填入一個月均用量 — 空白的時間窗口不會被視為零需求。',
 
 		// Tool Contract 驗證器
 		VALIDATE_AT_LEAST_ONE_ARRIVAL: '至少須有一筆到貨資料。',
@@ -901,6 +955,7 @@ export const zhTW = {
 		VALIDATE_NUMBER_REQUIRED: '「{field}」須為有效數字。',
 		VALIDATE_NUMBER_NON_NEGATIVE: '「{field}」不得為負數。',
 		VALIDATE_NUMBER_POSITIVE: '「{field}」須大於 0。',
+		VALIDATE_AT_LEAST_ONE_DEMAND_WINDOW: '請至少填入一個月均用量。',
 
 		// Arrival Collision 引擎敘述
 		ARRIVAL_CAPACITY_EXCEEDED: '{month}:到貨總量（{total}）超過月度容量（{capacity}）。',

@@ -34,6 +34,7 @@ const LOCALE_BLIND_DIRS = [
 	'tools/lead-time-gap-checker',
 	'tools/buffer-drift-monitor',
 	'tools/supplier-dependency-radar',
+	'tools/demand-wave-radar',
 ];
 
 function listTsFiles(dir: string): string[] {

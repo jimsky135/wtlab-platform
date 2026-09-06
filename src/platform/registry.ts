@@ -5,6 +5,7 @@
 import { arrivalCollisionTool } from '../tools/arrival-collision-detector/index.ts';
 import { bufferDriftMonitorTool } from '../tools/buffer-drift-monitor/index.ts';
 import { deadStockTool } from '../tools/dead-stock-scanner/index.ts';
+import { demandWaveRadarTool } from '../tools/demand-wave-radar/index.ts';
 import { inventoryBufferCheckTool } from '../tools/inventory-buffer-check/index.ts';
 import { leadTimeGapCheckerTool } from '../tools/lead-time-gap-checker/index.ts';
 import { supplierDependencyRadarTool } from '../tools/supplier-dependency-radar/index.ts';
@@ -17,4 +18,5 @@ export const platformRegistry = createToolRegistry([
 	leadTimeGapCheckerTool,
 	bufferDriftMonitorTool,
 	supplierDependencyRadarTool,
+	demandWaveRadarTool,
 ]);
