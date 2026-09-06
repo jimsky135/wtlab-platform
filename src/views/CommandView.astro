@@ -87,6 +87,7 @@ const suggestedWorkspaces = suggestedWorkspaceIds
 				return (
 					<li>
 						<a href={localizePath(locale, instrument.route)}>{text.displayName}</a>
+						<span class="version-tag">{t.common.versionLabel} {instrument.version}</span>
 						<StatusTag
 							status={instrument.status}
 							implementationState={instrument.implementationState}
@@ -274,6 +275,19 @@ const suggestedWorkspaces = suggestedWorkspaceIds
 
 	.instrument-status a:hover {
 		color: var(--color-accent);
+	}
+
+	/* Version as recorded on each catalog entry — never normalized across
+	   instruments, so a tool that has had a second round of work still
+	   reads differently from one that has not. */
+	.version-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		border: var(--border-hairline);
+		padding: 2px 8px;
 	}
 
 	.continuity-note {
