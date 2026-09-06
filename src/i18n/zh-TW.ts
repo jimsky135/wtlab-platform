@@ -299,42 +299,37 @@ export const zhTW = {
 
 	instruments: {
 		'inventory-buffer-check': {
-			displayName: 'Water Level Checker',
-			shortName: '水位檢查',
+			displayName: '庫存水位檢查',
 			description: '快速檢查目前庫存是否足以支撐耗用、補貨前置時間與安全庫存。',
 			coreQuestion: '目前庫存是否足以支撐補貨前置時間與安全庫存？',
 		},
 		'arrival-collision-detector': {
-			displayName: 'Arrival Collision Detector',
-			shortName: '到貨衝突',
+			displayName: '到貨衝突偵測',
 			description: '偵測到貨時間過於集中或單一期間到貨量過大的情形。',
 			coreQuestion: '預計到貨的批次是否會在同一期間相互衝突？',
 		},
 		'dead-stock-scanner': {
-			displayName: 'Dead Stock Scanner',
-			shortName: '呆滯庫存',
+			displayName: '滯存庫存掃描',
 			description: '找出已停止流動的庫存，並估算佔用了多少資金。',
 			coreQuestion: '哪些品項已經停止流動，佔用了多少資金？',
 		},
 		'demand-wave-radar': {
-			displayName: 'Demand Wave Radar',
+			displayName: '需求波動雷達',
 			description: '在耗用波動打亂補貨節奏之前，及早察覺需求的加速或減緩。',
 			coreQuestion: '需求的成長是否已超出目前安全庫存假設所能負荷？',
 		},
 		'lead-time-gap-checker': {
-			displayName: 'Lead Time Gap Checker',
-			shortName: '前置時間缺口',
+			displayName: '前置時間缺口檢查',
 			description: '補貨是否會在庫存耗盡前送達？比較補貨到貨時間與庫存耗盡時間。',
 			coreQuestion: '補貨是否會在庫存耗盡前送達？',
 		},
 		'supplier-dependency-radar': {
-			displayName: 'Supplier Dependency & Qualification Radar',
-			shortName: '供應商依賴',
+			displayName: '供應商依賴與認證雷達',
 			description: '找出因供應商集中度、唯一來源原物料與認證依賴所造成的結構性供應風險。',
 			coreQuestion: '哪裡會因單一供應商出狀況而拖垮整個營運？',
 		},
 		'buffer-drift-monitor': {
-			displayName: 'Buffer Drift Monitor',
+			displayName: '安全庫存偏移監測',
 			description: '追蹤實際安全庫存是否逐漸偏離原先設定的水準。',
 			coreQuestion: '我們的安全庫存是否仍維持在原本決定的水準？',
 		},
@@ -343,7 +338,7 @@ export const zhTW = {
 	// ---- 公用工具（catalog 呈現層，Sprint 010A）----
 	utilities: {
 		'excel-preprocessor': {
-			displayName: 'Excel Preprocessor',
+			displayName: 'Excel 前處理工具',
 			description: '將每日 SAP 庫存報表 MHTML 匯出檔，轉換為含總庫存與可比較可用月數的 Excel 檔案，可直接套用既有範本。',
 			inputType: 'SAP MHTML 庫存報表（.mhtml）',
 			outputType: 'Excel 檔案（.xlsx）',
@@ -352,42 +347,42 @@ export const zhTW = {
 
 	workspaces: {
 		'command-center': {
-			displayName: 'Operational Command Center',
+			displayName: '營運指揮中心',
 			description: '導引目前進行中的工作：今日審查、待決事項，以及目前的營運焦點。',
 			coreQuestion: '現在最需要關注的是什麼？',
 		},
 		'continuity-center': {
-			displayName: 'Continuity Center',
+			displayName: '延續性中心',
 			description: '保存並轉移使用者的工作內容：儲存、匯出、寄送備份、重新匯入、AI 交接。',
 			coreQuestion: '我的工作內容要如何在這個瀏覽器分頁之外延續？',
 		},
 		'data-intake': {
-			displayName: 'Data Intake Workspace',
+			displayName: '資料匯入工作區',
 			description: '將營運資料匯入 WTLab：CSV 匯入、標準化與驗證。',
 			coreQuestion: '原始的營運資料要如何變成工具可以讀取的格式？',
 		},
 		entity: {
-			displayName: 'Entity Workspace',
+			displayName: '實體工作區',
 			description: '整理觀察所依附的原物料、產品、供應商與據點。',
 			coreQuestion: '我們實際在追蹤的對象是什麼？',
 		},
 		'decision-priority': {
-			displayName: 'Decision Priority Map',
+			displayName: '決策優先地圖',
 			description: '依急迫性與影響程度排序待決事項，讓審查心力用在對的地方。',
 			coreQuestion: '哪個決策最需要優先處理？',
 		},
 		'decision-memory': {
-			displayName: 'Decision Memory',
+			displayName: '決策記憶',
 			description: '記錄當初做了什麼決定、依據什麼證據，以及什麼情況會改變這個決定。',
 			coreQuestion: '當初為什麼這樣決定，這個理由現在還成立嗎？',
 		},
 		'relationship-explorer': {
-			displayName: 'Operational Relationship Explorer',
+			displayName: '營運關聯探索',
 			description: '探索實體、觀察與決策之間的關聯。',
 			coreQuestion: '這筆觀察或決策還牽動了什麼？',
 		},
 		'case-intelligence': {
-			displayName: 'Case Intelligence Workspace',
+			displayName: '案例智慧工作區',
 			description: '從觀察、假設與結果中建立可回顧的案例。',
 			coreQuestion: '累積的證據實際上訴說著什麼樣的故事？',
 		},

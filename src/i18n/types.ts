@@ -11,7 +11,6 @@ export type Locale = 'en' | 'zh-TW';
 
 export interface CatalogEntryText {
 	displayName: string;
-	shortName?: string;
 	description: string;
 	coreQuestion: string;
 }
@@ -19,7 +18,6 @@ export interface CatalogEntryText {
 /** Utilities have no coreQuestion — they transform data, they don't pose a decision question (Sprint 010A). */
 export interface UtilityCatalogEntryText {
 	displayName: string;
-	shortName?: string;
 	description: string;
 	/** Optional localized override for the catalog's inputType/outputType (format descriptors) — falls back to the raw catalog value when absent. */
 	inputType?: string;

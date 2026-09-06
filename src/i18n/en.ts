@@ -312,19 +312,16 @@ export const en = {
 	instruments: {
 		'inventory-buffer-check': {
 			displayName: 'Water Level Checker',
-			shortName: 'Water Level',
 			description: 'Quickly check whether current inventory can cover consumption, replenishment lead time, and safety buffer.',
 			coreQuestion: 'Is current inventory sufficient to cover replenishment lead time and safety buffer?',
 		},
 		'arrival-collision-detector': {
 			displayName: 'Arrival Collision Detector',
-			shortName: 'Arrival Collision',
 			description: 'Detect incoming shipments that land too close together or overload a single period.',
 			coreQuestion: 'Will any expected arrivals collide with each other in the same period?',
 		},
 		'dead-stock-scanner': {
 			displayName: 'Dead Stock Scanner',
-			shortName: 'Dead Stock',
 			description: 'Surface inventory that has stopped moving and quantify how much capital it locks up.',
 			coreQuestion: 'Which items have stopped moving, and how much capital do they tie up?',
 		},
@@ -335,13 +332,11 @@ export const en = {
 		},
 		'lead-time-gap-checker': {
 			displayName: 'Lead Time Gap Checker',
-			shortName: 'Lead Time Gap',
 			description: 'Will replenishment arrive before inventory becomes unavailable? Compares arrival timing against depletion timing.',
 			coreQuestion: 'Will replenishment arrive before inventory becomes unavailable?',
 		},
 		'supplier-dependency-radar': {
 			displayName: 'Supplier Dependency & Qualification Radar',
-			shortName: 'Supplier Dependency',
 			description: 'Identify structural supply risk from supplier concentration, single-source materials, and qualification dependency.',
 			coreQuestion: 'Where does a single supplier failure take the whole operation down with it?',
 		},
