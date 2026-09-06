@@ -16,7 +16,7 @@ const text = t.workspaces[workspace.id] ?? workspace;
 ---
 
 <PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section="workspaces" locale={locale}>
-	<p class="kicker">{t.workspacePlaceholder.kickerPrefix} · {workspace.layer}</p>
+	<p class="kicker">{t.workspacePlaceholder.kickerPrefix} · {t.common.layerLabels[workspace.layer]}</p>
 	<h1>{text.displayName}</h1>
 	<StatusTag
 		status={workspace.status}

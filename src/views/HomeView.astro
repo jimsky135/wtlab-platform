@@ -27,7 +27,7 @@ const availableTools = platformRegistry.getAvailable().map((tool) => {
 		route: entry ? localizePath(locale, entry.route) : localizePath(locale, `/tools/${tool.metadata.id}`),
 		displayName: text.displayName,
 		description: text.description,
-		category: tool.metadata.category,
+		category: t.common.categoryLabels[tool.metadata.category] ?? tool.metadata.category,
 	};
 });
 
@@ -40,7 +40,7 @@ const homeUtilities = utilities.map((utility) => {
 		route: localizePath(locale, utility.route),
 		displayName: text.displayName,
 		description: text.description,
-		category: utility.category,
+		category: t.common.utilityCategoryLabels[utility.category],
 		statusLabel: t.common.utilityStatusTag.status[utility.status],
 	};
 });

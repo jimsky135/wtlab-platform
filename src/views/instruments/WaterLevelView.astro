@@ -59,7 +59,7 @@ const relatedLinks = [
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
 					<form id="quick-form">
-						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel={rt.fields.unit.label} />
+						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel={rt.fields.unit.label} unitOptions={t.common.unitOptions} />
 						<div class="action-row">
 							<button type="submit">{rt.buttons.runQuick}</button>
 							<button type="button" class="secondary" id="quick-download-input">{rt.buttons.downloadInput}</button>

@@ -31,11 +31,11 @@ const t = getDictionary(locale);
 					</div>
 					<p class="description">{text.description}</p>
 					<p class="io">
-						<span class="label">{t.utilitiesPage.inputTypeLabel}</span> {utility.inputType}
+						<span class="label">{t.utilitiesPage.inputTypeLabel}</span> {text.inputType ?? utility.inputType}
 						<span class="sep" aria-hidden="true">→</span>
-						<span class="label">{t.utilitiesPage.outputTypeLabel}</span> {utility.outputType}
+						<span class="label">{t.utilitiesPage.outputTypeLabel}</span> {text.outputType ?? utility.outputType}
 					</p>
-					<p class="category">{utility.category}</p>
+					<p class="category">{t.common.utilityCategoryLabels[utility.category]}</p>
 					<p class="status-tags">
 						<span class:list={['tag', utility.status === 'available' ? 'tag-live' : undefined]}>
 							{t.common.utilityStatusTag.status[utility.status]}

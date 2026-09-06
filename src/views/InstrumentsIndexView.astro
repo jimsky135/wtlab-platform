@@ -1,8 +1,9 @@
 ---
 // Instrument Library — fully registry-driven, no hardcoded cards.
 // Presentation text (displayName/description/coreQuestion) comes from
-// the i18n `instruments` dictionary; `category` stays an unlocalized
-// machine-style label (pre-existing design, out of scope this sprint).
+// the i18n `instruments` dictionary; `category` (a free-form machine
+// string on the catalog entry) is localized via `common.categoryLabels`,
+// falling back to the raw value for any category not yet translated.
 import StatusTag from '../components/StatusTag.astro';
 import PlatformShell from '../layouts/PlatformShell.astro';
 import { getDictionary, localizePath, type Locale } from '../i18n';
@@ -34,7 +35,7 @@ const t = getDictionary(locale);
 						<span class="label">{t.instrumentsPage.coreQuestionLabel}</span>
 						{text.coreQuestion}
 					</p>
-					<p class="category">{instrument.category}</p>
+					<p class="category">{t.common.categoryLabels[instrument.category] ?? instrument.category}</p>
 					<StatusTag
 						status={instrument.status}
 						implementationState={instrument.implementationState}

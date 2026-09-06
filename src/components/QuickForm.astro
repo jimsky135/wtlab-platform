@@ -24,9 +24,16 @@ interface Props {
 	fieldText: Record<string, FieldText>;
 	optionalWord: string;
 	unitLabel: string;
+	/**
+	 * Display text for the month/day option values — the machine `value`
+	 * stays "month"/"day" regardless of locale. Optional because most
+	 * instruments declare no `unitFieldId` field at all, so the select is
+	 * never rendered and this is never read.
+	 */
+	unitOptions?: { month: string; day: string };
 }
 
-const { fields, fieldText, optionalWord, unitLabel } = Astro.props;
+const { fields, fieldText, optionalWord, unitLabel, unitOptions = { month: 'month', day: 'day' } } = Astro.props;
 
 function text(id: string): FieldText {
 	return fieldText[id] ?? { label: id };
@@ -45,8 +52,8 @@ function text(id: string): FieldText {
 			<div class="field field-unit">
 				<label for={`q-${field.unitFieldId}`}>{unitLabel}</label>
 				<select id={`q-${field.unitFieldId}`} name={field.unitFieldId}>
-					<option value="month">month</option>
-					<option value="day">day</option>
+					<option value="month">{unitOptions.month}</option>
+					<option value="day">{unitOptions.day}</option>
 				</select>
 			</div>
 		</div>

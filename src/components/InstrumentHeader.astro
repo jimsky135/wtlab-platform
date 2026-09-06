@@ -22,7 +22,7 @@ const text = t.instruments[entry.id] ?? entry;
 ---
 
 <header class="instrument-header">
-	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {entry.layer}</p>
+	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {t.common.layerLabels[entry.layer]}</p>
 	<h1>
 		{text.displayName}
 		{subtitle && <span class="subtitle">{subtitle}</span>}

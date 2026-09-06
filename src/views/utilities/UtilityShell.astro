@@ -26,7 +26,7 @@ const statusText = t.common.utilityStatusTag;
 <PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section="utilities" locale={locale}>
 	<article class="utility-page">
 		<header class="utility-header">
-			<p class="kicker">{t.utilityPlaceholder.kickerPrefix} · {utility.category}</p>
+			<p class="kicker">{t.utilityPlaceholder.kickerPrefix} · {t.common.utilityCategoryLabels[utility.category]}</p>
 			<h1><span class="icon" aria-hidden="true">{utility.icon}</span> {text.displayName}</h1>
 			<p class="status-tags">
 				<span class:list={['tag', utility.status === 'available' ? 'tag-live' : undefined]}>
@@ -38,11 +38,11 @@ const statusText = t.common.utilityStatusTag;
 				<dt>{t.utilityPlaceholder.purposeLabel}</dt>
 				<dd>{text.description}</dd>
 				<dt>{t.utilityPlaceholder.categoryLabel}</dt>
-				<dd>{utility.category}</dd>
+				<dd>{t.common.utilityCategoryLabels[utility.category]}</dd>
 				<dt>{t.utilityPlaceholder.inputTypeLabel}</dt>
-				<dd>{utility.inputType}</dd>
+				<dd>{text.inputType ?? utility.inputType}</dd>
 				<dt>{t.utilityPlaceholder.outputTypeLabel}</dt>
-				<dd>{utility.outputType}</dd>
+				<dd>{text.outputType ?? utility.outputType}</dd>
 			</dl>
 			<nav class="utility-nav" aria-label="Utility">
 				<a href={localizePath(locale, '/utilities')}>{t.utilityPlaceholder.backLink}</a>

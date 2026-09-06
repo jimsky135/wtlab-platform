@@ -4,6 +4,8 @@
 // locale-neutral machine contract policy.
 
 import type { MessageCode } from '../platform/message-codes.ts';
+import type { ToolLayer } from '../platform/catalog.ts';
+import type { UtilityCategory } from '../platform/utility-catalog.ts';
 
 export type Locale = 'en' | 'zh-TW';
 
@@ -19,6 +21,9 @@ export interface UtilityCatalogEntryText {
 	displayName: string;
 	shortName?: string;
 	description: string;
+	/** Optional localized override for the catalog's inputType/outputType (format descriptors) — falls back to the raw catalog value when absent. */
+	inputType?: string;
+	outputType?: string;
 }
 
 export interface ModeText {
@@ -38,6 +43,16 @@ export interface UtilityStatusTagText {
 	implementationState: Record<'placeholder' | 'implemented', string>;
 }
 
+/** Instrument/Workspace platform layer, shown in every instrument/workspace kicker line (InstrumentHeader, *PlaceholderView). */
+export type LayerLabelText = Record<ToolLayer, string>;
+
+/**
+ * Instrument category — a free-form string on InstrumentEntry (platform/catalog.ts), not a closed union, so this
+ * is a lookup keyed by whatever category values are actually in use today (platform/instruments.ts). A category
+ * with no entry here falls back to showing its raw machine value — add a translation here when a new one is introduced.
+ */
+export type CategoryLabelText = Record<string, string>;
+
 export interface CapabilityPanelText {
 	heading: string;
 	future: string;
@@ -54,6 +69,9 @@ export interface CommonText {
 	optionalWord: string;
 	statusTag: StatusTagText;
 	utilityStatusTag: UtilityStatusTagText;
+	layerLabels: LayerLabelText;
+	categoryLabels: CategoryLabelText;
+	utilityCategoryLabels: Record<UtilityCategory, string>;
 	capabilityPanel: CapabilityPanelText;
 	modeHeading: string;
 	relatedHeading: string;
@@ -80,6 +98,8 @@ export interface CommonText {
 	};
 	/** Label for the shared setupRowTable() remove-row button (src/shared/instrument-ui.ts). */
 	removeRow: string;
+	/** Display text for the shared QuickForm day/month unit toggle (src/components/QuickForm.astro) — the underlying option `value` stays the machine literal "month"/"day". */
+	unitOptions: { month: string; day: string };
 }
 
 export interface NavigationText {
@@ -208,6 +228,8 @@ export interface CommandText {
 	summaryLabels: { activeReviews: string; pendingDecisions: string; openQuestions: string; newObservations: string };
 	focusHeading: string;
 	focusLabels: { entity: string; stage: string; observations: string; reviewQuestion: string };
+	/** Demo content for the focus block (labeled "demo data" in the UI) — was previously hardcoded English directly in CommandView.astro. */
+	focusValues: { entity: string; stage: string; observations: string; reviewQuestion: string };
 	workspacesHeading: string;
 	instrumentsHeading: string;
 	continuityHeading: string;

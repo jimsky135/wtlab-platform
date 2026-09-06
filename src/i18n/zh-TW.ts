@@ -25,6 +25,22 @@ export const zhTW = {
 			status: { 'coming-soon': '即將推出', available: '已上線', archived: '已封存' },
 			implementationState: { placeholder: '佔位', implemented: '已實作' },
 		},
+		layerLabels: {
+			observe: '觀察',
+			think: '思考',
+			work: '執行',
+			continue: '延續',
+			platform: '平台',
+		},
+		categoryLabels: {
+			'supply-chain-inventory': '供應鏈庫存',
+			'supply-chain-risk': '供應鏈風險',
+		},
+		utilityCategoryLabels: {
+			'data-preparation': '資料整理',
+			'format-transformation': '格式轉換',
+			'workflow-automation': '工作流程自動化',
+		},
 		capabilityPanel: {
 			heading: '功能',
 			future: '未來',
@@ -68,6 +84,7 @@ export const zhTW = {
 			rowPrefix: '第',
 		},
 		removeRow: '移除',
+		unitOptions: { month: '月', day: '天' },
 	},
 
 	nav: {
@@ -207,6 +224,12 @@ export const zhTW = {
 			observations: '目前觀察',
 			reviewQuestion: '審查問題',
 		},
+		focusValues: {
+			entity: 'M50 Series',
+			stage: '決策審查中',
+			observations: '耗用量超前月平均；有一筆在途到貨尚未確認。',
+			reviewQuestion: '目前的安全緩衝是否仍能涵蓋已確認到貨的缺口？',
+		},
 		workspacesHeading: '建議工作區',
 		instrumentsHeading: '工具狀態',
 		continuityHeading: '延續性操作',
@@ -322,6 +345,8 @@ export const zhTW = {
 		'excel-preprocessor': {
 			displayName: 'Excel Preprocessor',
 			description: '將每日 SAP 庫存報表 MHTML 匯出檔，轉換為含總庫存與可比較可用月數的 Excel 檔案，可直接套用既有範本。',
+			inputType: 'SAP MHTML 庫存報表（.mhtml）',
+			outputType: 'Excel 檔案（.xlsx）',
 		},
 	},
 

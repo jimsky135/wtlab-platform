@@ -27,6 +27,22 @@ export const en = {
 			status: { 'coming-soon': 'Coming Soon', available: 'Available', archived: 'Archived' },
 			implementationState: { placeholder: 'Placeholder', implemented: 'Implemented' },
 		},
+		layerLabels: {
+			observe: 'Observe',
+			think: 'Think',
+			work: 'Work',
+			continue: 'Continue',
+			platform: 'Platform',
+		},
+		categoryLabels: {
+			'supply-chain-inventory': 'Supply Chain Inventory',
+			'supply-chain-risk': 'Supply Chain Risk',
+		},
+		utilityCategoryLabels: {
+			'data-preparation': 'Data Preparation',
+			'format-transformation': 'Format Transformation',
+			'workflow-automation': 'Workflow Automation',
+		},
 		capabilityPanel: {
 			heading: 'Capabilities',
 			future: 'Future',
@@ -73,6 +89,7 @@ export const en = {
 			rowPrefix: 'Row',
 		},
 		removeRow: 'Remove',
+		unitOptions: { month: 'month', day: 'day' },
 	},
 
 	// ---- navigation ----
@@ -215,6 +232,12 @@ export const en = {
 			observations: 'Current observations',
 			reviewQuestion: 'Review question',
 		},
+		focusValues: {
+			entity: 'M50 Series',
+			stage: 'Decision Review',
+			observations: 'Consumption is running ahead of the monthly average; one inbound shipment is unconfirmed.',
+			reviewQuestion: 'Does the current buffer still cover the confirmed arrival gap?',
+		},
 		workspacesHeading: 'Suggested Workspaces',
 		instrumentsHeading: 'Instrument Status',
 		continuityHeading: 'Continuity Actions',
@@ -334,6 +357,8 @@ export const en = {
 		'excel-preprocessor': {
 			displayName: 'Excel Preprocessor',
 			description: 'Turn the daily SAP Inventory Report MHTML export into a Total-Inventory-and-comparable-months Excel file, ready for the existing template.',
+			inputType: 'SAP MHTML Inventory Report (.mhtml)',
+			outputType: 'Excel (.xlsx)',
 		},
 	},
 

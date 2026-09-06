@@ -17,7 +17,7 @@ const text = t.instruments[instrument.id] ?? instrument;
 ---
 
 <PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section="instruments" locale={locale}>
-	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {instrument.layer}</p>
+	<p class="kicker">{t.instrumentPlaceholder.kickerPrefix} · {t.common.layerLabels[instrument.layer]}</p>
 	<h1>{text.displayName}</h1>
 	<StatusTag
 		status={instrument.status}
@@ -32,7 +32,7 @@ const text = t.instruments[instrument.id] ?? instrument;
 		<dt>{t.instrumentPlaceholder.coreQuestionLabel}</dt>
 		<dd>{text.coreQuestion}</dd>
 		<dt>{t.instrumentPlaceholder.categoryLabel}</dt>
-		<dd>{instrument.category}</dd>
+		<dd>{t.common.categoryLabels[instrument.category] ?? instrument.category}</dd>
 		{instrument.prototypeRefs.length > 0 && (
 			<>
 				<dt>{t.instrumentPlaceholder.relatedPrototypesLabel}</dt>
