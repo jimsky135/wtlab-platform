@@ -32,9 +32,29 @@ const entry = findById(instruments, TOOL_ID);
 
 // Every window is optional on the form: a blank window is real data
 // ("no history for this window"), never an omission to nag about.
+//
+// This instrument has no CSV template to mirror, so the worked example is
+// declared here. Q3 deliberately runs well above the annual average — a
+// flat example would show a flat wave and teach nothing about what the
+// instrument is for.
+const SAMPLE_WINDOWS: Record<string, string> = {
+	annual: '100',
+	h1: '80',
+	h2: '120',
+	q1: '70',
+	q2: '90',
+	q3: '180',
+	q4: '60',
+};
+
 const quickFields: QuickFormFieldConfig[] = [
-	{ id: 'itemName', numeric: false, requiredOnForm: false },
-	...DEMAND_WINDOW_IDS.map((window) => ({ id: window, numeric: true, requiredOnForm: false })),
+	{ id: 'itemName', numeric: false, requiredOnForm: false, value: 'example-item' },
+	...DEMAND_WINDOW_IDS.map((window) => ({
+		id: window,
+		numeric: true,
+		requiredOnForm: false,
+		value: SAMPLE_WINDOWS[window],
+	})),
 ];
 ---
 
@@ -48,6 +68,7 @@ const quickFields: QuickFormFieldConfig[] = [
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
 					<p class="section-note">{rt.labels.manualEntryNote}</p>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<form id="quick-form">
 						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
@@ -58,7 +79,7 @@ const quickFields: QuickFormFieldConfig[] = [
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.results}</h2>
+					<h2>{rt.headings.results}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 				</div>
 			</section>
@@ -92,7 +113,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { el, renderIssues } from '../../shared/intake-ui.ts';
-	import { collectFormValues } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initSampleRun } from '../../shared/instrument-ui.ts';
 	import { demandWaveAdapter } from '../../platform/adapters/demand-wave/adapter.ts';
 	import { analyzeDemandWave } from '../../tools/demand-wave-radar/analyze.ts';
 	import { demandWaveSchema } from '../../tools/demand-wave-radar/schema.ts';
@@ -364,20 +385,27 @@ const quickFields: QuickFormFieldConfig[] = [
 		return row;
 	}
 
+	function runQuickFromForm() {
+		const record: RawIntakeRecord = { values: formRow(), unknown: {} };
+		const result = validateRecords([record], demandWaveSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+			return;
+		}
+		renderIssues(quickManualIssues, [], locale, fieldLabels);
+		const outcome = confirmIntake(demandWaveSchema, result);
+		if (outcome.confirmed) run(outcome.data);
+	}
+
 	if (quickForm) {
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			const record: RawIntakeRecord = { values: formRow(), unknown: {} };
-			const result = validateRecords([record], demandWaveSchema);
-			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-				return;
-			}
-			renderIssues(quickManualIssues, [], locale, fieldLabels);
-			const outcome = confirmIntake(demandWaveSchema, result);
-			if (outcome.confirmed) run(outcome.data);
+			runQuickFromForm();
 		});
 	}
+
+	// Land on the worked example rendered into the form above.
+	initSampleRun(quickForm, runQuickFromForm);
 </script>
 
 <style>

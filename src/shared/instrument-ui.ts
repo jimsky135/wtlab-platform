@@ -25,6 +25,36 @@ export function initModeSwitcher() {
 	}
 }
 
+/**
+ * Lands an instrument on a worked example instead of an empty form: runs
+ * it once against the values already rendered into the form, so a
+ * first-time visitor sees real output before typing anything.
+ *
+ * The sample stays labelled until the visitor submits their own numbers —
+ * results on screen that are not the visitor's data have to say so. Any
+ * element carrying `data-sample-marker` is hidden on that first submit.
+ */
+export function initSampleRun(trigger: EventTarget | null, run: () => void, eventName = 'submit') {
+	if (!trigger) return;
+	trigger.addEventListener(
+		eventName,
+		() => {
+			for (const marker of document.querySelectorAll<HTMLElement>('[data-sample-marker]')) {
+				marker.hidden = true;
+			}
+		},
+		{ once: true }
+	);
+
+	// Result renderers scroll their block into view — correct after a real
+	// submit, wrong on load, where it would drop the visitor past the form
+	// they are meant to see first. The render is synchronous, so restoring
+	// the offset straight after it keeps the page where it landed.
+	const { scrollX, scrollY } = window;
+	run();
+	window.scrollTo(scrollX, scrollY);
+}
+
 export interface RowTableField {
 	id: string;
 	placeholder?: string;
@@ -36,7 +66,13 @@ export interface RowTableField {
  * period-matrix table is a different responsibility and stays
  * instrument-specific.)
  */
-export function setupRowTable(bodyId: string, fields: readonly RowTableField[], removeLabel = 'Remove') {
+export function setupRowTable(
+	bodyId: string,
+	fields: readonly RowTableField[],
+	removeLabel = 'Remove',
+	/** Rows to seed the table with. Omit for the usual single empty row. */
+	initialRows?: ReadonlyArray<Record<string, string>>
+) {
 	const body = document.getElementById(bodyId);
 
 	function addRow(values?: Partial<Record<string, string>>) {
@@ -73,7 +109,11 @@ export function setupRowTable(bodyId: string, fields: readonly RowTableField[], 
 		});
 	}
 
-	addRow();
+	if (initialRows && initialRows.length > 0) {
+		for (const values of initialRows) addRow(values);
+	} else {
+		addRow();
+	}
 	return { addRow, rows };
 }
 

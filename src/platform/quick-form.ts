@@ -15,6 +15,13 @@ export interface QuickFormFieldConfig {
 	requiredOnForm: boolean;
 	placeholder?: string;
 	/**
+	 * Initial value rendered into the static HTML. Used to land the page on
+	 * a worked example instead of an empty form, so a first-time visitor
+	 * sees what the instrument actually produces. Server-rendered rather
+	 * than filled in by script, so there is no empty-then-populated flash.
+	 */
+	value?: string;
+	/**
 	 * Pairs this field with a day/month unit <select> sharing the same
 	 * row. The unit control's `name` is this id; its value feeds the
 	 * instrument's own day→month conversion (see toMonthsRaw in

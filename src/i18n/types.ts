@@ -98,6 +98,12 @@ export interface CommonText {
 	removeRow: string;
 	/** Display text for the shared QuickForm day/month unit toggle (src/components/QuickForm.astro) — the underlying option `value` stays the machine literal "month"/"day". */
 	unitOptions: { month: string; day: string };
+	/**
+	 * Shown when an instrument lands pre-filled with a worked example. The
+	 * tag must stay visible until the visitor runs their own numbers —
+	 * results on screen that are not the visitor's data have to say so.
+	 */
+	sampleData: { tag: string; note: string };
 }
 
 export interface NavigationText {

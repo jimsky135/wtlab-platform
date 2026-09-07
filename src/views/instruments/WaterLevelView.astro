@@ -29,12 +29,15 @@ const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
 const modes = [quickModeContract, advancedModeContract];
 
+// Values mirror this mode's CSV template samples (modes/quick/template.ts)
+// so the worked example on screen and the downloadable blank template
+// always tell the same story.
 const quickFields: QuickFormFieldConfig[] = [
-	{ id: 'itemName', numeric: false, requiredOnForm: false },
-	{ id: 'currentStock', numeric: true, requiredOnForm: true },
-	{ id: 'monthlyConsumption', numeric: true, requiredOnForm: true },
-	{ id: 'leadTime', numeric: true, requiredOnForm: true, unitFieldId: 'leadTimeUnit' },
-	{ id: 'safetyBuffer', numeric: true, requiredOnForm: true, unitFieldId: 'safetyBufferUnit' },
+	{ id: 'itemName', numeric: false, requiredOnForm: false, value: 'example-item' },
+	{ id: 'currentStock', numeric: true, requiredOnForm: true, value: '120' },
+	{ id: 'monthlyConsumption', numeric: true, requiredOnForm: true, value: '15' },
+	{ id: 'leadTime', numeric: true, requiredOnForm: true, unitFieldId: 'leadTimeUnit', value: '2' },
+	{ id: 'safetyBuffer', numeric: true, requiredOnForm: true, unitFieldId: 'safetyBufferUnit', value: '1' },
 	{ id: 'inTransitQuantity', numeric: true, requiredOnForm: false },
 	{ id: 'arrivalTime', numeric: true, requiredOnForm: false, unitFieldId: 'arrivalTimeUnit' },
 ];
@@ -58,6 +61,7 @@ const relatedLinks = [
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<form id="quick-form">
 						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel={rt.fields.unit.label} unitOptions={t.common.unitOptions} />
 						<div class="action-row">
@@ -76,7 +80,7 @@ const relatedLinks = [
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.results}</h2>
+					<h2>{rt.headings.results}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-download-result-csv">{rt.buttons.downloadResultCsv}</button>
@@ -164,7 +168,7 @@ const relatedLinks = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, toMonthsRaw } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher, initSampleRun, toMonthsRaw } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { advancedAdapter } from '../../platform/adapters/water-level/advanced-adapter.ts';
 	import { quickAdapter } from '../../platform/adapters/water-level/quick-adapter.ts';
@@ -330,20 +334,27 @@ const relatedLinks = [
 		};
 	}
 
+	function runQuickFromForm() {
+		const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+		const result = validateRecords([record], quickIntakeSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+			return;
+		}
+		renderIssues(quickManualIssues, [], locale, fieldLabels);
+		const outcome = confirmIntake(quickIntakeSchema, result);
+		if (outcome.confirmed) runQuick(outcome.data);
+	}
+
 	if (quickForm) {
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
-			const result = validateRecords([record], quickIntakeSchema);
-			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-				return;
-			}
-			renderIssues(quickManualIssues, [], locale, fieldLabels);
-			const outcome = confirmIntake(quickIntakeSchema, result);
-			if (outcome.confirmed) runQuick(outcome.data);
+			runQuickFromForm();
 		});
 	}
+
+	// Land on the worked example rendered into the form above.
+	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
 		download(quickModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(quickCsvTemplate, [quickFormRow()]));

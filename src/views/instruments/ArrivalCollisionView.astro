@@ -42,6 +42,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
 					<p class="section-note">{rt.labels.dateFormatNote}</p>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-add-row">{rt.buttons.addArrival}</button>
 					</div>
@@ -68,7 +69,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.results}</h2>
+					<h2>{rt.headings.results}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-download-result">{rt.buttons.downloadResult}</button>
@@ -147,7 +148,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { initModeSwitcher, initSampleRun, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { arrivalAdvancedAdapter } from '../../platform/adapters/arrival-collision/advanced-adapter.ts';
 	import { arrivalQuickAdapter } from '../../platform/adapters/arrival-collision/quick-adapter.ts';
@@ -251,7 +252,16 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 
 	// ---------- QUICK ----------
 
-	const quickTable = setupRowTable('quick-body', ROW_FIELDS, getDictionary(locale).common.removeRow);
+	// Worked example: two batches landing in the same month is the whole
+	// point of this instrument, so a single-row sample would demonstrate
+	// nothing. Dates mirror the CSV template's era.
+	const SAMPLE_ARRIVALS = [
+		{ arrivalDate: '2026-08-10', quantity: '500', container: 'C-01', supplier: 'supplier-a' },
+		{ arrivalDate: '2026-08-22', quantity: '400', container: 'C-02', supplier: 'supplier-b' },
+		{ arrivalDate: '2026-09-15', quantity: '300', container: 'C-03', supplier: 'supplier-a' },
+	];
+
+	const quickTable = setupRowTable('quick-body', ROW_FIELDS, getDictionary(locale).common.removeRow, SAMPLE_ARRIVALS);
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	let lastQuickAnalysis: ArrivalAnalysis | null = null;
 
@@ -277,16 +287,21 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	}
 
 	document.getElementById('quick-add-row')?.addEventListener('click', () => quickTable.addRow());
-	document.getElementById('quick-run')?.addEventListener('click', () => {
-		const records: RawIntakeRecord[] = quickTable.rows().map((values) => ({ values, unknown: {} }));
-		const result = validateRecords(records, arrivalQuickSchema);
-		if (result.errorCount > 0) {
-			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-			return;
-		}
-		const outcome = confirmIntake(arrivalQuickSchema, result);
-		if (outcome.confirmed) runQuick(outcome.data);
-	});
+	function runQuickFromTable() {
+	const records: RawIntakeRecord[] = quickTable.rows().map((values) => ({ values, unknown: {} }));
+	const result = validateRecords(records, arrivalQuickSchema);
+	if (result.errorCount > 0) {
+		renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+		return;
+	}
+	const outcome = confirmIntake(arrivalQuickSchema, result);
+	if (outcome.confirmed) runQuick(outcome.data);
+	}
+
+	document.getElementById('quick-run')?.addEventListener('click', runQuickFromTable);
+
+	// Land on the worked example seeded into the table above.
+	initSampleRun(document.getElementById('quick-run'), runQuickFromTable, 'click');
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
 		download(arrivalQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(arrivalQuickTemplate, quickTable.rows()));
 	});

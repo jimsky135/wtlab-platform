@@ -29,11 +29,14 @@ const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
 const modes = [bufferDriftQuickContract, bufferDriftAdvancedContract];
 
+// Values mirror this mode's CSV template samples (modes/quick/template.ts)
+// so the worked example on screen and the downloadable blank template
+// always tell the same story.
 const quickFields: QuickFormFieldConfig[] = [
-	{ id: 'itemName', numeric: false, requiredOnForm: false },
-	{ id: 'monthlyConsumption', numeric: true, requiredOnForm: true },
-	{ id: 'intendedBufferMonths', numeric: true, requiredOnForm: true },
-	{ id: 'actualBufferQuantity', numeric: true, requiredOnForm: true },
+	{ id: 'itemName', numeric: false, requiredOnForm: false, value: 'example-item' },
+	{ id: 'monthlyConsumption', numeric: true, requiredOnForm: true, value: '20' },
+	{ id: 'intendedBufferMonths', numeric: true, requiredOnForm: true, value: '1' },
+	{ id: 'actualBufferQuantity', numeric: true, requiredOnForm: true, value: '14' },
 ];
 ---
 
@@ -48,6 +51,7 @@ const quickFields: QuickFormFieldConfig[] = [
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<form id="quick-form">
 						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
@@ -66,7 +70,7 @@ const quickFields: QuickFormFieldConfig[] = [
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.results}</h2>
+					<h2>{rt.headings.results}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-download-result">{rt.buttons.downloadResult}</button>
@@ -142,7 +146,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher, initSampleRun } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { bufferDriftAdvancedAdapter } from '../../platform/adapters/buffer-drift/advanced-adapter.ts';
 	import { bufferDriftQuickAdapter } from '../../platform/adapters/buffer-drift/quick-adapter.ts';
@@ -282,20 +286,27 @@ const quickFields: QuickFormFieldConfig[] = [
 		};
 	}
 
+	function runQuickFromForm() {
+		const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+		const result = validateRecords([record], bufferDriftQuickSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+			return;
+		}
+		renderIssues(quickManualIssues, [], locale, fieldLabels);
+		const outcome = confirmIntake(bufferDriftQuickSchema, result);
+		if (outcome.confirmed) runQuick(outcome.data);
+	}
+
 	if (quickForm) {
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
-			const result = validateRecords([record], bufferDriftQuickSchema);
-			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-				return;
-			}
-			renderIssues(quickManualIssues, [], locale, fieldLabels);
-			const outcome = confirmIntake(bufferDriftQuickSchema, result);
-			if (outcome.confirmed) runQuick(outcome.data);
+			runQuickFromForm();
 		});
 	}
+
+	// Land on the worked example rendered into the form above.
+	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
 		download(bufferDriftQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(bufferDriftQuickTemplate, [quickFormRow()]));

@@ -34,25 +34,30 @@ const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
 const modes = [supplierDependencyQuickContract, supplierDependencyAdvancedContract];
 
+// Values mirror this mode's CSV template samples (modes/quick/template.ts)
+// so the worked example on screen and the downloadable blank template
+// tell the same story. Optional fields the template leaves blank are
+// filled in here where blank would land the visitor on an "unknown"
+// warning instead of a decisive verdict.
 const quickFields: QuickFormFieldConfig[] = [
-	{ id: 'supplierName', numeric: false, requiredOnForm: true },
-	{ id: 'materialCount', numeric: true, requiredOnForm: true },
-	{ id: 'criticalMaterialCount', numeric: true, requiredOnForm: true },
-	{ id: 'supplierSharePercent', numeric: true, requiredOnForm: true },
-	{ id: 'singleSourceMaterialCount', numeric: true, requiredOnForm: true },
-	{ id: 'qualifiedSingleSourceMaterialCount', numeric: true, requiredOnForm: true },
-	{ id: 'alternativeSupplierAvailable', numeric: false, requiredOnForm: false, placeholder: 'true / false' },
-	{ id: 'qualifiedAlternativeAvailable', numeric: false, requiredOnForm: false, placeholder: 'true / false' },
-	{ id: 'qualificationRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false' },
-	{ id: 'qualificationLeadTimeMonths', numeric: true, requiredOnForm: false },
-	{ id: 'customerApprovalRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false' },
-	{ id: 'trialProductionRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false' },
-	{ id: 'averageLeadTimeDays', numeric: true, requiredOnForm: false },
-	{ id: 'averageDelayDays', numeric: true, requiredOnForm: false },
-	{ id: 'deliveryReliabilityPercent', numeric: true, requiredOnForm: false },
-	{ id: 'agreementCancellationCount', numeric: true, requiredOnForm: false },
-	{ id: 'annualExposureValue', numeric: true, requiredOnForm: false },
-	{ id: 'estimatedSwitchingTime', numeric: false, requiredOnForm: false, placeholder: 'immediate / within-1-month / within-3-months / six-plus-months' },
+	{ id: 'supplierName', numeric: false, requiredOnForm: true, value: 'example-supplier' },
+	{ id: 'materialCount', numeric: true, requiredOnForm: true, value: '6' },
+	{ id: 'criticalMaterialCount', numeric: true, requiredOnForm: true, value: '2' },
+	{ id: 'supplierSharePercent', numeric: true, requiredOnForm: true, value: '70' },
+	{ id: 'singleSourceMaterialCount', numeric: true, requiredOnForm: true, value: '3' },
+	{ id: 'qualifiedSingleSourceMaterialCount', numeric: true, requiredOnForm: true, value: '1' },
+	{ id: 'alternativeSupplierAvailable', numeric: false, requiredOnForm: false, placeholder: 'true / false', value: 'true' },
+	{ id: 'qualifiedAlternativeAvailable', numeric: false, requiredOnForm: false, placeholder: 'true / false', value: 'false' },
+	{ id: 'qualificationRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false', value: 'true' },
+	{ id: 'qualificationLeadTimeMonths', numeric: true, requiredOnForm: false, value: '9' },
+	{ id: 'customerApprovalRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false', value: 'true' },
+	{ id: 'trialProductionRequired', numeric: false, requiredOnForm: false, placeholder: 'true / false', value: 'false' },
+	{ id: 'averageLeadTimeDays', numeric: true, requiredOnForm: false, value: '45' },
+	{ id: 'averageDelayDays', numeric: true, requiredOnForm: false, value: '5' },
+	{ id: 'deliveryReliabilityPercent', numeric: true, requiredOnForm: false, value: '92' },
+	{ id: 'agreementCancellationCount', numeric: true, requiredOnForm: false, value: '0' },
+	{ id: 'annualExposureValue', numeric: true, requiredOnForm: false, value: '250000' },
+	{ id: 'estimatedSwitchingTime', numeric: false, requiredOnForm: false, placeholder: 'immediate / within-1-month / within-3-months / six-plus-months', value: 'six-plus-months' },
 	{ id: 'notes', numeric: false, requiredOnForm: false },
 ];
 
@@ -70,6 +75,7 @@ const QUICK_FIELD_IDS = quickFields.map((field) => field.id);
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<form id="quick-form">
 						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
@@ -88,7 +94,7 @@ const QUICK_FIELD_IDS = quickFields.map((field) => field.id);
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.results}</h2>
+					<h2>{rt.headings.results}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-download-result">{rt.buttons.downloadResult}</button>
@@ -166,7 +172,7 @@ const QUICK_FIELD_IDS = quickFields.map((field) => field.id);
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher, initSampleRun, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { supplierDependencyAdvancedAdapter } from '../../platform/adapters/supplier-dependency/advanced-adapter.ts';
 	import { supplierDependencyQuickAdapter } from '../../platform/adapters/supplier-dependency/quick-adapter.ts';
@@ -314,20 +320,27 @@ const QUICK_FIELD_IDS = quickFields.map((field) => field.id);
 		return collectFormValues(quickForm, QUICK_FIELD_IDS);
 	}
 
+	function runQuickFromForm() {
+		const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+		const result = validateRecords([record], supplierDependencyQuickSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+			return;
+		}
+		renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
+		const outcome = confirmIntake(supplierDependencyQuickSchema, result);
+		if (outcome.confirmed) runQuick(outcome.data);
+	}
+
 	if (quickForm) {
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
-			const result = validateRecords([record], supplierDependencyQuickSchema);
-			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-				return;
-			}
-			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
-			const outcome = confirmIntake(supplierDependencyQuickSchema, result);
-			if (outcome.confirmed) runQuick(outcome.data);
+			runQuickFromForm();
 		});
 	}
+
+	// Land on the worked example rendered into the form above.
+	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
 		download(supplierDependencyQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(supplierDependencyQuickTemplate, [quickFormRow()]));

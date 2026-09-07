@@ -312,3 +312,17 @@
 	border-bottom: 1px solid var(--color-accent);
 	padding-bottom: 2px;
 }
+
+/* Sample-data marker — shown while an instrument is displaying its worked
+   example, hidden once the visitor runs their own numbers. */
+.instrument-page .demo-tag {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	border: var(--border-hairline);
+	padding: 2px 8px;
+	margin-left: var(--space-xs);
+	white-space: nowrap;
+}

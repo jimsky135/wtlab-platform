@@ -85,6 +85,10 @@ export const zhTW = {
 		},
 		removeRow: '移除',
 		unitOptions: { month: '月', day: '天' },
+		sampleData: {
+			tag: '示範資料',
+			note: '這是示範數字，讓你先看到這個工具會算出什麼。把欄位改成你自己的數值，再執行一次即可。',
+		},
 	},
 
 	nav: {

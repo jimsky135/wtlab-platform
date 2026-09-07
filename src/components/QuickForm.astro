@@ -47,7 +47,7 @@ function text(id: string): FieldText {
 		<div class="field-row">
 			<div class="field">
 				<label for={inputId}>{t.label}</label>
-				<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} />
+				<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} value={field.value} />
 			</div>
 			<div class="field field-unit">
 				<label for={`q-${field.unitFieldId}`}>{unitLabel}</label>
@@ -66,7 +66,7 @@ function text(id: string): FieldText {
 				)}
 				{field.requiredOnForm && t.optional && <span class="optional-marker"> ({t.optional})</span>}
 			</label>
-			<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} />
+			<input id={inputId} name={field.id} type="text" inputmode={field.numeric ? 'decimal' : undefined} required={field.requiredOnForm} placeholder={field.placeholder} value={field.value} />
 		</div>
 	);
 })}

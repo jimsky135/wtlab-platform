@@ -31,13 +31,18 @@ const available = platformRegistry.isAvailable(TOOL_ID);
 const entry = findById(instruments, TOOL_ID);
 const modes = [deadStockQuickContract, deadStockAdvancedContract];
 
+// Values mirror this mode's CSV template samples (modes/quick/template.ts)
+// so the worked example on screen and the downloadable blank template
+// tell the same story. Optional fields the template leaves blank are
+// filled in here where blank would land the visitor on an "unknown"
+// warning instead of a decisive verdict.
 const quickFields: QuickFormFieldConfig[] = [
-	{ id: 'item', numeric: false, requiredOnForm: true },
-	{ id: 'currentStock', numeric: true, requiredOnForm: true },
-	{ id: 'recentMonthlyConsumption', numeric: true, requiredOnForm: true },
-	{ id: 'monthsSinceLastMovement', numeric: true, requiredOnForm: false },
-	{ id: 'futureDemand', numeric: true, requiredOnForm: false },
-	{ id: 'unitCost', numeric: true, requiredOnForm: false },
+	{ id: 'item', numeric: false, requiredOnForm: true, value: 'example-item' },
+	{ id: 'currentStock', numeric: true, requiredOnForm: true, value: '800' },
+	{ id: 'recentMonthlyConsumption', numeric: true, requiredOnForm: true, value: '10' },
+	{ id: 'monthsSinceLastMovement', numeric: true, requiredOnForm: false, value: '2' },
+	{ id: 'futureDemand', numeric: true, requiredOnForm: false, value: '0' },
+	{ id: 'unitCost', numeric: true, requiredOnForm: false, value: '3.5' },
 	{ id: 'thresholdMonths', numeric: true, requiredOnForm: false },
 ];
 ---
@@ -53,6 +58,7 @@ const quickFields: QuickFormFieldConfig[] = [
 			<section id="panel-quick" class="mode-panel" aria-label="Quick Check">
 				<details open>
 					<summary>{rt.headings.manualEntry}</summary>
+					<p class="section-note" data-sample-marker>{t.common.sampleData.note}</p>
 					<form id="quick-form">
 						<QuickForm fields={quickFields} fieldText={rt.fields} optionalWord={t.common.optionalWord} unitLabel="" />
 						<div class="action-row">
@@ -71,7 +77,7 @@ const quickFields: QuickFormFieldConfig[] = [
 				</details>
 
 				<div id="quick-results-block" class="results-block" hidden>
-					<h2>{rt.headings.result}</h2>
+					<h2>{rt.headings.result}<span class="demo-tag" data-sample-marker>{t.common.sampleData.tag}</span></h2>
 					<div id="quick-results" aria-live="polite"></div>
 					<div class="action-row">
 						<button type="button" class="secondary" id="quick-download-result">{rt.buttons.downloadResult}</button>
@@ -148,7 +154,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initModeSwitcher, initSampleRun, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { deadStockAdvancedAdapter } from '../../platform/adapters/dead-stock/advanced-adapter.ts';
 	import { deadStockQuickAdapter } from '../../platform/adapters/dead-stock/quick-adapter.ts';
@@ -273,20 +279,27 @@ const quickFields: QuickFormFieldConfig[] = [
 		]);
 	}
 
+	function runQuickFromForm() {
+		const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
+		const result = validateRecords([record], deadStockQuickSchema);
+		if (result.errorCount > 0) {
+			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
+			return;
+		}
+		renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
+		const outcome = confirmIntake(deadStockQuickSchema, result);
+		if (outcome.confirmed) runQuick(outcome.data);
+	}
+
 	if (quickForm) {
 		quickForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			const record: RawIntakeRecord = { values: quickFormRow(), unknown: {} };
-			const result = validateRecords([record], deadStockQuickSchema);
-			if (result.errorCount > 0) {
-				renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'error'), locale, fieldLabels);
-				return;
-			}
-			renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
-			const outcome = confirmIntake(deadStockQuickSchema, result);
-			if (outcome.confirmed) runQuick(outcome.data);
+			runQuickFromForm();
 		});
 	}
+
+	// Land on the worked example rendered into the form above.
+	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
 		download(deadStockQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(deadStockQuickTemplate, [quickFormRow()]));

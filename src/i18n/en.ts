@@ -90,6 +90,10 @@ export const en = {
 		},
 		removeRow: 'Remove',
 		unitOptions: { month: 'month', day: 'day' },
+		sampleData: {
+			tag: 'Sample data',
+			note: 'These are example numbers, so you can see what this instrument produces before entering your own. Edit any field and run it again.',
+		},
 	},
 
 	// ---- navigation ----
