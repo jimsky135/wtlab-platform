@@ -109,6 +109,9 @@ export interface CommonText {
 export interface NavigationText {
 	brandSuffix: string;
 	items: {
+		/** Main workspace entry in the top navigation. */
+		workspace: string;
+		/** Retained for instrument "related links"; no longer a top-nav item. */
 		today: string;
 		instruments: string;
 		utilities: string;
@@ -186,10 +189,20 @@ export interface UtilityPlaceholderText {
 	backLink: string;
 }
 
+/** Archive of workspace prototypes kept out of the main product surface. */
+export interface WorkspacesArchiveText {
+	kicker: string;
+	heading: string;
+	lede: string;
+	notice: string;
+	backLink: string;
+}
+
 export interface WorkspacesPageText {
 	kicker: string;
 	heading: string;
 	lede: string;
+	archiveLink: string;
 }
 
 export interface WorkspacePlaceholderText {
@@ -350,6 +363,7 @@ export interface Dictionary {
 	instrumentsPage: InstrumentsPageText;
 	instrumentPlaceholder: InstrumentPlaceholderText;
 	workspacesPage: WorkspacesPageText;
+	workspacesArchive: WorkspacesArchiveText;
 	workspacePlaceholder: WorkspacePlaceholderText;
 	about: AboutText;
 	continuityPage: ContinuityPageText;

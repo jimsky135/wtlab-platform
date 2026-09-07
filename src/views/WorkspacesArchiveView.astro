@@ -1,6 +1,11 @@
 ---
-// Workspaces index — registry-driven. Presentation text comes from the
-// i18n `workspaces` dictionary; routes are locale-prefixed.
+// Archive of workspace prototypes taken off the main product surface.
+//
+// Preservation, not deletion: every entry here is still the same record in
+// platform/workspaces.ts, still carries its original name, description,
+// status and route, and its page still resolves. Nothing is duplicated —
+// this view reads the same catalog the main list reads, filtered by
+// `surface`.
 import StatusTag from '../components/StatusTag.astro';
 import PlatformShell from '../layouts/PlatformShell.astro';
 import { getDictionary, localizePath, type Locale } from '../i18n';
@@ -11,25 +16,23 @@ interface Props {
 }
 const { locale = 'en' } = Astro.props;
 const t = getDictionary(locale);
-
-// Only the main product surface is listed here. Archived prototypes stay
-// in the same catalog and keep their routes — they are reached through
-// the archive link below, not deleted.
-const mainWorkspaces = workspaces.filter((workspace) => workspace.surface === 'main');
+const archived = workspaces.filter((workspace) => workspace.surface === 'archived');
 ---
 
-<PlatformShell title={`${t.workspacesPage.heading} · ${t.seo.titleSuffix}`} section="workspaces" locale={locale}>
-	<p class="kicker">{t.workspacesPage.kicker}</p>
-	<h1>{t.workspacesPage.heading}</h1>
-	<p class="lede">{t.workspacesPage.lede}</p>
+<PlatformShell title={`${t.workspacesArchive.heading} · ${t.seo.titleSuffix}`} section="workspaces" locale={locale}>
+	<p class="kicker">{t.workspacesArchive.kicker}</p>
+	<h1>{t.workspacesArchive.heading}</h1>
+	<p class="lede">{t.workspacesArchive.lede}</p>
+	<p class="notice">{t.workspacesArchive.notice}</p>
 
 	<ul class="workspace-list">
-		{mainWorkspaces.map((workspace) => {
+		{archived.map((workspace) => {
 			const text = t.workspaces[workspace.id] ?? workspace;
 			return (
 				<li class="workspace">
 					<h2><a href={localizePath(locale, workspace.route)}>{text.displayName}</a></h2>
 					<p class="description">{text.description}</p>
+					<p class="route"><code>{workspace.route}</code></p>
 					<StatusTag
 						status={workspace.status}
 						implementationState={workspace.implementationState}
@@ -41,7 +44,7 @@ const mainWorkspaces = workspaces.filter((workspace) => workspace.surface === 'm
 		})}
 	</ul>
 
-	<p class="archive-link"><a href={localizePath(locale, '/workspace/archive')}>{t.workspacesPage.archiveLink}</a></p>
+	<p class="back"><a href={localizePath(locale, '/workspaces')}>{t.workspacesArchive.backLink}</a></p>
 </PlatformShell>
 
 <style>
@@ -51,7 +54,7 @@ const mainWorkspaces = workspaces.filter((workspace) => workspace.surface === 'm
 		font-weight: 500;
 		letter-spacing: var(--tracking-kicker);
 		text-transform: uppercase;
-		color: var(--color-accent);
+		color: var(--color-text-tertiary);
 		margin: 0 0 var(--space-sm);
 	}
 
@@ -65,62 +68,74 @@ const mainWorkspaces = workspaces.filter((workspace) => workspace.surface === 'm
 
 	.lede {
 		color: var(--color-text-secondary);
-		margin: 0 0 var(--space-xl);
+		max-width: 60ch;
+		margin: 0 0 var(--space-sm);
+	}
+
+	.notice {
+		color: var(--color-text-muted);
+		border-left: 2px solid var(--color-border);
+		padding-left: var(--space-sm);
+		max-width: 60ch;
+		margin: 0 0 var(--space-lg);
 	}
 
 	.workspace-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
+		display: grid;
+		gap: var(--space-md);
 	}
 
 	.workspace {
 		border: var(--border-hairline);
 		padding: var(--space-md);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-xs);
+		opacity: 0.75;
 	}
 
-	h2 {
+	.workspace h2 {
 		font-family: var(--font-display);
 		font-style: italic;
 		font-weight: 400;
-		font-size: 1.3rem;
-		margin: 0;
+		font-size: 1.4rem;
+		margin: 0 0 var(--space-xs);
 	}
 
-	h2 a {
+	.workspace h2 a {
 		color: var(--color-text-primary);
 		text-decoration: none;
 	}
 
-	h2 a:hover {
+	.workspace h2 a:hover {
 		color: var(--color-accent);
 	}
 
 	.description {
 		color: var(--color-text-secondary);
-		margin: 0;
+		margin: 0 0 var(--space-xs);
 	}
 
-	.archive-link {
+	.route {
+		margin: 0 0 var(--space-sm);
+	}
+
+	.route code {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-text-muted);
+	}
+
+	.back {
 		margin-top: var(--space-lg);
 	}
 
-	.archive-link a {
+	.back a {
 		font-family: var(--font-mono);
 		font-size: 11px;
 		letter-spacing: var(--tracking-kicker);
 		text-transform: uppercase;
-		color: var(--color-text-tertiary);
-		text-decoration: none;
-	}
-
-	.archive-link a:hover {
 		color: var(--color-accent);
+		text-decoration: none;
 	}
 </style>

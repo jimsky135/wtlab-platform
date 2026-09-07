@@ -100,7 +100,7 @@ export const en = {
 	// ---- navigation ----
 	nav: {
 		brandSuffix: 'Lab',
-		items: { today: 'Today', instruments: 'Instruments', utilities: 'Utilities', workspaces: 'Workspaces', continuity: 'Continuity', about: 'About' },
+		items: { workspace: 'Integrated Workspace', today: 'Today', instruments: 'Instruments', utilities: 'Utilities', workspaces: 'Workspaces', continuity: 'Continuity', about: 'About' },
 		headerNote: 'Save / Export — planned',
 		languageSwitcher: { en: 'EN', zhTW: '繁中' },
 	},
@@ -186,6 +186,15 @@ export const en = {
 		kicker: 'Platform Workspaces',
 		heading: 'Workspaces',
 		lede: 'Workspaces organize records, entities, observations, and decisions. Instruments measure one dimension; workspaces hold the work itself.',
+		archiveLink: 'Archived prototypes →',
+	},
+
+	workspacesArchive: {
+		kicker: 'Archive',
+		heading: 'Archived Workspace Prototypes',
+		lede: 'These workspaces are not part of the current product surface. They are kept here, at their original routes, because what they should become has not been decided yet.',
+		notice: 'Nothing on these pages is implemented. They are preserved for review, not for use.',
+		backLink: '← Back to Workspaces',
 	},
 
 	workspacePlaceholder: {
@@ -378,10 +387,10 @@ export const en = {
 			description: 'Bring operational data into WTLab: CSV import, normalization, and validation.',
 			coreQuestion: 'How does raw operational data become something instruments can read?',
 		},
-		entity: {
-			displayName: 'Entity Workspace',
-			description: 'Organize the materials, products, suppliers, and sites that observations attach to.',
-			coreQuestion: 'What are the things we are actually tracking?',
+		integrated: {
+			displayName: 'Integrated Workspace',
+			description: 'Work with current operational data and apply WTLab tools for analysis and review.',
+			coreQuestion: 'What am I working on right now, and which tools apply to it?',
 		},
 		'decision-priority': {
 			displayName: 'Decision Priority Map',

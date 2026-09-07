@@ -53,6 +53,13 @@ export interface InstrumentEntry {
 	prototypeRefs: string[];
 }
 
+/**
+ * Where a workspace surfaces in navigation. `archived` keeps an undecided
+ * prototype reachable at its original route while taking it out of the
+ * main Workspaces list — preservation, not deletion.
+ */
+export type WorkspaceSurface = 'main' | 'archived';
+
 /** A workspace: organizes records, entities, observations, or decisions. */
 export interface WorkspaceEntry {
 	id: string;
@@ -65,6 +72,8 @@ export interface WorkspaceEntry {
 	route: string;
 	coreQuestion: string;
 	implementationState: ImplementationState;
+	/** Main Workspaces list, or the archive of undecided prototypes. */
+	surface: WorkspaceSurface;
 	prototypeRefs: string[];
 }
 

@@ -94,7 +94,7 @@ export const zhTW = {
 
 	nav: {
 		brandSuffix: 'Lab',
-		items: { today: '今日', instruments: '工具庫', utilities: '公用工具', workspaces: '工作區', continuity: '延續性', about: '關於' },
+		items: { workspace: '整合工作區', today: '今日', instruments: '工具庫', utilities: '公用工具', workspaces: '工作區', continuity: '延續性', about: '關於' },
 		headerNote: '儲存／匯出 — 規劃中',
 		languageSwitcher: { en: 'EN', zhTW: '繁中' },
 	},
@@ -179,6 +179,15 @@ export const zhTW = {
 		kicker: '平台工作區',
 		heading: '工作區',
 		lede: '工作區用來整理記錄、實體、觀察與決策。工具測量單一面向；工作區則承載實際的工作內容。',
+		archiveLink: '暫存的原型工作區 →',
+	},
+
+	workspacesArchive: {
+		kicker: '暫存區',
+		heading: '暫存的原型工作區',
+		lede: '以下工作區目前不屬於產品主線。它們該長成什麼樣子尚未定案，因此暫時保留在原本的路由上。',
+		notice: '這些頁面沒有任何已實作的功能，保留供檢視之用，並非可使用的工具。',
+		backLink: '← 返回工作區',
 	},
 
 	workspacePlaceholder: {
@@ -366,10 +375,10 @@ export const zhTW = {
 			description: '將營運資料匯入 WTLab：CSV 匯入、標準化與驗證。',
 			coreQuestion: '原始的營運資料要如何變成工具可以讀取的格式？',
 		},
-		entity: {
-			displayName: '實體工作區',
-			description: '整理觀察所依附的原物料、產品、供應商與據點。',
-			coreQuestion: '我們實際在追蹤的對象是什麼？',
+		integrated: {
+			displayName: '整合工作區',
+			description: '集中處理目前工作資料，並使用 WTLab 工具進行分析與判斷。',
+			coreQuestion: '我現在在處理什麼？哪些工具適用？',
 		},
 		'decision-priority': {
 			displayName: '決策優先地圖',

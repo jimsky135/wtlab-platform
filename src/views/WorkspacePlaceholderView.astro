@@ -13,9 +13,14 @@ interface Props {
 const { workspace, locale = 'en' } = Astro.props;
 const t = getDictionary(locale);
 const text = t.workspaces[workspace.id] ?? workspace;
+
+// A main-surface workspace is reached from its own top-nav entry, so it
+// highlights that one; archived prototypes keep highlighting the
+// Workspaces index they are listed under.
+const section = workspace.surface === 'main' ? 'workspace' : 'workspaces';
 ---
 
-<PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section="workspaces" locale={locale}>
+<PlatformShell title={`${text.displayName} · ${t.seo.titleSuffix}`} section={section} locale={locale}>
 	<p class="kicker">{t.workspacePlaceholder.kickerPrefix} · {t.common.layerLabels[workspace.layer]}</p>
 	<h1>{text.displayName}</h1>
 	<StatusTag
