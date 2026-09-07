@@ -148,7 +148,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { initModeSwitcher, initSampleRun, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { arrivalAdvancedAdapter } from '../../platform/adapters/arrival-collision/advanced-adapter.ts';
 	import { arrivalQuickAdapter } from '../../platform/adapters/arrival-collision/quick-adapter.ts';
@@ -263,6 +263,14 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 
 	const quickTable = setupRowTable('quick-body', ROW_FIELDS, getDictionary(locale).common.removeRow, SAMPLE_ARRIVALS);
 	const quickManualIssues = document.getElementById('quick-manual-issues');
+	/**
+	 * Row tables can change without any single field changing, so the row
+	 * count is part of the comparison: adding or deleting an arrival means
+	 * this is no longer the seeded example.
+	 */
+	const showingSample = () =>
+		isSampleUnchanged(document.getElementById('quick-body'), SAMPLE_ARRIVALS.length);
+	const sampleDownloadMessage = getDictionary(locale).common.sampleData.downloadConfirm;
 	let lastQuickAnalysis: ArrivalAnalysis | null = null;
 
 	function runQuick(confirmed: ConfirmedIntake) {
@@ -295,7 +303,10 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 		return;
 	}
 	const outcome = confirmIntake(arrivalQuickSchema, result);
-	if (outcome.confirmed) runQuick(outcome.data);
+	if (outcome.confirmed) {
+		setSampleMarkers(showingSample());
+		runQuick(outcome.data);
+	}
 	}
 
 	document.getElementById('quick-run')?.addEventListener('click', runQuickFromTable);
@@ -303,12 +314,14 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	// Land on the worked example seeded into the table above.
 	initSampleRun(document.getElementById('quick-run'), runQuickFromTable, 'click');
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		download(arrivalQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(arrivalQuickTemplate, quickTable.rows()));
 	});
 	document.getElementById('quick-download-template')?.addEventListener('click', () => {
 		download('arrival-collision-quick-template.csv', 'text/csv', generateBlankTemplateCsv(arrivalQuickTemplate));
 	});
 	document.getElementById('quick-download-result')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		if (lastQuickAnalysis) {
 			download(arrivalQuickContract.exportProfile.resultFilename, 'text/csv', arrivalResultToCsv(lastQuickAnalysis));
 		}

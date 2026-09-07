@@ -168,7 +168,7 @@ const relatedLinks = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, initSampleRun, toMonthsRaw } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers, toMonthsRaw } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { advancedAdapter } from '../../platform/adapters/water-level/advanced-adapter.ts';
 	import { quickAdapter } from '../../platform/adapters/water-level/quick-adapter.ts';
@@ -195,6 +195,9 @@ const relatedLinks = [
 	initModeSwitcher();
 
 	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	/** The worked example is on screen only while every seeded field is untouched. */
+	const showingSample = () => isSampleUnchanged(quickForm);
+	const sampleDownloadMessage = getDictionary(locale).common.sampleData.downloadConfirm;
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	const quickResultsBlock = document.getElementById('quick-results-block');
 	const quickResults = document.getElementById('quick-results');
@@ -343,7 +346,10 @@ const relatedLinks = [
 		}
 		renderIssues(quickManualIssues, [], locale, fieldLabels);
 		const outcome = confirmIntake(quickIntakeSchema, result);
-		if (outcome.confirmed) runQuick(outcome.data);
+		if (outcome.confirmed) {
+			setSampleMarkers(showingSample());
+			runQuick(outcome.data);
+		}
 	}
 
 	if (quickForm) {
@@ -357,17 +363,20 @@ const relatedLinks = [
 	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		download(quickModeContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(quickCsvTemplate, [quickFormRow()]));
 	});
 	document.getElementById('quick-download-template')?.addEventListener('click', () => {
 		download('water-level-quick-template.csv', 'text/csv', generateBlankTemplateCsv(quickCsvTemplate));
 	});
 	document.getElementById('quick-download-result-csv')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		if (lastQuickResults.length > 0) {
 			download(quickModeContract.exportProfile.resultFilename, 'text/csv', quickResultsToCsv(lastQuickResults));
 		}
 	});
 	document.getElementById('quick-download-result-json')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		if (lastQuickResults.length > 0) {
 			download(
 				'water-level-quick-result.json',

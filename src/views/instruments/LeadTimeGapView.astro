@@ -149,7 +149,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, initSampleRun, toMonthsRaw } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers, toMonthsRaw } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { leadTimeGapAdvancedAdapter } from '../../platform/adapters/lead-time-gap/advanced-adapter.ts';
 	import { leadTimeGapQuickAdapter } from '../../platform/adapters/lead-time-gap/quick-adapter.ts';
@@ -188,6 +188,9 @@ const quickFields: QuickFormFieldConfig[] = [
 	// ---------- QUICK ----------
 
 	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	/** The worked example is on screen only while every seeded field is untouched. */
+	const showingSample = () => isSampleUnchanged(quickForm);
+	const sampleDownloadMessage = getDictionary(locale).common.sampleData.downloadConfirm;
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	const quickResultsBlock = document.getElementById('quick-results-block');
 	const quickResults = document.getElementById('quick-results');
@@ -247,7 +250,7 @@ const quickFields: QuickFormFieldConfig[] = [
 
 			const reasons = el('div', 'card');
 			reasons.appendChild(el('h3', undefined, rt.labels.reasons));
-			const list = el('ul');
+			const list = el('ul', 'reason-codes');
 			// Reason codes are stable machine codes — never translated (same convention as Dead Stock's Task 007).
 			for (const code of output.reasonCodes) list.appendChild(el('li', undefined, code));
 			reasons.appendChild(list);
@@ -311,7 +314,10 @@ const quickFields: QuickFormFieldConfig[] = [
 		}
 		renderIssues(quickManualIssues, [], locale, fieldLabels);
 		const outcome = confirmIntake(leadTimeGapQuickSchema, result);
-		if (outcome.confirmed) runQuick(outcome.data);
+		if (outcome.confirmed) {
+			setSampleMarkers(showingSample());
+			runQuick(outcome.data);
+		}
 	}
 
 	if (quickForm) {
@@ -325,12 +331,14 @@ const quickFields: QuickFormFieldConfig[] = [
 	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		download(leadTimeGapQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(leadTimeGapQuickTemplate, [quickFormRow()]));
 	});
 	document.getElementById('quick-download-template')?.addEventListener('click', () => {
 		download('lead-time-gap-quick-template.csv', 'text/csv', generateBlankTemplateCsv(leadTimeGapQuickTemplate));
 	});
 	document.getElementById('quick-download-result')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		if (lastQuickResults.length > 0) {
 			download(leadTimeGapQuickContract.exportProfile.resultFilename, 'text/csv', leadTimeGapQuickResultsToCsv(lastQuickResults));
 		}

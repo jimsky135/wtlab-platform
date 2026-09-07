@@ -154,7 +154,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initModeSwitcher, initSampleRun, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers, setupRowTable } from '../../shared/instrument-ui.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { deadStockAdvancedAdapter } from '../../platform/adapters/dead-stock/advanced-adapter.ts';
 	import { deadStockQuickAdapter } from '../../platform/adapters/dead-stock/quick-adapter.ts';
@@ -185,6 +185,9 @@ const quickFields: QuickFormFieldConfig[] = [
 	// ---------- QUICK ----------
 
 	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	/** The worked example is on screen only while every seeded field is untouched. */
+	const showingSample = () => isSampleUnchanged(quickForm);
+	const sampleDownloadMessage = getDictionary(locale).common.sampleData.downloadConfirm;
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	const quickResults = document.getElementById('quick-results');
 	const quickResultsBlock = document.getElementById('quick-results-block');
@@ -225,7 +228,7 @@ const quickFields: QuickFormFieldConfig[] = [
 
 		const reasons = el('div', 'card');
 		reasons.appendChild(el('h3', undefined, rt.headings.whyReasonCodes));
-		const list = el('ul');
+		const list = el('ul', 'reason-codes');
 		// Reason codes are stable machine codes (Task 007) — never translated.
 		for (const code of item.reasonCodes) list.appendChild(el('li', undefined, code));
 		reasons.appendChild(list);
@@ -288,7 +291,10 @@ const quickFields: QuickFormFieldConfig[] = [
 		}
 		renderIssues(quickManualIssues, result.issues.filter((issue) => issue.severity === 'warning'), locale, fieldLabels);
 		const outcome = confirmIntake(deadStockQuickSchema, result);
-		if (outcome.confirmed) runQuick(outcome.data);
+		if (outcome.confirmed) {
+			setSampleMarkers(showingSample());
+			runQuick(outcome.data);
+		}
 	}
 
 	if (quickForm) {
@@ -302,12 +308,14 @@ const quickFields: QuickFormFieldConfig[] = [
 	initSampleRun(quickForm, runQuickFromForm);
 
 	document.getElementById('quick-download-input')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		download(deadStockQuickContract.exportProfile.inputFilename, 'text/csv', generateInputCsv(deadStockQuickTemplate, [quickFormRow()]));
 	});
 	document.getElementById('quick-download-template')?.addEventListener('click', () => {
 		download('dead-stock-quick-template.csv', 'text/csv', generateBlankTemplateCsv(deadStockQuickTemplate));
 	});
 	document.getElementById('quick-download-result')?.addEventListener('click', () => {
+		if (!confirmSampleDownload(showingSample(), sampleDownloadMessage)) return;
 		if (lastQuickAnalysis) {
 			download(deadStockQuickContract.exportProfile.resultFilename, 'text/csv', deadStockResultToCsv(lastQuickAnalysis));
 		}

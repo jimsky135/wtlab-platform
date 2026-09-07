@@ -103,7 +103,7 @@ export interface CommonText {
 	 * tag must stay visible until the visitor runs their own numbers —
 	 * results on screen that are not the visitor's data have to say so.
 	 */
-	sampleData: { tag: string; note: string };
+	sampleData: { tag: string; note: string; downloadConfirm: string };
 }
 
 export interface NavigationText {

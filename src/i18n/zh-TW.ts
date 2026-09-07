@@ -88,6 +88,7 @@ export const zhTW = {
 		sampleData: {
 			tag: '示範資料',
 			note: '這是示範數字，讓你先看到這個工具會算出什麼。把欄位改成你自己的數值，再執行一次即可。',
+			downloadConfirm: '這是範例資料，不是你自己的分析結果。仍要下載嗎？',
 		},
 	},
 

@@ -93,6 +93,7 @@ export const en = {
 		sampleData: {
 			tag: 'Sample data',
 			note: 'These are example numbers, so you can see what this instrument produces before entering your own. Edit any field and run it again.',
+			downloadConfirm: 'This is sample data, not your own result. Download it anyway?',
 		},
 	},
 

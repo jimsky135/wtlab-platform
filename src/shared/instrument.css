@@ -314,15 +314,50 @@
 }
 
 /* Sample-data marker — shown while an instrument is displaying its worked
-   example, hidden once the visitor runs their own numbers. */
+   example, hidden as soon as the visitor's own numbers are on screen. It
+   has to out-shout the result beside it: a visitor who misreads sample
+   output as their own analysis is the one failure this marker exists to
+   prevent, so it is deliberately the brightest thing in the block. */
 .instrument-page .demo-tag {
+	display: inline-block;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-bg);
+	background: var(--color-accent-strong);
+	border: 1px solid var(--color-accent-strong);
+	padding: 3px 10px;
+	margin-left: var(--space-sm);
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.instrument-page p.section-note[data-sample-marker] {
+	color: var(--color-accent-strong);
+	border-left: 2px solid var(--color-accent-strong);
+	padding-left: var(--space-sm);
+}
+
+/* Reason codes are raw machine identifiers (SCREAMING_SNAKE_CASE) and can
+   be longer than the card that holds them — keep them small and let them
+   wrap rather than overflow. */
+.instrument-page .reason-codes {
+	list-style: none;
+	padding-left: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+}
+
+.instrument-page .reason-codes li {
 	font-family: var(--font-mono);
 	font-size: 10px;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	color: var(--color-text-muted);
+	letter-spacing: 0.06em;
+	color: var(--color-text-secondary);
+	background: var(--color-bg-inset);
 	border: var(--border-hairline);
-	padding: 2px 8px;
-	margin-left: var(--space-xs);
-	white-space: nowrap;
+	padding: 2px 6px;
+	overflow-wrap: anywhere;
 }

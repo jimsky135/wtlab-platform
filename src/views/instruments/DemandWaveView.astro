@@ -113,7 +113,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import type { ConfirmedIntake, RawIntakeRecord } from '../../platform/intake/types.ts';
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { el, renderIssues } from '../../shared/intake-ui.ts';
-	import { collectFormValues, initSampleRun } from '../../shared/instrument-ui.ts';
+	import { collectFormValues, initSampleRun, isSampleUnchanged, setSampleMarkers } from '../../shared/instrument-ui.ts';
 	import { demandWaveAdapter } from '../../platform/adapters/demand-wave/adapter.ts';
 	import { analyzeDemandWave } from '../../tools/demand-wave-radar/analyze.ts';
 	import { demandWaveSchema } from '../../tools/demand-wave-radar/schema.ts';
@@ -272,6 +272,8 @@ const quickFields: QuickFormFieldConfig[] = [
 	// ---------- RESULTS ----------
 
 	const quickForm = document.querySelector<HTMLFormElement>('#quick-form');
+	/** The worked example is on screen only while every seeded field is untouched. */
+	const showingSample = () => isSampleUnchanged(quickForm);
 	const quickManualIssues = document.getElementById('quick-manual-issues');
 	const quickResultsBlock = document.getElementById('quick-results-block');
 	const quickResults = document.getElementById('quick-results');
@@ -394,7 +396,10 @@ const quickFields: QuickFormFieldConfig[] = [
 		}
 		renderIssues(quickManualIssues, [], locale, fieldLabels);
 		const outcome = confirmIntake(demandWaveSchema, result);
-		if (outcome.confirmed) run(outcome.data);
+		if (outcome.confirmed) {
+			setSampleMarkers(showingSample());
+			run(outcome.data);
+		}
 	}
 
 	if (quickForm) {

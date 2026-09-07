@@ -36,15 +36,6 @@ export function initModeSwitcher() {
  */
 export function initSampleRun(trigger: EventTarget | null, run: () => void, eventName = 'submit') {
 	if (!trigger) return;
-	trigger.addEventListener(
-		eventName,
-		() => {
-			for (const marker of document.querySelectorAll<HTMLElement>('[data-sample-marker]')) {
-				marker.hidden = true;
-			}
-		},
-		{ once: true }
-	);
 
 	// Result renderers scroll their block into view — correct after a real
 	// submit, wrong on load, where it would drop the visitor past the form
@@ -53,6 +44,48 @@ export function initSampleRun(trigger: EventTarget | null, run: () => void, even
 	const { scrollX, scrollY } = window;
 	run();
 	window.scrollTo(scrollX, scrollY);
+}
+
+/**
+ * Whether what is on screen is still the seeded worked example rather than
+ * the visitor's own data.
+ *
+ * Compares each control against the value it was rendered with
+ * (`defaultValue` — the HTML `value` attribute) instead of a copied
+ * constant, so the check cannot drift from what was actually seeded, and a
+ * field edited and then put back correctly counts as unchanged again.
+ *
+ * `expectedRowCount` covers row tables, where adding or removing a row
+ * changes the dataset without changing any single field.
+ */
+export function isSampleUnchanged(scope: ParentNode | null, expectedRowCount?: number): boolean {
+	if (!scope) return false;
+
+	const inputs = Array.from(scope.querySelectorAll<HTMLInputElement>('input'));
+	if (inputs.length === 0) return false;
+	if (expectedRowCount !== undefined && scope.querySelectorAll('tr').length !== expectedRowCount) return false;
+	if (inputs.some((input) => input.value !== input.defaultValue)) return false;
+
+	return Array.from(scope.querySelectorAll<HTMLSelectElement>('select')).every((select) => {
+		const marked = select.querySelector<HTMLOptionElement>('option[selected]');
+		return select.value === (marked?.value ?? select.options[0]?.value ?? '');
+	});
+}
+
+/** Shows or hides every `[data-sample-marker]` on the page. */
+export function setSampleMarkers(showing: boolean) {
+	for (const marker of document.querySelectorAll<HTMLElement>('[data-sample-marker]')) {
+		marker.hidden = !showing;
+	}
+}
+
+/**
+ * Guards a download that would hand the visitor sample output as though it
+ * were their own analysis. Returns false only when they decline; a real
+ * result downloads with no prompt at all.
+ */
+export function confirmSampleDownload(showingSample: boolean, message: string): boolean {
+	return !showingSample || window.confirm(message);
 }
 
 export interface RowTableField {
@@ -84,6 +117,9 @@ export function setupRowTable(
 			input.type = 'text';
 			input.dataset.field = field.id;
 			input.value = values?.[field.id] ?? '';
+			// Record what this cell was seeded with, so isSampleUnchanged can
+			// tell a seeded value apart from one the visitor typed.
+			input.defaultValue = input.value;
 			input.setAttribute('aria-label', field.id);
 			if (field.placeholder) input.placeholder = field.placeholder;
 			cell.appendChild(input);
