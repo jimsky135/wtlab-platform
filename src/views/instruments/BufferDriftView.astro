@@ -147,6 +147,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
 	import { collectFormValues, confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers } from '../../shared/instrument-ui.ts';
+	import { saveWorkingDataset } from '../../shared/workspace-bridge.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { bufferDriftAdvancedAdapter } from '../../platform/adapters/buffer-drift/advanced-adapter.ts';
 	import { bufferDriftQuickAdapter } from '../../platform/adapters/buffer-drift/quick-adapter.ts';
@@ -301,6 +302,9 @@ const quickFields: QuickFormFieldConfig[] = [
 		if (outcome.confirmed) {
 			setSampleMarkers(showingSample());
 			runQuick(outcome.data);
+			// Hand the confirmed working data to the guest workspace
+			// (ADR-0004). Same shape this instrument already produces.
+			saveWorkingDataset(bufferDriftQuickSchema.id, outcome.data, { isSample: showingSample() });
 		}
 	}
 

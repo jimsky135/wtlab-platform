@@ -23,9 +23,23 @@ import {
 	listDatasets,
 	putDataset,
 } from './guest-workspace.ts';
+import {
+	authSessionCookie,
+	clearedAuthCookie,
+	createAuthenticatedSession,
+	readAuthenticatedSessionId,
+	verifyPrototypeCredentials,
+	type PrototypeLoginConfig,
+} from './prototype-login.ts';
 import type { SqlDatabase } from './sql.ts';
 
 export const GUEST_WORKSPACE_PATH = '/api/guest/workspace';
+export const GUEST_LOGIN_PATH = '/api/guest/login';
+export const GUEST_LOGOUT_PATH = '/api/guest/logout';
+export const GUEST_SESSION_PATH = '/api/guest/session';
+
+/** Prototype session lifetime — not a retention policy (ADR-0004 defers that). */
+export const PROTOTYPE_AUTH_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export interface RouterContext {
 	db: SqlDatabase;
@@ -33,6 +47,47 @@ export interface RouterContext {
 	now(): Date;
 	/** False only for plain-HTTP local verification, where Secure would drop the cookie. */
 	secureCookies: boolean;
+	/**
+	 * Prototype credential + signing key from server configuration. Absent
+	 * means the login bridge is simply not available; the anonymous guest
+	 * workspace continues to work exactly as before.
+	 */
+	login?: PrototypeLoginConfig;
+}
+
+/**
+ * Who this request is, resolved server-side only.
+ *
+ * An authenticated session wins over an anonymous one, and is trusted only
+ * when its cookie signature verifies. Nothing else on the request — path,
+ * query, body, header — participates.
+ *
+ * The two kinds own rows in SEPARATE namespaces (`auth:` / `anon:`), which
+ * matters more than it looks: without it, stripping the signature off an
+ * authenticated cookie and replaying the bare id as an anonymous cookie
+ * would land on the same `session_id` and hand over that workspace. The
+ * prefix means an unsigned id can only ever reach anonymous rows.
+ */
+async function resolveIdentity(
+	request: Request,
+	context: RouterContext
+): Promise<{ ownerId: string; authenticated: boolean; cookie?: string }> {
+	const cookieHeader = request.headers.get('cookie');
+
+	if (context.login) {
+		const authenticated = await readAuthenticatedSessionId(context.login.sessionSecret, cookieHeader);
+		if (authenticated) return { ownerId: `auth:${authenticated}`, authenticated: true };
+	}
+
+	const existing = readGuestSessionId(cookieHeader);
+	if (existing) return { ownerId: `anon:${existing}`, authenticated: false };
+
+	const sessionId = createGuestSessionId();
+	return {
+		ownerId: `anon:${sessionId}`,
+		authenticated: false,
+		cookie: guestSessionCookie(sessionId, { secure: context.secureCookies }),
+	};
 }
 
 function json(body: unknown, init: { status?: number; cookie?: string } = {}): Response {
@@ -43,25 +98,13 @@ function json(body: unknown, init: { status?: number; cookie?: string } = {}): R
 	return new Response(JSON.stringify(body), { status: init.status ?? 200, headers });
 }
 
-/**
- * Resolves the Guest for this request, minting an identity when there is no
- * usable cookie. Returns the cookie to set, when a new one was issued.
- */
-function resolveGuest(request: Request, secure: boolean): { sessionId: string; cookie?: string } {
-	const existing = readGuestSessionId(request.headers.get('cookie'));
-	if (existing) return { sessionId: existing };
-
-	const sessionId = createGuestSessionId();
-	return { sessionId, cookie: guestSessionCookie(sessionId, { secure }) };
-}
-
 export async function handleGuestWorkspace(request: Request, context: RouterContext): Promise<Response> {
 	const { db, secureCookies } = context;
-	const { sessionId, cookie } = resolveGuest(request, secureCookies);
+	const { ownerId, cookie } = await resolveIdentity(request, context);
 	const now = context.now().toISOString();
 
 	if (request.method === 'GET') {
-		const datasets = await listDatasets(db, sessionId);
+		const datasets = await listDatasets(db, ownerId);
 		return json({ datasets }, { cookie });
 	}
 
@@ -85,19 +128,19 @@ export async function handleGuestWorkspace(request: Request, context: RouterCont
 		}
 
 		// Bound how much one anonymous visitor can accumulate.
-		const existingCount = await countDatasets(db, sessionId);
-		const datasets = await listDatasets(db, sessionId);
+		const existingCount = await countDatasets(db, ownerId);
+		const datasets = await listDatasets(db, ownerId);
 		const isNew = !datasets.some((dataset) => dataset.datasetId === datasetId);
 		if (isNew && existingCount >= MAX_DATASETS_PER_SESSION) {
 			return json({ error: 'DATASET_LIMIT_REACHED' }, { status: 409, cookie });
 		}
 
-		await putDataset(db, sessionId, datasetId, payload, now);
-		return json({ datasets: await listDatasets(db, sessionId) }, { cookie });
+		await putDataset(db, ownerId, datasetId, payload, now);
+		return json({ datasets: await listDatasets(db, ownerId) }, { cookie });
 	}
 
 	if (request.method === 'DELETE') {
-		await clearWorkspace(db, sessionId);
+		await clearWorkspace(db, ownerId);
 		// Ending a Guest session also drops the identity, so the next visit
 		// starts clean rather than re-attaching to an emptied workspace.
 		return json({ datasets: [] }, { cookie: clearedGuestSessionCookie({ secure: secureCookies }) });
@@ -106,9 +149,71 @@ export async function handleGuestWorkspace(request: Request, context: RouterCont
 	return json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405, cookie });
 }
 
-/** Returns null for anything that is not a Guest workspace route. */
+/**
+ * Prototype login. Success always mints a NEW session id — the request's
+ * existing identity is discarded, which is what makes session fixation
+ * pointless. Failure changes nothing at all: no session is issued, and the
+ * caller keeps whatever anonymous identity it already had.
+ */
+export async function handleGuestLogin(request: Request, context: RouterContext): Promise<Response> {
+	if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405 });
+	if (!context.login) return json({ error: 'LOGIN_NOT_CONFIGURED' }, { status: 503 });
+
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch {
+		return json({ error: 'INVALID_JSON' }, { status: 400 });
+	}
+
+	const input = body as { username?: unknown; password?: unknown } | null;
+	const ok = await verifyPrototypeCredentials(context.login, input?.username, input?.password);
+	if (!ok) {
+		// One message for every failure mode, so nothing distinguishes a bad
+		// username from a bad password.
+		return json({ error: 'INVALID_CREDENTIALS', authenticated: false }, { status: 401 });
+	}
+
+	const { cookieValue } = await createAuthenticatedSession(context.login.sessionSecret);
+	return json(
+		{ authenticated: true },
+		{
+			cookie: authSessionCookie(cookieValue, {
+				secure: context.secureCookies,
+				maxAgeSeconds: PROTOTYPE_AUTH_MAX_AGE_SECONDS,
+			}),
+		}
+	);
+}
+
+/**
+ * Logout ends the session AND deletes its workspace rows, so replaying the
+ * old cookie cannot read anything back. The cookie is expired as well.
+ */
+export async function handleGuestLogout(request: Request, context: RouterContext): Promise<Response> {
+	if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405 });
+
+	const { ownerId, authenticated } = await resolveIdentity(request, context);
+	if (authenticated) await clearWorkspace(context.db, ownerId);
+
+	return json(
+		{ authenticated: false },
+		{ cookie: clearedAuthCookie({ secure: context.secureCookies }) }
+	);
+}
+
+/** Whether this request currently holds a valid authenticated session. */
+export async function handleGuestSession(request: Request, context: RouterContext): Promise<Response> {
+	const { authenticated } = await resolveIdentity(request, context);
+	return json({ authenticated, loginAvailable: context.login !== undefined });
+}
+
+/** Returns null for anything that is not a Guest API route. */
 export async function routeGuestApi(request: Request, context: RouterContext): Promise<Response | null> {
 	const { pathname } = new URL(request.url);
-	if (pathname !== GUEST_WORKSPACE_PATH) return null;
-	return handleGuestWorkspace(request, context);
+	if (pathname === GUEST_WORKSPACE_PATH) return handleGuestWorkspace(request, context);
+	if (pathname === GUEST_LOGIN_PATH) return handleGuestLogin(request, context);
+	if (pathname === GUEST_LOGOUT_PATH) return handleGuestLogout(request, context);
+	if (pathname === GUEST_SESSION_PATH) return handleGuestSession(request, context);
+	return null;
 }

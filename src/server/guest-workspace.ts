@@ -14,6 +14,22 @@
 
 import type { SqlDatabase } from './sql.ts';
 
+/**
+ * The ONLY table this prototype touches. Every statement below interpolates
+ * this constant and nothing else — no table name is ever derived from a
+ * request, and there is no dynamic table selection, no generic query
+ * endpoint, and no arbitrary SQL surface.
+ *
+ * This is the outer of two independent limits:
+ *
+ *   Table lock       — a guest can only reach guest_workspace_records
+ *   Row ownership    — within it, only rows whose session_id matches the
+ *                      server-resolved owner (`auth:` / `anon:` prefixed)
+ *
+ * Both must hold. Neither replaces the other: the lock alone would let one
+ * guest read another's rows, and ownership alone would leave the rest of the
+ * database reachable if a table name ever became caller-supplied.
+ */
 export const GUEST_WORKSPACE_TABLE = 'guest_workspace_records';
 
 /** Bounds a prototype payload so one Guest cannot fill the table. */

@@ -18,6 +18,13 @@ import PlatformShell from '../layouts/PlatformShell.astro';
 import { getDictionary, localizePath, type Locale } from '../i18n';
 import { instruments } from '../platform/instruments';
 import { csvTemplates } from '../platform/templates/registry';
+import { quickIntakeSchema } from '../tools/inventory-buffer-check/modes/quick/schema';
+import { arrivalQuickSchema } from '../tools/arrival-collision-detector/modes/quick/schema';
+import { deadStockQuickSchema } from '../tools/dead-stock-scanner/modes/quick/schema';
+import { leadTimeGapQuickSchema } from '../tools/lead-time-gap-checker/modes/quick/schema';
+import { bufferDriftQuickSchema } from '../tools/buffer-drift-monitor/modes/quick/schema';
+import { supplierDependencyQuickSchema } from '../tools/supplier-dependency-radar/modes/quick/schema';
+import { demandWaveSchema } from '../tools/demand-wave-radar/schema';
 
 interface Props {
 	locale?: Locale;
@@ -28,15 +35,22 @@ const iw = t.integratedWorkspace;
 
 const quickTemplates = csvTemplates.filter((template) => template.modeId === 'quick');
 
-// What the Save button stores: the sample rows this page already displays,
-// serialized as generic working data. No new demo values, no industry
-// vocabulary — the server holds an opaque payload.
-const sampleDatasetPayload = JSON.stringify(
-	quickTemplates.map((template) => ({
-		instrumentId: template.instrumentId,
-		columns: template.columns.map((column) => ({ id: column.id, value: column.sample ?? '' })),
-	}))
-);
+// Which workspace dataset belongs to which instrument. Each value is that
+// instrument's own quick-mode schema id — identifiers that already exist,
+// not a second naming system, and not a shared schema: the tools keep their
+// own vocabularies and granularities, only the transport is common.
+//
+// Quick mode only, matching the pattern validated in v0.1. Advanced modes
+// have their own separate schemas and are deliberately not connected here.
+const WORKSPACE_DATASET_BY_INSTRUMENT: Record<string, string> = {
+	'inventory-buffer-check': quickIntakeSchema.id,
+	'arrival-collision-detector': arrivalQuickSchema.id,
+	'dead-stock-scanner': deadStockQuickSchema.id,
+	'lead-time-gap-checker': leadTimeGapQuickSchema.id,
+	'buffer-drift-monitor': bufferDriftQuickSchema.id,
+	'supplier-dependency-radar': supplierDependencyQuickSchema.id,
+	'demand-wave-radar': demandWaveSchema.id,
+};
 
 const cards = instruments.map((instrument) => {
 	const template = quickTemplates.find((candidate) => candidate.instrumentId === instrument.id);
@@ -47,6 +61,7 @@ const cards = instruments.map((instrument) => {
 		// One template describes one example row; no template, no rows.
 		columns: template?.columns.map((column) => ({ id: column.id, sample: column.sample ?? '' })) ?? [],
 		recordCount: template ? 1 : undefined,
+		datasetId: WORKSPACE_DATASET_BY_INSTRUMENT[instrument.id] ?? null,
 	};
 });
 ---
@@ -60,8 +75,24 @@ const cards = instruments.map((instrument) => {
 	<section class="guest-panel" aria-labelledby="guest-heading">
 		<h2 id="guest-heading">{iw.guest.heading}</h2>
 		<p class="guest-note">{iw.guest.note}</p>
+
+		<div class="login-block">
+			<h3>{iw.guest.login.heading}</h3>
+			<p class="guest-note">{iw.guest.login.note}</p>
+			<form id="guest-login-form" class="login-form" hidden>
+				<label for="guest-username">{iw.guest.login.usernameLabel}</label>
+				<input id="guest-username" name="username" type="text" autocomplete="off" />
+				<label for="guest-password">{iw.guest.login.passwordLabel}</label>
+				<input id="guest-password" name="password" type="password" autocomplete="off" />
+				<button type="submit">{iw.guest.login.loginButton}</button>
+			</form>
+			<div id="guest-logged-in" hidden>
+				<button type="button" class="secondary" id="guest-logout">{iw.guest.login.logoutButton}</button>
+			</div>
+			<p class="guest-status" id="login-status" aria-live="polite"></p>
+		</div>
+
 		<div class="guest-actions">
-			<button type="button" id="guest-save">{iw.guest.saveButton}</button>
 			<button type="button" class="secondary" id="guest-clear">{iw.guest.clearButton}</button>
 		</div>
 		<p class="guest-status" id="guest-status" aria-live="polite"></p>
@@ -73,11 +104,11 @@ const cards = instruments.map((instrument) => {
 
 	<ul class="tool-list">
 		{cards.map((card) => (
-			<li>
+			<li data-instrument={card.id} data-dataset={card.datasetId ?? undefined}>
 				<details>
 					<summary>
 						<span class="tool-name">{card.name}</span>
-						<span class="meta">
+						<span class="meta" data-meta>
 							{card.recordCount === undefined ? (
 								<span class="unavailable-tag">{iw.noSampleTag}</span>
 							) : (
@@ -90,9 +121,11 @@ const cards = instruments.map((instrument) => {
 					</summary>
 
 					{card.recordCount === undefined ? (
-						<p class="unavailable-note">{iw.noSample}</p>
+						<div class="table-wrap" data-table>
+							<p class="unavailable-note">{iw.noSample}</p>
+						</div>
 					) : (
-						<div class="table-wrap">
+						<div class="table-wrap" data-table>
 							<table>
 								<thead>
 									<tr>
@@ -121,7 +154,7 @@ const cards = instruments.map((instrument) => {
 	</ul>
 </PlatformShell>
 
-<script define:vars={{ text: { empty: iw.guest.empty, unavailable: iw.guest.unavailable, failed: iw.guest.failed, updated: iw.guest.updatedLabel }, sample: sampleDatasetPayload }}>
+<script define:vars={{ text: { empty: iw.guest.empty, unavailable: iw.guest.unavailable, failed: iw.guest.failed, updated: iw.guest.updatedLabel, loggedIn: iw.guest.login.loggedIn, loggedOut: iw.guest.login.loggedOut, loginInvalid: iw.guest.login.invalid, loginUnavailable: iw.guest.login.unavailable, workspaceTag: iw.guest.workspaceTag, workspaceNote: iw.guest.workspaceNote } }}>
 	// Server-backed guest workspace (ADR-0004 prototype).
 	//
 	// Identity lives in an HttpOnly cookie the server sets, so this script
@@ -136,6 +169,8 @@ const cards = instruments.map((instrument) => {
 
 	function render(datasets) {
 		listEl.innerHTML = '';
+		renderInstrumentCards(datasets ?? []);
+
 		if (!datasets || datasets.length === 0) {
 			storedEl.hidden = true;
 			statusEl.textContent = text.empty;
@@ -148,6 +183,93 @@ const cards = instruments.map((instrument) => {
 		}
 		storedEl.hidden = false;
 		statusEl.textContent = '';
+	}
+
+	/**
+	 * Where the loop actually closes: a card whose instrument has saved
+	 * working data in THIS session shows those values instead of the CSV
+	 * template sample, and says so. Demo output and the visitor's own data
+	 * must never be mistaken for one another.
+	 *
+	 * Cards with no saved dataset are left exactly as server-rendered — no
+	 * demo value is ever written to the server, and none is invented here.
+	 */
+	function headerFallback() {
+		const source = document.querySelector('[data-table] thead');
+		return source ? source.innerHTML : '';
+	}
+
+	function renderInstrumentCards(datasets) {
+		const byId = new Map(datasets.map((dataset) => [dataset.datasetId, dataset]));
+
+		for (const item of document.querySelectorAll('li[data-dataset]')) {
+			const datasetId = item.getAttribute('data-dataset');
+			const stored = byId.get(datasetId);
+			const meta = item.querySelector('[data-meta]');
+			const tableWrap = item.querySelector('[data-table]');
+			if (!meta || !tableWrap) continue;
+
+			if (!stored) {
+				// Restore the server-rendered sample view.
+				const previous = item.querySelector('[data-workspace-restore]');
+				if (previous) {
+					meta.innerHTML = previous.dataset.meta;
+					tableWrap.innerHTML = previous.dataset.table;
+					previous.remove();
+				}
+				continue;
+			}
+
+			let record;
+			try {
+				const confirmed = JSON.parse(stored.payload);
+				record = confirmed.records && confirmed.records[0];
+			} catch {
+				continue;
+			}
+			if (!record) continue;
+
+			// Keep the original markup so it can come back after a clear.
+			if (!item.querySelector('[data-workspace-restore]')) {
+				const keep = document.createElement('span');
+				keep.hidden = true;
+				keep.setAttribute('data-workspace-restore', '');
+				keep.dataset.meta = meta.innerHTML;
+				keep.dataset.table = tableWrap.innerHTML;
+				item.appendChild(keep);
+			}
+
+			meta.innerHTML = '';
+			const tag = document.createElement('span');
+			tag.className = 'workspace-tag';
+			tag.textContent = text.workspaceTag;
+			meta.appendChild(tag);
+
+			const table = document.createElement('table');
+			const existingHead = tableWrap.querySelector('thead');
+			const head = document.createElement('thead');
+			// An instrument with no CSV sample has no header row to reuse.
+			head.innerHTML = existingHead ? existingHead.innerHTML : headerFallback();
+			table.appendChild(head);
+			const body = document.createElement('tbody');
+			for (const [field, value] of Object.entries(record)) {
+				const row = document.createElement('tr');
+				const key = document.createElement('td');
+				const code = document.createElement('code');
+				code.textContent = field;
+				key.appendChild(code);
+				const cell = document.createElement('td');
+				cell.textContent = value === undefined || value === null || value === '' ? '—' : String(value);
+				row.append(key, cell);
+				body.appendChild(row);
+			}
+			table.appendChild(body);
+			tableWrap.innerHTML = '';
+			const note = document.createElement('p');
+			note.className = 'workspace-note';
+			note.textContent = text.workspaceNote;
+			tableWrap.append(note, table);
+		}
 	}
 
 	async function call(method, body) {
@@ -171,9 +293,65 @@ const cards = instruments.map((instrument) => {
 		}
 	}
 
-	document.getElementById('guest-save')?.addEventListener('click', () => {
-		call('PUT', { datasetId: 'integrated-sample', payload: sample });
+	// --- prototype login bridge ---
+	const loginForm = document.getElementById('guest-login-form');
+	const loggedInBlock = document.getElementById('guest-logged-in');
+	const loginStatus = document.getElementById('login-status');
+
+	function showAuth(state) {
+		// state: 'in' | 'out' | 'unavailable'
+		loginForm.hidden = state !== 'out';
+		loggedInBlock.hidden = state !== 'in';
+		loginStatus.textContent =
+			state === 'in' ? text.loggedIn : state === 'unavailable' ? text.loginUnavailable : text.loggedOut;
+	}
+
+	async function refreshSession() {
+		try {
+			const response = await fetch('/api/guest/session');
+			if (!response.ok) throw new Error(String(response.status));
+			const session = await response.json();
+			showAuth(!session.loginAvailable ? 'unavailable' : session.authenticated ? 'in' : 'out');
+		} catch {
+			showAuth('unavailable');
+		}
+	}
+
+	loginForm?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const form = new FormData(loginForm);
+		try {
+			const response = await fetch('/api/guest/login', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ username: form.get('username'), password: form.get('password') }),
+			});
+			if (response.status === 401) {
+				loginStatus.textContent = text.loginInvalid;
+				return;
+			}
+			if (!response.ok) throw new Error(String(response.status));
+			loginForm.reset();
+			await refreshSession();
+			// A new session owns a different workspace — reload what it holds.
+			await call('GET');
+		} catch {
+			showAuth('unavailable');
+		}
 	});
+
+	document.getElementById('guest-logout')?.addEventListener('click', async () => {
+		try {
+			await fetch('/api/guest/logout', { method: 'POST' });
+		} catch {
+			// fall through to refresh either way
+		}
+		await refreshSession();
+		await call('GET');
+	});
+
+	refreshSession();
+
 	document.getElementById('guest-clear')?.addEventListener('click', () => call('DELETE'));
 
 	call('GET');
@@ -234,6 +412,65 @@ const cards = instruments.map((instrument) => {
 		max-width: 70ch;
 		margin: 0 0 var(--space-md);
 		font-size: 0.9rem;
+	}
+
+	.login-block {
+		border-top: var(--border-hairline);
+		border-bottom: var(--border-hairline);
+		padding: var(--space-md) 0;
+		margin: 0 0 var(--space-md);
+	}
+
+	.login-block h3 {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: 0 0 var(--space-xs);
+	}
+
+	.login-form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.login-form label {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+	}
+
+	.login-form input {
+		background: var(--color-bg-inset);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-body);
+		max-width: 12rem;
+	}
+
+	.login-form button,
+	#guest-logged-in button {
+		background: var(--color-accent);
+		border: none;
+		color: var(--color-bg);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: pointer;
+	}
+
+	#guest-logged-in button.secondary {
+		background: transparent;
+		border: var(--border-hairline);
+		color: var(--color-text-secondary);
 	}
 
 	.guest-actions {
@@ -344,6 +581,23 @@ const cards = instruments.map((instrument) => {
 
 	/* No sample source for this instrument — stated plainly rather than
 	   dressed up as data. */
+	.workspace-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-bg);
+		background: var(--color-accent);
+		padding: 2px 8px;
+		white-space: nowrap;
+	}
+
+	:global(.workspace-note) {
+		color: var(--color-text-tertiary);
+		font-size: 0.85rem;
+		margin: 0 0 var(--space-xs);
+	}
+
 	.unavailable-tag {
 		font-family: var(--font-mono);
 		font-size: 10px;

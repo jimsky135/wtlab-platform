@@ -114,6 +114,7 @@ const quickFields: QuickFormFieldConfig[] = [
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { el, renderIssues } from '../../shared/intake-ui.ts';
 	import { collectFormValues, initSampleRun, isSampleUnchanged, setSampleMarkers } from '../../shared/instrument-ui.ts';
+	import { saveWorkingDataset } from '../../shared/workspace-bridge.ts';
 	import { demandWaveAdapter } from '../../platform/adapters/demand-wave/adapter.ts';
 	import { analyzeDemandWave } from '../../tools/demand-wave-radar/analyze.ts';
 	import { demandWaveSchema } from '../../tools/demand-wave-radar/schema.ts';
@@ -399,6 +400,9 @@ const quickFields: QuickFormFieldConfig[] = [
 		if (outcome.confirmed) {
 			setSampleMarkers(showingSample());
 			run(outcome.data);
+			// Hand the confirmed working data to the guest workspace
+			// (ADR-0004). Same shape this instrument already produces.
+			saveWorkingDataset(demandWaveSchema.id, outcome.data, { isSample: showingSample() });
 		}
 	}
 

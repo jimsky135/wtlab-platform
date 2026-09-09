@@ -214,6 +214,22 @@ export interface IntegratedWorkspaceText {
 		failed: string;
 		storedHeading: string;
 		updatedLabel: string;
+		/** Marks a card showing the visitor's own saved working data, not the demo. */
+		workspaceTag: string;
+		workspaceNote: string;
+		/** Prototype login bridge — not an account system. */
+		login: {
+			heading: string;
+			note: string;
+			usernameLabel: string;
+			passwordLabel: string;
+			loginButton: string;
+			logoutButton: string;
+			loggedIn: string;
+			loggedOut: string;
+			invalid: string;
+			unavailable: string;
+		};
 	};
 }
 

@@ -155,3 +155,7 @@ Prototype/
 
 # Wrangler local state (local D1, dev cache) — never committed
 .wrangler/
+
+# Wrangler local secrets (prototype credentials) — never committed
+.dev.vars
+.dev.vars.*

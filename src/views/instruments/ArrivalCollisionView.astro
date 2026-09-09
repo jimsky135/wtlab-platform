@@ -149,6 +149,7 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	import { validateRecords } from '../../platform/intake/validate.ts';
 	import { download, el, renderIssues, setupCsvIntake } from '../../shared/intake-ui.ts';
 	import { confirmSampleDownload, initModeSwitcher, initSampleRun, isSampleUnchanged, setSampleMarkers, setupRowTable } from '../../shared/instrument-ui.ts';
+	import { saveWorkingDataset } from '../../shared/workspace-bridge.ts';
 	import { generateBlankTemplateCsv, generateInputCsv } from '../../platform/templates/generate-csv-template.ts';
 	import { arrivalAdvancedAdapter } from '../../platform/adapters/arrival-collision/advanced-adapter.ts';
 	import { arrivalQuickAdapter } from '../../platform/adapters/arrival-collision/quick-adapter.ts';
@@ -306,6 +307,9 @@ const modes = [arrivalQuickContract, arrivalAdvancedContract];
 	if (outcome.confirmed) {
 		setSampleMarkers(showingSample());
 		runQuick(outcome.data);
+		// Hand the confirmed working data to the guest workspace
+		// (ADR-0004). Same shape this instrument already produces.
+		saveWorkingDataset(arrivalQuickSchema.id, outcome.data, { isSample: showingSample() });
 	}
 	}
 

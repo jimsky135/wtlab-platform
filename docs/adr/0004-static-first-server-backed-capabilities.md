@@ -67,6 +67,33 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - 永久性 Workspace 的資料模型（本輪的暫存表是原型容器，不是最終領域模型）
 - **把原型 Worker 提升為 production**：需要認領 route／custom domain、為閒置掃除接上排程觸發器、並處理現有 Pages 專案的去留。目前皆未做。
 
+## Guest 權限範圍（2026-09-09，Table Lock v0.1）
+
+`guest / guest` 登入建立的**只是** Guest Workspace 的暫時存取身分。它**不代表**全站登入、不代表未來的會員身分、不授予任何其他 server resource 或 Phoenix 的存取權。
+
+範圍以兩層獨立限制表達，兩層都必須成立：
+
+| 層 | 保證 |
+|---|---|
+| **Table lock** | 訪客只碰得到 `guest_workspace_records`。所有 SQL 的表名來自單一常數，無任何一處從 request 取得表名，無動態表選擇、無泛用查詢端點 |
+| **Row ownership** | 表內只碰得到 `session_id` 等於伺服器解析出的擁有者（`auth:` / `anon:` 前綴）的列 |
+
+外層若失守，其餘資料庫就暴露；內層若失守，訪客之間互相可見。**兩層互不取代。**
+
+`resolveIdentity()` 只被 Guest Workspace 的 handler 使用——**身分解析不等於授權**。Worker 上除了四條 `/api/guest/*` 之外沒有任何 API；未匹配的 `/api/` 路徑由 Worker 直接回 404，不經身分解析、不碰 D1。
+
+登入不建立任何 row：身分不是帳號。
+
+### 未來會員（尚未實作）
+
+| | Guest（現況） | Future Member（**未實作**） |
+|---|---|---|
+| 儲存 | `guest_workspace_records` | 另立的持久化擁有權／儲存 |
+| 性質 | 暫時、session 所有 | 持久、使用者所有 |
+| 清理 | TTL / 明確清除 | 另行決定 |
+
+**本輪未建立任何 member table、role、permission 或 RBAC 架構。**
+
 ## 已供裝的原型資源（2026-09-09）
 
 遠端 D1 與 Worker **已實際建立並驗證**，非僅本機：
