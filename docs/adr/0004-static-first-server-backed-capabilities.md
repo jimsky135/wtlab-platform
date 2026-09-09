@@ -65,4 +65,13 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - Cron trigger 的正式佈署（需要獨立的部署決策，不在原型階段悄悄建立第二個 production service）
 - 註冊使用者、付費方案、角色／組織
 - 永久性 Workspace 的資料模型（本輪的暫存表是原型容器，不是最終領域模型）
-- 遠端 D1 資料庫的供裝（原型只在本機驗證）
+- **把原型 Worker 提升為 production**：需要認領 route／custom domain、為閒置掃除接上排程觸發器、並處理現有 Pages 專案的去留。目前皆未做。
+
+## 已供裝的原型資源（2026-09-09）
+
+遠端 D1 與 Worker **已實際建立並驗證**，非僅本機：
+
+- Worker `wtlab-guest-workspace-prototype`（僅 workers.dev，無 route／無 cron）
+- D1 `wtlab-guest-workspace`（migration 0001 已套用，驗證資料已清空）
+
+兩者都在 production 路徑之外，`www.wtlab.co` 仍由 Cloudflare Pages 服務。**這些資源不會自動消失**——若不採用此方向須明確刪除，指令與理由見 [deployment.md](../deployment.md#prototype-resources--live-not-production)。

@@ -48,6 +48,38 @@ Rollback = redeploy a previous good commit. Two options:
 - `wtlab.co` — redirect only, via a zone-level Redirect Rule; carries no content.
 - `phoenix.wtlab.co` — belongs to Project Phoenix. No DNS record, Pages project, or rule of Phoenix may be modified when operating on this project.
 
+## Prototype resources — live, not production
+
+The Guest Workspace Foundation (ADR-0004, commit `e47a8c7`) created **real
+Cloudflare resources that are still running**. They are validation-only and
+sit deliberately outside the production path:
+
+| Resource | Name | State |
+|---|---|---|
+| Worker | `wtlab-guest-workspace-prototype` | Deployed. `workers.dev` URL only — **no custom domain, no route, no cron** |
+| D1 database | `wtlab-guest-workspace` | Created (APAC). Migration `0001` applied. Validation rows cleaned; 0 rows |
+
+Why the Worker is not named `wtlab-platform`: that name belongs to the Pages
+project serving `www.wtlab.co`. The prototype keeps a distinct name so it can
+never collide with production.
+
+**Production is unaffected.** `www.wtlab.co` continues to be served by the
+Cloudflare Pages project. Nothing routes to the prototype Worker.
+
+⚠️ **Standing reminder — these resources do not clean themselves up.** If the
+guest-workspace direction is not pursued, both must be deleted explicitly:
+
+```bash
+npx wrangler delete --name wtlab-guest-workspace-prototype
+npx wrangler d1 delete wtlab-guest-workspace
+```
+
+Conversely, promoting this Worker to production is a separate decision that
+has **not** been made. It would mean claiming a route or custom domain,
+provisioning a scheduled trigger for the inactivity sweep (Pages Functions
+cannot do cron — only Workers can), and retiring or repositioning the Pages
+project. None of that is in place today.
+
 ## Production smoke-test checklist
 
 After each production deployment, verify:
