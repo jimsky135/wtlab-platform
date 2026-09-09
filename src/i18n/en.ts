@@ -189,6 +189,31 @@ export const en = {
 		archiveLink: 'Archived prototypes →',
 	},
 
+	integratedWorkspace: {
+		kicker: 'Workspace',
+		heading: 'Integrated Workspace',
+		lede: 'The sample data each instrument currently carries, gathered in one place.',
+		sourceNote: 'Prototype. These rows are read from each instrument’s own CSV input template — the same sample the instrument page lands on. There is no working dataset behind this page yet, and nothing here is calculated.',
+		demoTag: 'Demo data',
+		recordCount: '{count} record(s)',
+		openTool: 'Open instrument →',
+		noSampleTag: 'Demo data unavailable',
+		noSample: 'This instrument currently has no reusable input template available to the Integrated Workspace.',
+		columnHeading: 'Column',
+		valueHeading: 'Sample value',
+		guest: {
+			heading: 'Temporary workspace',
+			note: 'Prototype (ADR-0004). Saving keeps this sample on the server against an anonymous guest identity held in a cookie, so it survives a refresh and appears in another tab. It is temporary working state, not storage — clear it any time, and inactive data is swept automatically.',
+			saveButton: 'Save sample to workspace',
+			clearButton: 'Clear workspace',
+			empty: 'Nothing saved to the temporary workspace yet.',
+			unavailable: 'The workspace API is not running in this environment. It is served by the Worker, not by the static site.',
+			failed: 'Could not reach the temporary workspace.',
+			storedHeading: 'Stored on the server',
+			updatedLabel: 'updated',
+		},
+	},
+
 	workspacesArchive: {
 		kicker: 'Archive',
 		heading: 'Archived Workspace Prototypes',

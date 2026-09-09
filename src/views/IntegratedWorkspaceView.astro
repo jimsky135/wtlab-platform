@@ -1,0 +1,415 @@
+---
+// Integrated Workspace — demo-data overview prototype.
+//
+// Concept check only: can one page show, in one place, the sample data the
+// seven instruments already carry? It holds no data of its own, computes
+// nothing, and stores nothing.
+//
+// The only source for the rows below is the existing CSV input template
+// registry (platform/templates/registry.ts) — the same `sample` values each
+// instrument page lands on. Nothing here is copied or invented.
+//
+// An instrument with no CSV template (Demand Wave Radar declares no
+// csv-import capability) simply has no row to show. Its card still appears
+// and still links to the instrument, but says the sample is unavailable
+// rather than standing in a local copy — a fabricated row would make this
+// page a second source of demo data, which is exactly what it must not be.
+import PlatformShell from '../layouts/PlatformShell.astro';
+import { getDictionary, localizePath, type Locale } from '../i18n';
+import { instruments } from '../platform/instruments';
+import { csvTemplates } from '../platform/templates/registry';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+const iw = t.integratedWorkspace;
+
+const quickTemplates = csvTemplates.filter((template) => template.modeId === 'quick');
+
+// What the Save button stores: the sample rows this page already displays,
+// serialized as generic working data. No new demo values, no industry
+// vocabulary — the server holds an opaque payload.
+const sampleDatasetPayload = JSON.stringify(
+	quickTemplates.map((template) => ({
+		instrumentId: template.instrumentId,
+		columns: template.columns.map((column) => ({ id: column.id, value: column.sample ?? '' })),
+	}))
+);
+
+const cards = instruments.map((instrument) => {
+	const template = quickTemplates.find((candidate) => candidate.instrumentId === instrument.id);
+	return {
+		id: instrument.id,
+		route: instrument.route,
+		name: t.instruments[instrument.id]?.displayName ?? instrument.displayName,
+		// One template describes one example row; no template, no rows.
+		columns: template?.columns.map((column) => ({ id: column.id, sample: column.sample ?? '' })) ?? [],
+		recordCount: template ? 1 : undefined,
+	};
+});
+---
+
+<PlatformShell title={`${iw.heading} · ${t.seo.titleSuffix}`} section="workspace" locale={locale}>
+	<p class="kicker">{iw.kicker}</p>
+	<h1>{iw.heading}</h1>
+	<p class="lede">{iw.lede}</p>
+	<p class="source-note">{iw.sourceNote}</p>
+
+	<section class="guest-panel" aria-labelledby="guest-heading">
+		<h2 id="guest-heading">{iw.guest.heading}</h2>
+		<p class="guest-note">{iw.guest.note}</p>
+		<div class="guest-actions">
+			<button type="button" id="guest-save">{iw.guest.saveButton}</button>
+			<button type="button" class="secondary" id="guest-clear">{iw.guest.clearButton}</button>
+		</div>
+		<p class="guest-status" id="guest-status" aria-live="polite"></p>
+		<div id="guest-stored" hidden>
+			<h3>{iw.guest.storedHeading}</h3>
+			<ul id="guest-list"></ul>
+		</div>
+	</section>
+
+	<ul class="tool-list">
+		{cards.map((card) => (
+			<li>
+				<details>
+					<summary>
+						<span class="tool-name">{card.name}</span>
+						<span class="meta">
+							{card.recordCount === undefined ? (
+								<span class="unavailable-tag">{iw.noSampleTag}</span>
+							) : (
+								<>
+									<span class="demo-tag">{iw.demoTag}</span>
+									<span class="count">{iw.recordCount.replace('{count}', String(card.recordCount))}</span>
+								</>
+							)}
+						</span>
+					</summary>
+
+					{card.recordCount === undefined ? (
+						<p class="unavailable-note">{iw.noSample}</p>
+					) : (
+						<div class="table-wrap">
+							<table>
+								<thead>
+									<tr>
+										<th>{iw.columnHeading}</th>
+										<th>{iw.valueHeading}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{card.columns.map((column) => (
+										<tr>
+											<td><code>{column.id}</code></td>
+											<td>{column.sample === '' ? '—' : column.sample}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+
+					<p class="open-tool">
+						<a href={localizePath(locale, card.route)} target="_blank" rel="noopener">{iw.openTool}</a>
+					</p>
+				</details>
+			</li>
+		))}
+	</ul>
+</PlatformShell>
+
+<script define:vars={{ text: { empty: iw.guest.empty, unavailable: iw.guest.unavailable, failed: iw.guest.failed, updated: iw.guest.updatedLabel }, sample: sampleDatasetPayload }}>
+	// Server-backed guest workspace (ADR-0004 prototype).
+	//
+	// Identity lives in an HttpOnly cookie the server sets, so this script
+	// never sees or sends a session id — same-origin fetch carries it
+	// automatically. That is also why a second tab needs no coordination:
+	// there is deliberately no localStorage, sessionStorage or BroadcastChannel
+	// here, and no dataset is copied between tabs.
+	const API = '/api/guest/workspace';
+	const statusEl = document.getElementById('guest-status');
+	const storedEl = document.getElementById('guest-stored');
+	const listEl = document.getElementById('guest-list');
+
+	function render(datasets) {
+		listEl.innerHTML = '';
+		if (!datasets || datasets.length === 0) {
+			storedEl.hidden = true;
+			statusEl.textContent = text.empty;
+			return;
+		}
+		for (const dataset of datasets) {
+			const li = document.createElement('li');
+			li.textContent = dataset.datasetId + ' — ' + text.updated + ' ' + dataset.updatedAt;
+			listEl.appendChild(li);
+		}
+		storedEl.hidden = false;
+		statusEl.textContent = '';
+	}
+
+	async function call(method, body) {
+		try {
+			const response = await fetch(API, {
+				method,
+				headers: body ? { 'content-type': 'application/json' } : undefined,
+				body: body ? JSON.stringify(body) : undefined,
+			});
+			if (response.status === 404) {
+				// Static-only environment: the Worker is not in front of these assets.
+				statusEl.textContent = text.unavailable;
+				storedEl.hidden = true;
+				return;
+			}
+			if (!response.ok) throw new Error(String(response.status));
+			render((await response.json()).datasets);
+		} catch {
+			statusEl.textContent = text.failed;
+			storedEl.hidden = true;
+		}
+	}
+
+	document.getElementById('guest-save')?.addEventListener('click', () => {
+		call('PUT', { datasetId: 'integrated-sample', payload: sample });
+	});
+	document.getElementById('guest-clear')?.addEventListener('click', () => call('DELETE'));
+
+	call('GET');
+</script>
+
+<style>
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h1 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		max-width: 60ch;
+		margin: 0 0 var(--space-sm);
+	}
+
+	.source-note {
+		color: var(--color-text-muted);
+		border-left: 2px solid var(--color-border);
+		padding-left: var(--space-sm);
+		max-width: 70ch;
+		margin: 0 0 var(--space-lg);
+		font-size: 0.9rem;
+	}
+
+	.guest-panel {
+		border: var(--border-hairline);
+		background: var(--color-bg-raised);
+		padding: var(--space-md);
+		margin: 0 0 var(--space-lg);
+	}
+
+	.guest-panel h2 {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-sm);
+	}
+
+	.guest-note {
+		color: var(--color-text-muted);
+		max-width: 70ch;
+		margin: 0 0 var(--space-md);
+		font-size: 0.9rem;
+	}
+
+	.guest-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-sm);
+	}
+
+	.guest-actions button {
+		background: var(--color-accent);
+		border: none;
+		color: var(--color-bg);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		padding: var(--space-xs) var(--space-md);
+		cursor: pointer;
+	}
+
+	.guest-actions button.secondary {
+		background: transparent;
+		border: var(--border-hairline);
+		color: var(--color-text-secondary);
+	}
+
+	.guest-status {
+		color: var(--color-text-tertiary);
+		font-size: 0.9rem;
+		margin: var(--space-sm) 0 0;
+	}
+
+	#guest-stored h3 {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		margin: var(--space-md) 0 var(--space-xs);
+	}
+
+	#guest-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-text-secondary);
+	}
+
+	.tool-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-xs);
+	}
+
+	details {
+		border: var(--border-hairline);
+		background: var(--color-bg-raised);
+	}
+
+	summary {
+		cursor: pointer;
+		padding: var(--space-md);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-sm);
+	}
+
+	summary:hover .tool-name {
+		color: var(--color-accent);
+	}
+
+	.tool-name {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 1.2rem;
+		color: var(--color-text-primary);
+	}
+
+	.meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.demo-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-bg);
+		background: var(--color-accent-strong);
+		padding: 2px 8px;
+		white-space: nowrap;
+	}
+
+	.count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-text-tertiary);
+		white-space: nowrap;
+	}
+
+	/* No sample source for this instrument — stated plainly rather than
+	   dressed up as data. */
+	.unavailable-tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+		border: var(--border-hairline);
+		padding: 2px 8px;
+		white-space: nowrap;
+	}
+
+	.unavailable-note {
+		margin: 0 var(--space-md) var(--space-md);
+		padding-left: var(--space-sm);
+		border-left: 2px solid var(--color-border);
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+	}
+
+	.table-wrap {
+		overflow-x: auto;
+		margin: 0 var(--space-md);
+	}
+
+	table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	th,
+	td {
+		border-top: var(--border-hairline);
+		padding: var(--space-xs) var(--space-sm);
+		text-align: left;
+		font-size: 0.9rem;
+	}
+
+	th {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-tertiary);
+		font-weight: 500;
+	}
+
+	td code {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-text-secondary);
+	}
+
+	.open-tool {
+		margin: var(--space-md);
+	}
+
+	.open-tool a {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	.open-tool a:hover {
+		color: var(--color-accent-strong);
+	}
+</style>

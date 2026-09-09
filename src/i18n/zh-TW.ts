@@ -182,6 +182,31 @@ export const zhTW = {
 		archiveLink: '暫存的原型工作區 →',
 	},
 
+	integratedWorkspace: {
+		kicker: '工作區',
+		heading: '整合工作區',
+		lede: '把目前各工具帶的示範資料集中在一處。',
+		sourceNote: '原型驗證。下列資料讀自各工具自己的 CSV 輸入範本，與工具頁面落地時的示範同一份。這個頁面背後尚未有實際的工作資料層，也不進行任何計算。',
+		demoTag: '示範資料',
+		recordCount: '{count} 筆',
+		openTool: '開啟工具 →',
+		noSampleTag: '示範資料未提供',
+		noSample: '此工具目前沒有可供整合工作區讀取的輸入範本。',
+		columnHeading: '欄位',
+		valueHeading: '示範值',
+		guest: {
+			heading: '暫存工作區',
+			note: '原型驗證（ADR-0004）。存入後，這份示範資料會以 cookie 中的匿名訪客身分保存在伺服器端，因此重新整理後仍在，另開分頁也看得到。這是暫時的工作狀態，不是保管——隨時可以清除，閒置資料也會被自動掃除。',
+			saveButton: '存入暫存工作區',
+			clearButton: '清除暫存工作區',
+			empty: '暫存工作區目前沒有資料。',
+			unavailable: '此環境沒有執行工作區 API。它由 Worker 提供，靜態站本身不含後端。',
+			failed: '無法連線到暫存工作區。',
+			storedHeading: '已存在伺服器端',
+			updatedLabel: '更新於',
+		},
+	},
+
 	workspacesArchive: {
 		kicker: '暫存區',
 		heading: '暫存的原型工作區',

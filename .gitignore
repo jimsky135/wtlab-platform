@@ -152,3 +152,6 @@ vite.config.ts.timestamp-*
 # Design reference (standalone prototype bundles, not source code)
 WTLab Foundations v3(standalone).html
 Prototype/
+
+# Wrangler local state (local D1, dev cache) — never committed
+.wrangler/

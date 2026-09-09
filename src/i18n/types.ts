@@ -189,6 +189,34 @@ export interface UtilityPlaceholderText {
 	backLink: string;
 }
 
+/** Integrated Workspace — demo-data overview prototype. */
+export interface IntegratedWorkspaceText {
+	kicker: string;
+	heading: string;
+	lede: string;
+	sourceNote: string;
+	demoTag: string;
+	recordCount: string;
+	openTool: string;
+	/** Shown in place of the demo tag when no sample source exists. */
+	noSampleTag: string;
+	noSample: string;
+	columnHeading: string;
+	valueHeading: string;
+	/** Server-backed guest workspace panel (ADR-0004 prototype). */
+	guest: {
+		heading: string;
+		note: string;
+		saveButton: string;
+		clearButton: string;
+		empty: string;
+		unavailable: string;
+		failed: string;
+		storedHeading: string;
+		updatedLabel: string;
+	};
+}
+
 /** Archive of workspace prototypes kept out of the main product surface. */
 export interface WorkspacesArchiveText {
 	kicker: string;
@@ -364,6 +392,7 @@ export interface Dictionary {
 	instrumentPlaceholder: InstrumentPlaceholderText;
 	workspacesPage: WorkspacesPageText;
 	workspacesArchive: WorkspacesArchiveText;
+	integratedWorkspace: IntegratedWorkspaceText;
 	workspacePlaceholder: WorkspacePlaceholderText;
 	about: AboutText;
 	continuityPage: ContinuityPageText;

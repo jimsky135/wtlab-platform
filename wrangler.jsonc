@@ -1,0 +1,37 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// Deliberately NOT "wtlab-platform": that name belongs to the Cloudflare
+	// Pages project serving www.wtlab.co. This prototype Worker keeps its own
+	// distinct name so it can never collide with production.
+	"name": "wtlab-guest-workspace-prototype",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-09-01",
+
+	// Validation only: a workers.dev URL, no custom domain, no routes, no cron.
+	"workers_dev": true,
+
+	// Astro stays `output: 'static'` (ADR-0004). The Worker serves that build
+	// as-is and adds only /api/*.
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+		// WTLab is a multi-page static site, not an SPA — a missing path must
+		// 404 rather than be rewritten to an index page.
+		"not_found_handling": "none",
+		// Without this, a top-level navigation to /api/* is answered by the
+		// asset handler before the Worker ever sees it.
+		"run_worker_first": ["/api/*"]
+	},
+
+	// WTLab-owned D1, created for this prototype. Never Phoenix's database.
+	// Production continues to be served by the Cloudflare Pages project until
+	// promoting this Worker is separately decided and approved.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "wtlab-guest-workspace",
+			"database_id": "56a81ea3-ba31-4e38-8b39-a7487fc883e6",
+			"migrations_dir": "migrations"
+		}
+	]
+}
