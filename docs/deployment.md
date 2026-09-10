@@ -18,6 +18,8 @@
 
 The site is fully static (ADR-0001): no SSR, no functions, no backend, no database, no cookies/localStorage. All instrument calculation and CSV import/export run in the visitor's browser. The only external requests are Google Fonts.
 
+This describes the **Pages surface** (`www.wtlab.co`). The Pages build ships the Integrated Workspace guest UI but no Guest API backend; the server-backed prototype runs on a separate Worker (ADR-0004) — see [Prototype resources](#prototype-resources--live-not-production).
+
 ## Deployment workflow
 
 ```
@@ -52,19 +54,86 @@ Rollback = redeploy a previous good commit. Two options:
 
 The Guest Workspace Foundation (ADR-0004, commit `e47a8c7`) created **real
 Cloudflare resources that are still running**. They are validation-only and
-sit deliberately outside the production path:
+sit deliberately outside the production path.
 
-| Resource | Name | State |
-|---|---|---|
-| Worker | `wtlab-guest-workspace-prototype` | Deployed. `workers.dev` URL only — **no custom domain, no route, no cron** |
-| D1 database | `wtlab-guest-workspace` | Created (APAC). Migration `0001` applied. Validation rows cleaned; 0 rows |
+Current reality as of **2026-09-10**, split into three separate surfaces.
+
+### A. Repository / Pages — `www.wtlab.co`
+
+| | |
+|---|---|
+| `main` | `70cb437` |
+| Frontend | Current repo frontend is deployed (Integrated Workspace login panel markup and workspace-tag styles are live) |
+| Guest API backend | **None.** Pages has no Guest Workspace API route |
+| Guest login | **Not functional on `www.wtlab.co`** |
+
+Known behaviour — do not misread it:
+
+- `GET /api/guest/session` may return **HTTP 200**. That is the Pages
+  unknown-route fallback serving homepage HTML, **not a working API** (see the
+  Pages fallback HOLD entry in [engineering.md](engineering.md)).
+- `POST /api/guest/login` returns a Pages-side **405**.
+- The production login UI therefore reports that login is unavailable in this
+  environment.
+
+### B. Prototype Worker
+
+| | |
+|---|---|
+| Worker | `wtlab-guest-workspace-prototype` |
+| Current version | `3190914d-778a-4305-a7f7-f741e37ecbd9` (deployed from `main` @ `70cb437`) |
+| URL | https://wtlab-guest-workspace-prototype.jimchiu0627.workers.dev |
+| D1 database | `wtlab-guest-workspace` (APAC). Migration `0001` applied |
+| Bindings | `DB`, `ASSETS` |
+| Triggers | `workers.dev` only — **no custom route, no custom domain, no cron** |
 
 Why the Worker is not named `wtlab-platform`: that name belongs to the Pages
 project serving `www.wtlab.co`. The prototype keeps a distinct name so it can
 never collide with production.
 
-**Production is unaffected.** `www.wtlab.co` continues to be served by the
-Cloudflare Pages project. Nothing routes to the prototype Worker.
+### C. Prototype Login (Worker only)
+
+| Method | Route | |
+|---|---|---|
+| `GET` | `/api/guest/workspace` | List the caller's own datasets |
+| `PUT` | `/api/guest/workspace` | Write (upsert) one dataset |
+| `DELETE` | `/api/guest/workspace` | Clear the caller's own datasets |
+| `GET` | `/api/guest/session` | `{ authenticated, loginAvailable }` |
+| `POST` | `/api/guest/login` | Prototype login (`guest / guest`) |
+| `POST` | `/api/guest/logout` | End the session and clear that owner's rows |
+
+Workspace writes are **`PUT`**. `POST /api/guest/workspace` returns **405 by
+design**. Any other `/api/*` path returns an explicit JSON 404 `NOT_FOUND`.
+
+Login config — Worker secrets, **names only**. Values exist only in Cloudflare
+and in the gitignored local `.dev.vars`, never in the repository:
+
+| Secret | Status |
+|---|---|
+| `PROTOTYPE_LOGIN_USERNAME` | configured on the prototype Worker |
+| `PROTOTYPE_LOGIN_PASSWORD_SHA256` | configured on the prototype Worker |
+| `PROTOTYPE_SESSION_SECRET` | configured on the prototype Worker |
+
+Remote validation — Prototype Worker Activation v0.1 (2026-09-10): **PASS**,
+69 checks passed (routes, login, workspace ownership, A/B and auth/anon
+isolation, table lock). Cleanup returned `guest_workspace_records` to 0
+validation rows.
+
+### Deployment boundary
+
+**The prototype Worker working does NOT mean `www.wtlab.co` production login is
+connected.** Current topology:
+
+```
+www.wtlab.co           → Cloudflare Pages frontend → no Guest API backend route
+workers.dev prototype  → Worker + D1               → Guest Login + Guest Workspace functional
+```
+
+There is currently no route connecting `www.wtlab.co/api/guest/*` to the
+prototype Worker. This is intentional and remains a separate future deployment
+decision. `www.wtlab.co` continues to be served by the Cloudflare Pages project.
+
+### Cleanup
 
 ⚠️ **Standing reminder — these resources do not clean themselves up.** If the
 guest-workspace direction is not pursued, both must be deleted explicitly:
@@ -73,6 +142,19 @@ guest-workspace direction is not pursued, both must be deleted explicitly:
 npx wrangler delete --name wtlab-guest-workspace-prototype
 npx wrangler d1 delete wtlab-guest-workspace
 ```
+
+When Prototype Login is retired, cleanup must cover **both** the prototype
+Worker deployment/resources as applicable **and** the three Prototype Login
+Worker secrets. If the Worker itself is kept, remove the secrets explicitly:
+
+```bash
+npx wrangler secret delete PROTOTYPE_LOGIN_USERNAME --name wtlab-guest-workspace-prototype
+npx wrangler secret delete PROTOTYPE_LOGIN_PASSWORD_SHA256 --name wtlab-guest-workspace-prototype
+npx wrangler secret delete PROTOTYPE_SESSION_SECRET --name wtlab-guest-workspace-prototype
+```
+
+Retiring login does not by itself delete the Guest Workspace table or its D1
+database; that is the separate step above.
 
 Conversely, promoting this Worker to production is a separate decision that
 has **not** been made. It would mean claiming a route or custom domain,

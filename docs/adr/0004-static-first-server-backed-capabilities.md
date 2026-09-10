@@ -76,13 +76,15 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 | 層 | 保證 |
 |---|---|
 | **Table lock** | 訪客只碰得到 `guest_workspace_records`。所有 SQL 的表名來自單一常數，無任何一處從 request 取得表名，無動態表選擇、無泛用查詢端點 |
-| **Row ownership** | 表內只碰得到 `session_id` 等於伺服器解析出的擁有者（`auth:` / `anon:` 前綴）的列 |
+| **Row ownership** | 表內只碰得到 `session_id` 等於伺服器解析出的擁有者（`auth:<session-id>` / `anon:<session-id>`）的列 |
 
 外層若失守，其餘資料庫就暴露；內層若失守，訪客之間互相可見。**兩層互不取代。**
 
 `resolveIdentity()` 只被 Guest Workspace 的 handler 使用——**身分解析不等於授權**。Worker 上除了四條 `/api/guest/*` 之外沒有任何 API；未匹配的 `/api/` 路徑由 Worker 直接回 404，不經身分解析、不碰 D1。
 
 登入不建立任何 row：身分不是帳號。
+
+**共用憑證不等於共用工作區。** `guest / guest` 是所有訪客共用的一組原型憑證，但每次成功登入都由伺服器產生全新的 session，取得自己的 `auth:<session-id>` 命名空間，只碰得到自己的暫存列。
 
 ### 未來會員（尚未實作）
 
@@ -92,7 +94,7 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 | 性質 | 暫時、session 所有 | 持久、使用者所有 |
 | 清理 | TTL / 明確清除 | 另行決定 |
 
-**本輪未建立任何 member table、role、permission 或 RBAC 架構。**
+**本輪未建立任何 member table、role、permission 或 RBAC 架構。** 這個原型**不是**註冊使用者系統、不是會員帳號模型、不是付費帳戶儲存、不是 RBAC、也不是角色／權限系統。未來會員的擁有權是另一個獨立的設計決策，本 ADR 不定義。
 
 ## 已供裝的原型資源（2026-09-09）
 
@@ -102,3 +104,17 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - D1 `wtlab-guest-workspace`（migration 0001 已套用，驗證資料已清空）
 
 兩者都在 production 路徑之外，`www.wtlab.co` 仍由 Cloudflare Pages 服務。**這些資源不會自動消失**——若不採用此方向須明確刪除，指令與理由見 [deployment.md](../deployment.md#prototype-resources--live-not-production)。
+
+### 目前遠端狀態（2026-09-10）
+
+既有的原型 Worker 已部署含登入的版本，四條路由皆在：`/api/guest/workspace`、`/api/guest/session`、`/api/guest/login`、`/api/guest/logout`。原型登入所需的 secrets 已在伺服器端設定（僅列名稱，值不進任何文件）：
+
+- `PROTOTYPE_LOGIN_USERNAME`
+- `PROTOTYPE_LOGIN_PASSWORD_SHA256`
+- `PROTOTYPE_SESSION_SECRET`
+
+遠端驗證結果：`guest / guest` 登入可用；錯誤憑證被拒；auth cookie 必須帶有效簽章；auth / anon 隔離、A / B session 隔離皆 PASS；剝除簽章後重放被擋下；logout 只清除當前擁有者的列；table lock 負向測試 PASS；未知 API 路徑明確回 404；驗證資料已清為 0。版本號與驗證細節見 [deployment.md](../deployment.md#prototype-resources--live-not-production)。
+
+**這只代表 workers.dev 上的原型可用，不代表 `www.wtlab.co` 已接上登入。** 目前沒有任何 route 把 `www.wtlab.co/api/guest/*` 接到原型 Worker，這是刻意保留的部署邊界。
+
+**原型登入退場時**，清理必須同時涵蓋：原型 Worker 的部署／資源（視情況），以及上述三個 Prototype Login Worker secrets。退場登入本身不會、也不應自動刪除 Guest Workspace 的資料表。
