@@ -206,7 +206,6 @@ export interface IntegratedWorkspaceText {
 	/** Server-backed guest workspace panel (ADR-0004 prototype). */
 	guest: {
 		heading: string;
-		note: string;
 		saveButton: string;
 		clearButton: string;
 		empty: string;
@@ -220,7 +219,6 @@ export interface IntegratedWorkspaceText {
 		/** Prototype login bridge — not an account system. */
 		login: {
 			heading: string;
-			note: string;
 			usernameLabel: string;
 			passwordLabel: string;
 			loginButton: string;

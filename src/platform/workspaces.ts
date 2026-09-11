@@ -13,12 +13,13 @@ export const workspaces: readonly WorkspaceEntry[] = [
 		displayName: 'Integrated Workspace',
 		description: 'Work with current operational data and apply WTLab tools for analysis and review.',
 		layer: 'work',
-		status: 'prototype',
-		enabled: false,
+		status: 'beta',
+		enabled: true,
 		route: '/workspace/integrated',
 		coreQuestion: 'What am I working on right now, and which tools apply to it?',
 		surface: 'main',
-		implementationState: 'placeholder',
+		// Partial: shows current working data from the Quick modes only.
+		implementationState: 'partial',
 		prototypeRefs: [],
 	},
 	{

@@ -74,11 +74,9 @@ const cards = instruments.map((instrument) => {
 
 	<section class="guest-panel" aria-labelledby="guest-heading">
 		<h2 id="guest-heading">{iw.guest.heading}</h2>
-		<p class="guest-note">{iw.guest.note}</p>
 
 		<div class="login-block">
 			<h3>{iw.guest.login.heading}</h3>
-			<p class="guest-note">{iw.guest.login.note}</p>
 			<form id="guest-login-form" class="login-form" hidden>
 				<label for="guest-username">{iw.guest.login.usernameLabel}</label>
 				<input id="guest-username" name="username" type="text" autocomplete="off" />
@@ -405,13 +403,6 @@ const cards = instruments.map((instrument) => {
 		text-transform: uppercase;
 		color: var(--color-text-secondary);
 		margin: 0 0 var(--space-sm);
-	}
-
-	.guest-note {
-		color: var(--color-text-muted);
-		max-width: 70ch;
-		margin: 0 0 var(--space-md);
-		font-size: 0.9rem;
 	}
 
 	.login-block {
