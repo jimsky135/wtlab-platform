@@ -57,16 +57,17 @@ Cloudflare resources that are still running**. They remain a prototype (one
 shared demo credential, no member model), but since **2026-09-10** the Worker
 also answers one production path: `www.wtlab.co/api/guest/*`.
 
-Current reality as of **2026-09-10**, split into three surfaces.
+Current reality as of **2026-09-11**, split into three surfaces.
 
 ### A. Pages — `www.wtlab.co` frontend
 
 | | |
 |---|---|
-| `main` | `00f4fd6` (frontend code unchanged since `70cb437`) |
+| `main` | `8184b59` — production UI copy aligned with current workspace capabilities on 2026-09-11 |
 | Frontend | Every normal page on `www.wtlab.co` is served by Cloudflare Pages |
 | `/api/guest/*` | **Not served by Pages** — routed to the Guest Workspace Worker (B) |
-| Guest login | **Functional on `www.wtlab.co`** |
+| Guest login | **Functional on `www.wtlab.co`** ("Guest sign-in") |
+| Integrated Workspace | Listed as **Beta · Partial** — shows current working data from the Quick modes only; calculation stays inside each instrument |
 
 Every other unmatched path — including non-guest `/api/*` such as `/api/db` —
 still reaches Pages and gets its unknown-route fallback (200 + homepage HTML);
@@ -81,7 +82,7 @@ Pages-side 405, and the login panel reported login unavailable.
 | | |
 |---|---|
 | Worker | `wtlab-guest-workspace-prototype` |
-| Current version | `a7b41c83-3eb0-4440-8ed1-6a1c83d47db5` (deployed 2026-09-11 from `main` @ `00f4fd6`; previous `3190914d`) |
+| Current version | `a7b41c83-3eb0-4440-8ed1-6a1c83d47db5` (deployed 2026-09-11 from `main` @ `00f4fd6`; previous `3190914d`). Its bundled static assets are that build, so the `workers.dev` URL still shows the pre-`8184b59` UI copy; `www.wtlab.co` pages come from Pages and are current |
 | URL | https://wtlab-guest-workspace-prototype.jimchiu0627.workers.dev |
 | D1 database | `wtlab-guest-workspace` (APAC). Migration `0001` applied |
 | Bindings | `DB`, `ASSETS` |
@@ -192,13 +193,15 @@ repositioning the Pages project. None of that is in place today.
 After each production deployment, verify:
 
 1. `https://www.wtlab.co` loads with valid HTTPS
-2. Homepage lists both instruments; navigation (Today/Instruments/Workspaces/Continuity/About) works
-3. Instrument Library shows 2 × "Open Instrument" + 5 × "Prototype Planned"
+2. Homepage lists 7 instruments and 1 utility; header navigation (Integrated Workspace / Instruments / Utilities / Workspaces / Continuity / About) and the EN / 繁中 switch work
+3. Instrument Library shows 7 × "Open Instrument" and no "Prototype Planned"
 4. Water Level Checker: Quick manual run returns results (e.g. 25/10/2mo/1mo → Caution, 2.5 months)
 5. Water Level: blank template + input CSV download; re-upload runs
 6. Arrival Collision Detector: Quick manual run returns results; Advanced CSV with capacity flags OVER
-7. Result CSV exports download from both instruments
+7. Result CSV exports download from the six instruments that offer them (Demand Wave Radar has none)
 8. `/workspace/data-intake` demo flow works
-9. Mobile width (375px): no horizontal overflow
-10. Browser console: no application errors
-11. `phoenix.wtlab.co` still serves Phoenix, unaffected
+9. `GET /api/guest/session` returns JSON (`authenticated`, `loginAvailable: true`), not homepage HTML
+10. Integrated Workspace: Guest sign-in → run one Quick instrument with non-sample values → its card shows "Your working data" → refresh keeps it → sign out clears it
+11. Mobile width (375px): no horizontal overflow
+12. Browser console: no application errors
+13. `phoenix.wtlab.co` still serves Phoenix, unaffected
