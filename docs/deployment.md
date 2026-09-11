@@ -63,7 +63,7 @@ Current reality as of **2026-09-10**, split into three surfaces.
 
 | | |
 |---|---|
-| `main` | `0b2081d` (frontend code unchanged since `70cb437`) |
+| `main` | `00f4fd6` (frontend code unchanged since `70cb437`) |
 | Frontend | Every normal page on `www.wtlab.co` is served by Cloudflare Pages |
 | `/api/guest/*` | **Not served by Pages** — routed to the Guest Workspace Worker (B) |
 | Guest login | **Functional on `www.wtlab.co`** |
@@ -81,7 +81,7 @@ Pages-side 405, and the login panel reported login unavailable.
 | | |
 |---|---|
 | Worker | `wtlab-guest-workspace-prototype` |
-| Current version | `3190914d-778a-4305-a7f7-f741e37ecbd9` (deployed from `main` @ `70cb437`) |
+| Current version | `a7b41c83-3eb0-4440-8ed1-6a1c83d47db5` (deployed 2026-09-11 from `main` @ `00f4fd6`; previous `3190914d`) |
 | URL | https://wtlab-guest-workspace-prototype.jimchiu0627.workers.dev |
 | D1 database | `wtlab-guest-workspace` (APAC). Migration `0001` applied |
 | Bindings | `DB`, `ASSETS` |
@@ -167,12 +167,19 @@ npx wrangler secret delete PROTOTYPE_SESSION_SECRET --name wtlab-guest-workspace
 Retiring login does not by itself delete the Guest Workspace table or its D1
 database; that is the separate step above.
 
-**Orphaned session rows — known, not fixed.** Logging in while already logged
-in mints a new session; rows owned by the previous session stay in
-`guest_workspace_records`, because logout only clears the current owner.
+**Orphaned session rows.** Observed during production validation on
+2026-09-10: logging in while already logged in minted a new session and
+stranded the previous session's rows. **Fixed 2026-09-11** (`00f4fd6`, Worker
+`a7b41c83`): a login from a browser that already holds a valid signed session
+keeps that session, including a second tab sharing its cookie. Production
+check PASS — repeated login and second-tab login left 1 session / 1 row, and
+logout cleaned it to 0. Unsigned, tampered or anonymous identities still get a
+new session id.
+
+Still orphaned, not fixed: anonymous rows written before logging in, and
+sessions that are never logged out (browser closed, cookie expired).
 Inactivity/TTL cleanup (`deleteInactiveBefore`) exists as code but has no
-scheduled trigger, so orphaned temporary rows remain until cleaned manually.
-Observed during production validation on 2026-09-10.
+scheduled trigger, so those temporary rows remain until cleaned manually.
 
 Promoting this Worker to serve the **whole** domain is a separate decision that
 has **not** been made — the narrow guest route above is not that. It would mean
