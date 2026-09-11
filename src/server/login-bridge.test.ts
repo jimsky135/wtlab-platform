@@ -156,16 +156,80 @@ test('logging in mints a new session id — a pre-planted one is discarded', asy
 	db.close();
 });
 
-test('logging in twice produces two different sessions', async () => {
+test('logging in again while already logged in keeps the same session and its rows', async () => {
 	const db = createTestDatabase();
 	const browser = createBrowser(await contextFor(db));
 
 	await browser.login();
 	const first = browser.cookie(AUTH_COOKIE_NAME);
-	await browser.login();
-	const second = browser.cookie(AUTH_COOKIE_NAME);
+	await browser.write('notes', 'first-login');
 
-	assert.notEqual(first, second);
+	const again = await browser.login();
+	assert.equal(again.status, 200);
+	assert.equal(again.json.authenticated, true);
+	assert.equal(browser.cookie(AUTH_COOKIE_NAME), first, 'the existing signed session is kept');
+
+	const read = await browser.read();
+	assert.equal(read.json.datasets.length, 1, 'work from the first login is still reachable');
+	assert.equal(read.json.datasets[0].payload, 'first-login');
+	assert.equal(db.totalRows(), 1, 'no second session, no orphaned rows');
+
+	// And logout still reaches those rows.
+	await browser.logout();
+	assert.equal(db.totalRows(), 0);
+	db.close();
+});
+
+test('a second tab logging in again does not strand the first tab’s work', async () => {
+	const db = createTestDatabase();
+	const context = await contextFor(db);
+	const tabA = createBrowser(context);
+
+	await tabA.login();
+	await tabA.write('shared', 'written-in-tab-A');
+
+	// Tab B was opened before the login, so it still shows the form — but it
+	// shares tab A's cookies, as tabs in one browser do.
+	const tabB = createBrowser(context);
+	tabB.setCookie(AUTH_COOKIE_NAME, tabA.cookie(AUTH_COOKIE_NAME)!);
+	await tabB.login();
+
+	assert.equal(tabB.cookie(AUTH_COOKIE_NAME), tabA.cookie(AUTH_COOKIE_NAME));
+	assert.equal((await tabA.read()).json.datasets.length, 1, 'tab A still sees its work');
+	assert.equal((await tabB.read()).json.datasets.length, 1, 'tab B sees the same workspace');
+	assert.equal(db.totalRows(), 1);
+	db.close();
+});
+
+test('a wrong password while logged in changes nothing', async () => {
+	const db = createTestDatabase();
+	const browser = createBrowser(await contextFor(db));
+
+	await browser.login();
+	const cookie = browser.cookie(AUTH_COOKIE_NAME);
+	await browser.write('notes', 'kept');
+
+	assert.equal((await browser.login('guest', 'wrong')).status, 401);
+	assert.equal(browser.cookie(AUTH_COOKIE_NAME), cookie, 'session untouched');
+	assert.equal((await browser.session()).json.authenticated, true);
+	assert.equal((await browser.read()).json.datasets.length, 1);
+	db.close();
+});
+
+test('a tampered or unsigned auth cookie is never adopted at login', async () => {
+	const db = createTestDatabase();
+	const context = await contextFor(db);
+
+	const planted = 'e'.repeat(64);
+	for (const forged of [planted, `${planted}.not-a-real-signature`]) {
+		const browser = createBrowser(context);
+		browser.setCookie(AUTH_COOKIE_NAME, forged);
+
+		assert.equal((await browser.login()).status, 200);
+		const issued = browser.cookie(AUTH_COOKIE_NAME);
+		assert.ok(issued);
+		assert.notEqual(issued.split('.')[0], planted, `forged cookie "${forged.slice(-12)}" must not become the session`);
+	}
 	db.close();
 });
 

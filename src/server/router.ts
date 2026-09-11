@@ -28,6 +28,7 @@ import {
 	clearedAuthCookie,
 	createAuthenticatedSession,
 	readAuthenticatedSessionId,
+	signSessionId,
 	verifyPrototypeCredentials,
 	type PrototypeLoginConfig,
 } from './prototype-login.ts';
@@ -150,10 +151,16 @@ export async function handleGuestWorkspace(request: Request, context: RouterCont
 }
 
 /**
- * Prototype login. Success always mints a NEW session id — the request's
- * existing identity is discarded, which is what makes session fixation
- * pointless. Failure changes nothing at all: no session is issued, and the
- * caller keeps whatever anonymous identity it already had.
+ * Prototype login. Credentials are always checked first; failure changes
+ * nothing at all — no session is issued, and the caller keeps whatever
+ * identity it already had.
+ *
+ * On success, a request that already holds a valid SIGNED session keeps it.
+ * A second login from the same browser (e.g. another tab still showing the
+ * form) must not strand the first session's rows where logout can no longer
+ * reach them. Only a signature this server produced can take that branch,
+ * so session fixation stays pointless: a planted anonymous id, or an
+ * unsigned / tampered auth cookie, still gets a brand-new session id.
  */
 export async function handleGuestLogin(request: Request, context: RouterContext): Promise<Response> {
 	if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405 });
@@ -174,7 +181,10 @@ export async function handleGuestLogin(request: Request, context: RouterContext)
 		return json({ error: 'INVALID_CREDENTIALS', authenticated: false }, { status: 401 });
 	}
 
-	const { cookieValue } = await createAuthenticatedSession(context.login.sessionSecret);
+	const existing = await readAuthenticatedSessionId(context.login.sessionSecret, request.headers.get('cookie'));
+	const cookieValue = existing
+		? await signSessionId(context.login.sessionSecret, existing)
+		: (await createAuthenticatedSession(context.login.sessionSecret)).cookieValue;
 	return json(
 		{ authenticated: true },
 		{
