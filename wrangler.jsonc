@@ -7,8 +7,15 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-09-01",
 
-	// Validation only: a workers.dev URL, no custom domain, no routes, no cron.
+	// workers.dev stays on for direct prototype access. No custom domain, no cron.
 	"workers_dev": true,
+
+	// Path-level production route, live since 2026-09-10 (ADR-0004). Only the
+	// guest API on www.wtlab.co reaches this Worker; every other path on the
+	// domain — the whole frontend — is still served by the Cloudflare Pages
+	// project. Kept here so a later `wrangler deploy` preserves it. Never widen
+	// it to www.wtlab.co/* or www.wtlab.co/api/* without a separate decision.
+	"routes": [{ "pattern": "www.wtlab.co/api/guest/*", "zone_name": "wtlab.co" }],
 
 	// Astro stays `output: 'static'` (ADR-0004). The Worker serves that build
 	// as-is and adds only /api/*.

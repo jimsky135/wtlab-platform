@@ -18,7 +18,7 @@
 
 The site is fully static (ADR-0001): no SSR, no functions, no backend, no database, no cookies/localStorage. All instrument calculation and CSV import/export run in the visitor's browser. The only external requests are Google Fonts.
 
-This describes the **Pages surface** (`www.wtlab.co`). The Pages build ships the Integrated Workspace guest UI but no Guest API backend; the server-backed prototype runs on a separate Worker (ADR-0004) — see [Prototype resources](#prototype-resources--live-not-production).
+This describes the **Pages surface**, which serves every normal frontend page on `www.wtlab.co`. The one exception is `www.wtlab.co/api/guest/*`, routed since 2026-09-10 to the Guest Workspace Worker (ADR-0004) — see [Prototype resources](#prototype-resources--live-path-routed-in-production).
 
 ## Deployment workflow
 
@@ -46,37 +46,37 @@ Rollback = redeploy a previous good commit. Two options:
 
 ## Domain boundary
 
-- `www.wtlab.co` — this project (Pages custom domain).
+- `www.wtlab.co` — this project (Pages custom domain), except `www.wtlab.co/api/guest/*`, which a Worker route sends to `wtlab-guest-workspace-prototype`.
 - `wtlab.co` — redirect only, via a zone-level Redirect Rule; carries no content.
 - `phoenix.wtlab.co` — belongs to Project Phoenix. No DNS record, Pages project, or rule of Phoenix may be modified when operating on this project.
 
-## Prototype resources — live, not production
+## Prototype resources — live, path-routed in production
 
 The Guest Workspace Foundation (ADR-0004, commit `e47a8c7`) created **real
-Cloudflare resources that are still running**. They are validation-only and
-sit deliberately outside the production path.
+Cloudflare resources that are still running**. They remain a prototype (one
+shared demo credential, no member model), but since **2026-09-10** the Worker
+also answers one production path: `www.wtlab.co/api/guest/*`.
 
-Current reality as of **2026-09-10**, split into three separate surfaces.
+Current reality as of **2026-09-10**, split into three surfaces.
 
-### A. Repository / Pages — `www.wtlab.co`
+### A. Pages — `www.wtlab.co` frontend
 
 | | |
 |---|---|
-| `main` | `70cb437` |
-| Frontend | Current repo frontend is deployed (Integrated Workspace login panel markup and workspace-tag styles are live) |
-| Guest API backend | **None.** Pages has no Guest Workspace API route |
-| Guest login | **Not functional on `www.wtlab.co`** |
+| `main` | `0b2081d` (frontend code unchanged since `70cb437`) |
+| Frontend | Every normal page on `www.wtlab.co` is served by Cloudflare Pages |
+| `/api/guest/*` | **Not served by Pages** — routed to the Guest Workspace Worker (B) |
+| Guest login | **Functional on `www.wtlab.co`** |
 
-Known behaviour — do not misread it:
+Every other unmatched path — including non-guest `/api/*` such as `/api/db` —
+still reaches Pages and gets its unknown-route fallback (200 + homepage HTML);
+see the Pages fallback HOLD entry in [engineering.md](engineering.md).
 
-- `GET /api/guest/session` may return **HTTP 200**. That is the Pages
-  unknown-route fallback serving homepage HTML, **not a working API** (see the
-  Pages fallback HOLD entry in [engineering.md](engineering.md)).
-- `POST /api/guest/login` returns a Pages-side **405**.
-- The production login UI therefore reports that login is unavailable in this
-  environment.
+Historical (before the route was activated on 2026-09-10): `GET
+/api/guest/session` returned that fallback HTML, `POST /api/guest/login` a
+Pages-side 405, and the login panel reported login unavailable.
 
-### B. Prototype Worker
+### B. Guest Workspace Worker
 
 | | |
 |---|---|
@@ -85,13 +85,14 @@ Known behaviour — do not misread it:
 | URL | https://wtlab-guest-workspace-prototype.jimchiu0627.workers.dev |
 | D1 database | `wtlab-guest-workspace` (APAC). Migration `0001` applied |
 | Bindings | `DB`, `ASSETS` |
-| Triggers | `workers.dev` only — **no custom route, no custom domain, no cron** |
+| Route | `www.wtlab.co/api/guest/*` (zone `wtlab.co`) — activated 2026-09-10, persisted in `wrangler.jsonc` |
+| Triggers | `workers.dev` + the route above — **no custom domain, no cron** |
 
 Why the Worker is not named `wtlab-platform`: that name belongs to the Pages
 project serving `www.wtlab.co`. The prototype keeps a distinct name so it can
 never collide with production.
 
-### C. Prototype Login (Worker only)
+### C. Prototype Login
 
 | Method | Route | |
 |---|---|---|
@@ -103,7 +104,8 @@ never collide with production.
 | `POST` | `/api/guest/logout` | End the session and clear that owner's rows |
 
 Workspace writes are **`PUT`**. `POST /api/guest/workspace` returns **405 by
-design**. Any other `/api/*` path returns an explicit JSON 404 `NOT_FOUND`.
+design**. Any other `/api/guest/*` path gets the Worker's explicit JSON 404
+`NOT_FOUND` (on the `workers.dev` URL, so does every other `/api/*` path).
 
 Login config — Worker secrets, **names only**. Values exist only in Cloudflare
 and in the gitignored local `.dev.vars`, never in the repository:
@@ -119,19 +121,25 @@ Remote validation — Prototype Worker Activation v0.1 (2026-09-10): **PASS**,
 isolation, table lock). Cleanup returned `guest_workspace_records` to 0
 validation rows.
 
+Production go-live — route activated 2026-09-10: `guest / guest` production
+login PASS; minimum production validation **7/7 PASS** (`/api/guest/session`
+answers JSON, login, Quick → Integrated Workspace, refresh continuity, logout,
+Pages homepage, validation data cleaned to 0).
+
 ### Deployment boundary
 
-**The prototype Worker working does NOT mean `www.wtlab.co` production login is
-connected.** Current topology:
+**Path-level routing only — the site was not converted to a Worker.**
 
 ```
-www.wtlab.co           → Cloudflare Pages frontend → no Guest API backend route
-workers.dev prototype  → Worker + D1               → Guest Login + Guest Workspace functional
+www.wtlab.co (every other path) → Cloudflare Pages (normal frontend pages)
+www.wtlab.co/api/guest/*        → wtlab-guest-workspace-prototype → wtlab-guest-workspace D1
+workers.dev prototype URL       → same Worker, direct access
 ```
 
-There is currently no route connecting `www.wtlab.co/api/guest/*` to the
-prototype Worker. This is intentional and remains a separate future deployment
-decision. `www.wtlab.co` continues to be served by the Cloudflare Pages project.
+The route is persisted in `wrangler.jsonc`, so a later `wrangler deploy` keeps
+it. Never widen it to `www.wtlab.co/*` or `www.wtlab.co/api/*` without a
+separate decision. No member architecture, RBAC, persistent member storage or
+cron was introduced.
 
 ### Cleanup
 
@@ -142,6 +150,9 @@ guest-workspace direction is not pursued, both must be deleted explicitly:
 npx wrangler delete --name wtlab-guest-workspace-prototype
 npx wrangler d1 delete wtlab-guest-workspace
 ```
+
+Then confirm the `www.wtlab.co/api/guest/*` route is gone from the `wtlab.co`
+zone and remove the `routes` entry from `wrangler.jsonc`.
 
 When Prototype Login is retired, cleanup must cover **both** the prototype
 Worker deployment/resources as applicable **and** the three Prototype Login
@@ -156,11 +167,18 @@ npx wrangler secret delete PROTOTYPE_SESSION_SECRET --name wtlab-guest-workspace
 Retiring login does not by itself delete the Guest Workspace table or its D1
 database; that is the separate step above.
 
-Conversely, promoting this Worker to production is a separate decision that
-has **not** been made. It would mean claiming a route or custom domain,
-provisioning a scheduled trigger for the inactivity sweep (Pages Functions
-cannot do cron — only Workers can), and retiring or repositioning the Pages
-project. None of that is in place today.
+**Orphaned session rows — known, not fixed.** Logging in while already logged
+in mints a new session; rows owned by the previous session stay in
+`guest_workspace_records`, because logout only clears the current owner.
+Inactivity/TTL cleanup (`deleteInactiveBefore`) exists as code but has no
+scheduled trigger, so orphaned temporary rows remain until cleaned manually.
+Observed during production validation on 2026-09-10.
+
+Promoting this Worker to serve the **whole** domain is a separate decision that
+has **not** been made — the narrow guest route above is not that. It would mean
+a whole-domain route or custom domain, a scheduled trigger for the inactivity
+sweep (Pages Functions cannot do cron — only Workers can), and retiring or
+repositioning the Pages project. None of that is in place today.
 
 ## Production smoke-test checklist
 

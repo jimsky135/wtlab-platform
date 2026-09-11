@@ -65,7 +65,7 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - Cron trigger 的正式佈署（需要獨立的部署決策，不在原型階段悄悄建立第二個 production service）
 - 註冊使用者、付費方案、角色／組織
 - 永久性 Workspace 的資料模型（本輪的暫存表是原型容器，不是最終領域模型）
-- **把原型 Worker 提升為 production**：需要認領 route／custom domain、為閒置掃除接上排程觸發器、並處理現有 Pages 專案的去留。目前皆未做。
+- **把原型 Worker 提升為 production**：需要認領 route／custom domain、為閒置掃除接上排程觸發器、並處理現有 Pages 專案的去留。2026-09-10 起只有 `www.wtlab.co/api/guest/*` 這條 path-level route 已上線（見下方「正式站路由」）；整站 route／custom domain、排程觸發器、Pages 專案去留仍未做。
 
 ## Guest 權限範圍（2026-09-09，Table Lock v0.1）
 
@@ -103,7 +103,7 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - Worker `wtlab-guest-workspace-prototype`（僅 workers.dev，無 route／無 cron）
 - D1 `wtlab-guest-workspace`（migration 0001 已套用，驗證資料已清空）
 
-兩者都在 production 路徑之外，`www.wtlab.co` 仍由 Cloudflare Pages 服務。**這些資源不會自動消失**——若不採用此方向須明確刪除，指令與理由見 [deployment.md](../deployment.md#prototype-resources--live-not-production)。
+供裝當時兩者都在 production 路徑之外（2026-09-10 起的正式站路由見下文「正式站路由」）。**這些資源不會自動消失**——若不採用此方向須明確刪除，指令與理由見 [deployment.md](../deployment.md#prototype-resources--live-path-routed-in-production)。
 
 ### 目前遠端狀態（2026-09-10）
 
@@ -113,8 +113,12 @@ Astro 維持 `output: 'static'`。新增一個 Cloudflare Worker，以 static as
 - `PROTOTYPE_LOGIN_PASSWORD_SHA256`
 - `PROTOTYPE_SESSION_SECRET`
 
-遠端驗證結果：`guest / guest` 登入可用；錯誤憑證被拒；auth cookie 必須帶有效簽章；auth / anon 隔離、A / B session 隔離皆 PASS；剝除簽章後重放被擋下；logout 只清除當前擁有者的列；table lock 負向測試 PASS；未知 API 路徑明確回 404；驗證資料已清為 0。版本號與驗證細節見 [deployment.md](../deployment.md#prototype-resources--live-not-production)。
+遠端驗證結果：`guest / guest` 登入可用；錯誤憑證被拒；auth cookie 必須帶有效簽章；auth / anon 隔離、A / B session 隔離皆 PASS；剝除簽章後重放被擋下；logout 只清除當前擁有者的列；table lock 負向測試 PASS；未知 API 路徑明確回 404；驗證資料已清為 0。版本號與驗證細節見 [deployment.md](../deployment.md#prototype-resources--live-path-routed-in-production)。
 
-**這只代表 workers.dev 上的原型可用，不代表 `www.wtlab.co` 已接上登入。** 目前沒有任何 route 把 `www.wtlab.co/api/guest/*` 接到原型 Worker，這是刻意保留的部署邊界。
+### 正式站路由（2026-09-10）
 
-**原型登入退場時**，清理必須同時涵蓋：原型 Worker 的部署／資源（視情況），以及上述三個 Prototype Login Worker secrets。退場登入本身不會、也不應自動刪除 Guest Workspace 的資料表。
+Deferred Decisions 中「把原型 Worker 提升為 production」的路由部分，已用**最窄的形式**解決：只有 `www.wtlab.co/api/guest/*` 路由到既有的 Guest Workspace Worker（`wtlab-guest-workspace-prototype` → D1 `wtlab-guest-workspace`），一般前端頁面仍由 Cloudflare Pages 服務。正式站 `guest / guest` 登入 PASS，最小驗證 7/7 PASS。
+
+這是 **path-level routing**，不是把整站轉成 Worker。沒有引入會員架構、沒有 RBAC、沒有持久化的會員儲存，也沒有 cron。整站提升、排程清理、Pages 專案去留仍屬 Deferred Decisions。
+
+**原型登入退場時**，清理必須同時涵蓋：原型 Worker 的部署／資源（視情況）、`www.wtlab.co/api/guest/*` 這條 route，以及上述三個 Prototype Login Worker secrets。退場登入本身不會、也不應自動刪除 Guest Workspace 的資料表。
