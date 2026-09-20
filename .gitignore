@@ -159,3 +159,7 @@ Prototype/
 # Wrangler local secrets (prototype credentials) — never committed
 .dev.vars
 .dev.vars.*
+
+# Homepage design prototypes — kept locally, never committed
+# (v0.2 assets are duplicated under public/brand/, which IS tracked)
+design-prototypes/

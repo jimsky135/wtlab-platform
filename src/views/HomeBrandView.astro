@@ -1,0 +1,195 @@
+---
+// Brand-entry homepage (輪椅哥 → 輪椅流 → WTLab tools).
+// Direction: docs/notes/homepage-direction-v0.1.md
+// Design reference: design-prototypes/homepage-v0.2/
+//
+// This view sits BESIDE the original HomeView.astro and is not routed
+// until src/pages/index.astro and src/pages/zh-tw/index.astro import it.
+// Like HomeView it is its own shell (no PlatformShell): the brand tone
+// belongs to the homepage only; every tool page keeps the platform chrome.
+import '../shared/global.css';
+import BlogPodcastSection from '../components/home/BlogPodcastSection.astro';
+import BrandFooter from '../components/home/BrandFooter.astro';
+import BrandHero from '../components/home/BrandHero.astro';
+import ComicsSection from '../components/home/ComicsSection.astro';
+import ToolsSection from '../components/home/ToolsSection.astro';
+import WheelchairFlow from '../components/home/WheelchairFlow.astro';
+import { equivalentPath, getDictionary, type Locale } from '../i18n';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale);
+
+const currentPath = Astro.url.pathname;
+const enPath = equivalentPath(currentPath, 'en');
+const zhPath = equivalentPath(currentPath, 'zh-TW');
+const siteOrigin = Astro.site ?? new URL('https://www.wtlab.co');
+const absolute = (path: string) => new URL(path, siteOrigin).toString();
+---
+
+<html lang={t.htmlLang}>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{t.brandHome.seoTitle}</title>
+		<meta name="description" content={t.brandHome.seoDescription} />
+		<link rel="canonical" href={absolute(locale === 'en' ? enPath : zhPath)} />
+		<link rel="alternate" hreflang="en" href={absolute(enPath)} />
+		<link rel="alternate" hreflang="zh-TW" href={absolute(zhPath)} />
+		<link rel="alternate" hreflang="x-default" href={absolute(enPath)} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- Newsreader + Noto Sans SC: the existing tool tone (ToolsSection).
+		     Noto Sans TC + LXGW WenKai TC: the brand sections. -->
+		<link
+			href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Newsreader:ital@1&family=Noto+Sans+SC:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body class="brand-home">
+		<main>
+			<BrandHero locale={locale} />
+			<WheelchairFlow locale={locale} />
+			<ComicsSection locale={locale} />
+			<ToolsSection locale={locale} />
+			<BlogPodcastSection locale={locale} />
+		</main>
+		<BrandFooter locale={locale} />
+	</body>
+</html>
+
+<style is:global>
+	/* Brand tokens are scoped to the homepage body so nothing leaks into
+	   the platform shell or the tool pages. */
+	body.brand-home {
+		--bh-ink: #16120e;
+		--bh-paper: #f3ead7;
+		--bh-paper-2: #e9ddc2;
+		--bh-white: #fffdf7;
+		--bh-red: #c9301c;
+		--bh-yellow: #ffcf33;
+		--bh-grey: #5b5347;
+		--bh-max: 1440px;
+		--bh-gutter: clamp(20px, 8.33vw, 120px);
+		--bh-font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+		--bh-font-hand: 'LXGW WenKai TC', 'Noto Sans TC', cursive;
+
+		background: var(--bh-paper);
+		color: var(--bh-ink);
+		font-family: var(--bh-font-sans);
+	}
+
+	body.brand-home :focus-visible {
+		outline: 3px solid var(--bh-red);
+		outline-offset: 3px;
+	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html {
+			scroll-behavior: auto;
+		}
+	}
+</style>
+
+<style is:global>
+	/* Scroll reveal — phones only, and only once the script has opted in, so
+	   a visitor without JS still gets the whole page. */
+	@media (max-width: 900px) {
+		html.bh-reveal [data-bh-reveal] {
+			opacity: 0;
+			translate: 0 18px;
+		}
+
+		html.bh-reveal [data-bh-reveal].is-in {
+			opacity: 1;
+			translate: none;
+			transition:
+				opacity 0.5s ease,
+				translate 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html.bh-reveal [data-bh-reveal] {
+			opacity: 1;
+			translate: none;
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	// Blocks below the hero arrive as you scroll to them: a small fade and
+	// lift, once each. Phones only — the desktop layout was signed off as-is.
+	//
+	// The hero is deliberately excluded: it is already on screen at load, and
+	// fading in the thing a visitor is looking at reads as a glitch.
+	const GROUPS = [
+		'.bh-flow .bh-kicker, .bh-flow .bh-flow-head',
+		'.bh-flow .bh-beat',
+		'.bh-comics .bh-kicker, .bh-comics .bh-head, .bh-comics .bh-lede',
+		'.bh-comics .bh-column, .bh-comics .bh-blogcard',
+		'.bh-tools-lead, .bh-tools .kicker, .bh-tools h2, .bh-tools .lede',
+		'.bh-tools .tool-grid > li',
+		'.bh-tools .second-row > *',
+		'.bh-side .bh-kicker, .bh-side .bh-head, .bh-side .bh-lede',
+		'.bh-side .bh-articles > li',
+		'.bh-side .bh-podcast',
+	];
+
+	const small = window.matchMedia('(max-width: 900px)');
+	const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+	if (small.matches && !still.matches && 'IntersectionObserver' in window) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) continue;
+					entry.target.classList.add('is-in');
+					observer.unobserve(entry.target);
+				}
+			},
+			// Fire a little before the block reaches the middle of the screen,
+			// so it has finished arriving by the time it is properly in view.
+			{ rootMargin: '0px 0px -10% 0px', threshold: 0.06 }
+		);
+
+		let marked = 0;
+		for (const selector of GROUPS) {
+			const members = document.querySelectorAll(selector);
+			members.forEach((element, index) => {
+				if (!(element instanceof HTMLElement)) return;
+				element.setAttribute('data-bh-reveal', '');
+				// Stagger within the group only, so each section starts fresh
+				// instead of the delay growing down the whole page.
+				element.style.transitionDelay = `${Math.min(index, 5) * 70}ms`;
+				observer.observe(element);
+				marked += 1;
+			});
+		}
+
+		// Only hide things once there is something to reveal — otherwise a
+		// selector that stops matching would blank the page.
+		if (marked > 0) {
+			document.documentElement.classList.add('bh-reveal');
+
+			// Failsafe: hidden content is worse than no animation. If nothing has
+			// been revealed a few seconds in — observer never fired, tab restored
+			// from bfcache, anything — drop the whole effect and show the page.
+			window.setTimeout(() => {
+				if (document.querySelectorAll('[data-bh-reveal].is-in').length === 0) {
+					document.documentElement.classList.remove('bh-reveal');
+				}
+			}, 4000);
+		}
+	}
+</script>

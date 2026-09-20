@@ -1,0 +1,408 @@
+---
+// 輪椅工具: the homepage's window into the real WTLab tools. This block
+// deliberately keeps the existing professional tone (tokens.css colours,
+// Newsreader italic, mono kickers) — the brand voice stops at the door.
+//
+// Data rules carried over unchanged from the original HomeView:
+//  - Decision Instruments are never hardcoded: only what the Registry
+//    reports as available (status:active + enabled) is listed.
+//  - Utilities are listed regardless of status, with their status label.
+//  - The Integrated Workspace status comes from the workspace catalog via
+//    <StatusTag>, so the homepage can never claim more than the catalog does.
+import StatusTag from '../StatusTag.astro';
+import { getDictionary, localizePath, type Locale } from '../../i18n';
+import { findById } from '../../platform/catalog';
+import { instruments } from '../../platform/instruments';
+import { platformRegistry } from '../../platform/registry';
+import { utilities } from '../../platform/utilities.ts';
+import { workspaces } from '../../platform/workspaces';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const dict = getDictionary(locale);
+const t = dict.brandHome.tools;
+
+const availableTools = platformRegistry.getAvailable().map((tool) => {
+	const entry = findById(instruments, tool.metadata.id);
+	const text = dict.instruments[tool.metadata.id] ?? tool.metadata;
+	return {
+		route: entry ? localizePath(locale, entry.route) : localizePath(locale, `/tools/${tool.metadata.id}`),
+		displayName: text.displayName,
+		description: text.description,
+		category: dict.common.categoryLabels[tool.metadata.category] ?? tool.metadata.category,
+	};
+});
+
+const homeUtilities = utilities.map((utility) => {
+	const text = dict.utilities[utility.id] ?? utility;
+	return {
+		route: localizePath(locale, utility.route),
+		displayName: text.displayName,
+		description: text.description,
+		category: dict.common.utilityCategoryLabels[utility.category],
+		statusLabel: dict.common.utilityStatusTag.status[utility.status],
+	};
+});
+
+const integrated = findById(workspaces, 'integrated');
+const integratedText = integrated ? (dict.workspaces[integrated.id] ?? integrated) : undefined;
+---
+
+<p class="bh-tools-lead"><span>{t.lead}</span></p>
+
+<section id="tools" class="bh-tools">
+	<div class="bh-wrap">
+		<p class="kicker">{t.kicker}</p>
+		<h2>
+			{t.heading}
+			<span class="count">{t.headingCount.replace('{count}', String(availableTools.length))}</span>
+		</h2>
+		<p class="lede">{t.lede}</p>
+
+		{availableTools.length === 0 ? (
+			<p class="empty-state">{dict.home.emptyState}</p>
+		) : (
+			<ul class="tool-grid">
+				{availableTools.map((tool, index) => (
+					<li>
+						<a class="tool-card" href={tool.route}>
+							<span class="tool-index">{String(index + 1).padStart(2, '0')}</span>
+							<span class="tool-name">{tool.displayName}</span>
+							<span class="tool-description">{tool.description}</span>
+							<span class="tool-category">{tool.category}</span>
+						</a>
+					</li>
+				))}
+				<li>
+					<a class="tool-card is-library" href={localizePath(locale, '/instruments')}>
+						<span class="tool-category">{t.libraryKicker}</span>
+						<span class="tool-name accent">{t.libraryLink}</span>
+						<span class="tool-description">{t.libraryNote}</span>
+					</a>
+				</li>
+			</ul>
+		)}
+
+		<div class="second-row">
+			{integrated && integratedText && (
+				<article class="workspace-card">
+					<div class="workspace-status">
+						<span class="tool-category">{t.workspaceKicker}</span>
+						<StatusTag
+							status={integrated.status}
+							implementationState={integrated.implementationState}
+							enabled={integrated.enabled}
+							locale={locale}
+						/>
+					</div>
+					<h3>{integratedText.displayName}</h3>
+					<p class="tool-description">{t.workspaceLede}</p>
+					<ul class="facts">
+						{t.workspaceFacts.map((fact) => <li>{fact}</li>)}
+					</ul>
+					<a class="outline-link" href={localizePath(locale, integrated.route)}>{t.workspaceOpen}</a>
+				</article>
+			)}
+
+			<div class="utilities">
+				{homeUtilities.map((utility) => (
+					<a class="tool-card" href={utility.route}>
+						<span class="tool-category">{dict.home.utilitiesKicker} · {utility.statusLabel}</span>
+						<span class="tool-name">{utility.displayName}</span>
+						<span class="tool-description">{utility.description}</span>
+						<span class="tool-category">{utility.category}</span>
+					</a>
+				))}
+				<a class="plain-link" href={localizePath(locale, '/utilities')}>{t.utilitiesLink}</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.bh-tools-lead {
+		margin: 0;
+		padding: 56px var(--bh-gutter) 28px;
+		background: var(--bh-paper);
+		color: var(--bh-ink);
+	}
+
+	.bh-tools-lead span {
+		display: block;
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		font-family: var(--bh-font-hand);
+		font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+		font-weight: 700;
+		transform: rotate(-1deg);
+		transform-origin: left center;
+	}
+
+	/* From here down: the existing WTLab tool tone. */
+	.bh-tools {
+		background: var(--color-bg);
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		padding: 88px 0 96px;
+	}
+
+	.bh-wrap {
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 0 var(--bh-gutter);
+	}
+
+	.bh-tools a:focus-visible {
+		outline: var(--focus-outline);
+		outline-offset: var(--focus-outline-offset);
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2.2rem, 4vw, 3.5rem);
+		line-height: 1.1;
+		margin: 0 0 var(--space-sm);
+	}
+
+	h2 .count {
+		font-size: 0.55em;
+		color: var(--color-text-secondary);
+		margin-left: 0.3em;
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		max-width: 42em;
+		line-height: 1.8;
+		margin: 0 0 40px;
+	}
+
+	.empty-state {
+		color: var(--color-text-tertiary);
+		margin: 0 0 40px;
+	}
+
+	.tool-grid {
+		list-style: none;
+		margin: 0 0 16px;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 16px;
+	}
+
+	.tool-grid li {
+		display: flex;
+	}
+
+	.tool-card {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		flex-grow: 1;
+		min-height: 44px;
+		padding: 22px 22px 20px;
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+		color: var(--color-text-primary);
+		text-decoration: none;
+	}
+
+	.tool-card:hover,
+	.tool-card:focus-visible {
+		border-color: var(--color-accent);
+	}
+
+	.tool-card.is-library {
+		background: transparent;
+		border-style: dashed;
+		justify-content: flex-end;
+	}
+
+	.tool-index {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		color: var(--color-accent);
+	}
+
+	.tool-name {
+		font-size: 1.125rem;
+		font-weight: 500;
+		line-height: 1.35;
+	}
+
+	.tool-name.accent {
+		color: var(--color-accent);
+	}
+
+	.tool-description {
+		font-size: 0.85rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+		flex-grow: 1;
+		margin: 0;
+	}
+
+	.tool-category {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.second-row {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+		gap: 16px;
+	}
+
+	.workspace-card {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 30px 32px;
+		background: var(--color-bg-raised);
+		border: 1px solid var(--color-accent);
+	}
+
+	.workspace-status {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 14px;
+	}
+
+	h3 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.9rem;
+		line-height: 1.2;
+		margin: 0;
+	}
+
+	.workspace-card .tool-description {
+		font-size: 0.9rem;
+		flex-grow: 0;
+	}
+
+	.facts {
+		margin: 0;
+		padding-left: 20px;
+		font-size: 0.9rem;
+		line-height: 1.8;
+	}
+
+	.outline-link {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 18px;
+		border: 1px solid var(--color-accent);
+		color: var(--color-accent);
+		text-decoration: none;
+		font-size: 0.9rem;
+	}
+
+	.outline-link:hover,
+	.outline-link:focus-visible {
+		background: var(--color-accent);
+		color: var(--color-bg);
+	}
+
+	.utilities {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.plain-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		color: var(--color-accent);
+		text-decoration: none;
+		font-size: 0.9rem;
+	}
+
+	.plain-link:hover,
+	.plain-link:focus-visible {
+		text-decoration: underline;
+	}
+
+	@media (max-width: 1080px) {
+		.tool-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.second-row {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.bh-tools-lead {
+			padding: 32px var(--bh-gutter) 20px;
+		}
+
+		.bh-tools {
+			padding: 48px 0 56px;
+		}
+
+		/* Compact list on phones: every instrument stays one tap away. */
+		.tool-grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0;
+			border-top: var(--border-hairline);
+		}
+
+		.tool-grid .tool-card {
+			flex-direction: row;
+			align-items: center;
+			gap: 14px;
+			min-height: 56px;
+			padding: 10px 0;
+			background: transparent;
+			border: 0;
+			border-bottom: var(--border-hairline);
+		}
+
+		.tool-grid .tool-card:not(.is-library) .tool-description,
+		.tool-grid .tool-card:not(.is-library) .tool-category {
+			display: none;
+		}
+
+		.tool-grid .tool-card.is-library {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 4px;
+			padding: 14px 0;
+			border-bottom: 0;
+		}
+
+		.tool-name {
+			font-size: 1rem;
+			flex-grow: 1;
+		}
+
+		.workspace-card {
+			padding: 24px 20px;
+		}
+	}
+</style>

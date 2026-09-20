@@ -1,0 +1,107 @@
+---
+// Closing slogan + language switch.
+import { equivalentPath, getDictionary, type Locale } from '../../i18n';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const dict = getDictionary(locale);
+const t = dict.brandHome.footer;
+
+const currentPath = Astro.url.pathname;
+const enPath = equivalentPath(currentPath, 'en');
+const zhPath = equivalentPath(currentPath, 'zh-TW');
+---
+
+<footer class="bh-footer">
+	<div class="bh-wrap">
+		<p class="bh-slogan">{t.sloganLead}<span>{t.sloganPunch}</span></p>
+		<div class="bh-line">
+			<span class="bh-mark">WT{dict.nav.brandSuffix}</span>
+			<span class="bh-text">{t.line}</span>
+			<nav class="bh-lang" aria-label="Language">
+				<a href={enPath} aria-current={locale === 'en' ? 'true' : undefined}>{dict.nav.languageSwitcher.en}</a>
+				<span aria-hidden="true">|</span>
+				<a href={zhPath} aria-current={locale === 'zh-TW' ? 'true' : undefined}>{dict.nav.languageSwitcher.zhTW}</a>
+			</nav>
+		</div>
+	</div>
+</footer>
+
+<style>
+	.bh-footer {
+		background: var(--bh-ink);
+		color: var(--bh-paper);
+		padding: 72px 0 56px;
+	}
+
+	.bh-wrap {
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 0 var(--bh-gutter);
+	}
+
+	.bh-slogan {
+		margin: 0 0 40px;
+		font-size: clamp(2.4rem, 6.1vw, 5.5rem);
+		font-weight: 900;
+		line-height: 1.12;
+		letter-spacing: -0.02em;
+	}
+
+	.bh-slogan span {
+		color: var(--bh-yellow);
+	}
+
+	.bh-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px 28px;
+		padding-top: 28px;
+		border-top: 2px solid rgba(243, 234, 215, 0.3);
+		font-size: 15px;
+	}
+
+	.bh-mark {
+		font-size: 22px;
+		font-weight: 900;
+	}
+
+	.bh-text {
+		flex-grow: 1;
+		color: #cfc4ae;
+		line-height: 1.7;
+	}
+
+	.bh-lang {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		color: #cfc4ae;
+	}
+
+	.bh-lang a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 4px;
+		color: #cfc4ae;
+		text-decoration: none;
+	}
+
+	.bh-lang a[aria-current='true'] {
+		color: var(--bh-paper);
+		font-weight: 700;
+	}
+
+	@media (max-width: 600px) {
+		.bh-footer {
+			padding: 48px 0 40px;
+		}
+	}
+</style>

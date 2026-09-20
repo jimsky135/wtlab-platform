@@ -1,0 +1,503 @@
+---
+// Brand-entry hero: nav strip + 輪椅哥 main visual. Comic/collage tone.
+// Copy comes from `brandHome`; nothing here is hardcoded per locale.
+import { equivalentPath, getDictionary, type Locale } from '../../i18n';
+import { brandImages } from '../../platform/brand-content.ts';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const dict = getDictionary(locale);
+const t = dict.brandHome;
+
+const currentPath = Astro.url.pathname;
+const enPath = equivalentPath(currentPath, 'en');
+const zhPath = equivalentPath(currentPath, 'zh-TW');
+
+// Spiky burst behind the lettering (viewBox 480x310).
+const BURST =
+	'468,155 434,174 460,200 415,212 426,241 380,245 372,271 331,269 309,291 271,281 240,298 209,279 169,294 147,271 107,271 100,244 52,242 57,214 20,200 42,174 4,155 46,135 17,108 63,97 57,70 100,65 106,37 147,38 170,17 208,27 239,6 271,28 311,14 329,42 372,38 379,65 427,67 418,96 456,109 438,134';
+---
+
+<header class="bh-nav">
+	<a class="bh-wordmark" href="#top">WT<span>{dict.nav.brandSuffix}</span></a>
+	<span class="bh-nav-tagline">{t.nav.tagline}</span>
+	<nav class="bh-nav-links" aria-label={t.nav.sectionsLabel}>
+		<a href="#comics">{t.nav.comics}</a>
+		<a href="#tools">{t.nav.tools}</a>
+		<a href="#blog">{t.nav.blog}</a>
+		<a class="is-quiet" href="#podcast">{t.nav.podcast}</a>
+	</nav>
+	<nav class="bh-lang" aria-label="Language">
+		<a href={enPath} aria-current={locale === 'en' ? 'true' : undefined}>{dict.nav.languageSwitcher.en}</a>
+		<span aria-hidden="true">|</span>
+		<a href={zhPath} aria-current={locale === 'zh-TW' ? 'true' : undefined}>{dict.nav.languageSwitcher.zhTW}</a>
+	</nav>
+</header>
+
+<section id="top" class="bh-hero">
+	<div class="bh-hero-inner">
+		<div class="bh-hero-copy">
+			<span class="bh-chip bh-chip-yellow">{t.hero.chip}</span>
+			<h1>{t.hero.titleLine1}<br />{t.hero.titleLine2}</h1>
+			<p class="bh-slogan">{t.hero.slogan}</p>
+			<p class="bh-intro">
+				{t.hero.introBefore}<strong>{t.hero.flowTerm}</strong>{t.hero.introAfter}
+			</p>
+			<div class="bh-cta">
+				<a class="bh-button" href="#tools">{t.hero.ctaTools}</a>
+				<a class="bh-textlink" href="#comics">{t.hero.ctaComics}</a>
+			</div>
+		</div>
+
+		<div class="bh-hero-art">
+			<div class="bh-burst">
+				<svg viewBox="0 0 490 320" preserveAspectRatio="none" aria-hidden="true">
+					<polygon points={BURST} transform="translate(9 9)" class="bh-burst-shadow"></polygon>
+					<polygon points={BURST} class="bh-burst-fill"></polygon>
+				</svg>
+				<img
+					src={brandImages.lettering.src}
+					width={brandImages.lettering.width}
+					height={brandImages.lettering.height}
+					alt={t.hero.letteringAlt}
+				/>
+			</div>
+			<div class="bh-card">
+				<span class="bh-tape" aria-hidden="true"></span>
+				<img
+					src={brandImages.character.src}
+					width={brandImages.character.width}
+					height={brandImages.character.height}
+					alt={t.hero.characterAlt}
+				/>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.bh-nav {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 28px;
+		padding: 16px var(--bh-gutter);
+		border-bottom: 4px solid var(--bh-ink);
+		background: var(--bh-paper);
+	}
+
+	.bh-wordmark {
+		font-size: 26px;
+		font-weight: 900;
+		letter-spacing: -0.02em;
+		color: var(--bh-ink);
+		text-decoration: none;
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.bh-wordmark span {
+		color: var(--bh-red);
+	}
+
+	.bh-nav-tagline {
+		font-family: var(--bh-font-hand);
+		font-size: 17px;
+		color: var(--bh-grey);
+		flex-grow: 1;
+	}
+
+	.bh-nav-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 24px;
+	}
+
+	.bh-nav-links a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		font-size: 16px;
+		font-weight: 700;
+		color: var(--bh-ink);
+		text-decoration: none;
+	}
+
+	.bh-nav-links a.is-quiet {
+		font-weight: 400;
+		color: var(--bh-grey);
+	}
+
+	.bh-nav-links a:hover,
+	.bh-nav-links a:focus-visible {
+		text-decoration: underline;
+		text-decoration-thickness: 3px;
+	}
+
+	.bh-lang {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		color: var(--bh-grey);
+	}
+
+	.bh-lang a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 4px;
+		color: var(--bh-grey);
+		text-decoration: none;
+	}
+
+	.bh-lang a[aria-current='true'] {
+		color: var(--bh-ink);
+		font-weight: 700;
+	}
+
+	.bh-hero {
+		background:
+			radial-gradient(rgba(22, 18, 14, 0.22) 1.6px, rgba(22, 18, 14, 0) 1.8px) 0 0 / 14px 14px,
+			var(--bh-paper);
+		border-bottom: 4px solid var(--bh-ink);
+		overflow: hidden;
+	}
+
+	.bh-hero-inner {
+		display: grid;
+		grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+		gap: 40px;
+		align-items: center;
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 72px var(--bh-gutter) 84px;
+	}
+
+	.bh-hero-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 26px;
+	}
+
+	.bh-chip {
+		display: inline-block;
+		padding: 5px 12px;
+		border: 2px solid var(--bh-ink);
+		border-radius: 999px;
+		font-size: 14px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		background: var(--bh-white);
+		color: var(--bh-ink);
+	}
+
+	.bh-chip-yellow {
+		background: var(--bh-yellow);
+		transform: rotate(-2deg);
+	}
+
+	h1 {
+		margin: 0;
+		font-size: clamp(3.5rem, 8.8vw, 8rem);
+		font-weight: 900;
+		line-height: 1.02;
+		letter-spacing: -0.03em;
+	}
+
+	.bh-slogan {
+		margin: 0;
+		padding: 14px 24px;
+		background: var(--bh-yellow);
+		border: 5px solid var(--bh-ink);
+		box-shadow: 8px 8px 0 var(--bh-ink);
+		font-size: clamp(1.4rem, 2.7vw, 2.4rem);
+		font-weight: 900;
+		line-height: 1.25;
+		transform: rotate(-3deg);
+	}
+
+	.bh-intro {
+		margin: 8px 0 0;
+		font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+		line-height: 1.8;
+		max-width: 36em;
+	}
+
+	.bh-intro strong {
+		background: var(--bh-white);
+		border-bottom: 4px solid var(--bh-red);
+		padding: 0 4px;
+	}
+
+	.bh-cta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 16px 28px;
+	}
+
+	.bh-button {
+		display: inline-flex;
+		align-items: center;
+		min-height: 60px;
+		padding: 0 30px;
+		background: var(--bh-ink);
+		color: var(--bh-paper);
+		border: 4px solid var(--bh-ink);
+		box-shadow: 6px 6px 0 var(--bh-red);
+		font-size: 20px;
+		font-weight: 900;
+		text-decoration: none;
+	}
+
+	.bh-button:hover,
+	.bh-button:focus-visible {
+		transform: translate(2px, 2px);
+		box-shadow: 4px 4px 0 var(--bh-red);
+	}
+
+	.bh-textlink {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		font-family: var(--bh-font-hand);
+		font-size: 20px;
+		font-weight: 700;
+		color: var(--bh-ink);
+	}
+
+	.bh-hero-art {
+		position: relative;
+		padding-top: 90px;
+	}
+
+	.bh-card {
+		position: relative;
+		padding: 26px 24px;
+		background: #ffffff;
+		border: 5px solid var(--bh-ink);
+		box-shadow: 12px 12px 0 var(--bh-ink);
+		transform: rotate(2.5deg);
+	}
+
+	.bh-card img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.bh-tape {
+		position: absolute;
+		top: -18px;
+		right: 56px;
+		width: 130px;
+		height: 30px;
+		background: rgba(255, 207, 51, 0.82);
+		border: 1px solid rgba(22, 18, 14, 0.35);
+		transform: rotate(4deg);
+	}
+
+	.bh-burst {
+		position: absolute;
+		z-index: 1;
+		top: -24px;
+		left: -150px;
+		width: min(371px, 80%);
+		aspect-ratio: 371 / 253;
+		transform: rotate(-6deg);
+	}
+
+	.bh-burst svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.bh-burst-shadow {
+		fill: var(--bh-red);
+	}
+
+	.bh-burst-fill {
+		fill: var(--bh-ink);
+		stroke: var(--bh-ink);
+		stroke-width: 6;
+		stroke-linejoin: round;
+	}
+
+	.bh-burst img {
+		position: absolute;
+		left: 19%;
+		top: 20%;
+		width: 62%;
+		height: 58%;
+		object-fit: contain;
+	}
+
+	/* English runs much wider than the four-character zh title, so it gets a
+	   smaller headline and the burst stays out of the text column. */
+	:global(html[lang='en']) h1 {
+		font-size: clamp(2.6rem, 5.4vw, 4.9rem);
+		line-height: 1.06;
+	}
+
+	:global(html[lang='en']) .bh-burst {
+		left: -48px;
+		top: -56px;
+	}
+
+	@media (max-width: 900px) {
+		:global(html[lang='en']) .bh-burst {
+			left: 12%;
+			top: auto;
+		}
+
+		.bh-nav-tagline {
+			display: none;
+		}
+
+		.bh-nav-links {
+			order: 3;
+			width: 100%;
+			justify-content: space-between;
+			gap: 0;
+		}
+
+		.bh-lang {
+			margin-left: auto;
+		}
+
+		.bh-hero-inner {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 28px var(--bh-gutter) 44px;
+			gap: 28px;
+		}
+
+		/* Art first on small screens, like the mobile prototype. */
+		.bh-hero-art {
+			order: -1;
+			padding-top: 0;
+			padding-bottom: 150px;
+			max-width: 420px;
+		}
+
+		.bh-card {
+			padding: 14px;
+			border-width: 4px;
+			box-shadow: 8px 8px 0 var(--bh-ink);
+			transform: rotate(2deg);
+		}
+
+		.bh-burst {
+			top: auto;
+			bottom: -6px;
+			/* Centre-right on a phone, not dead centre, and tilted like a
+			   sticker slapped on. Uses the standalone rotate property so the
+			   scroll drift can keep the transform to itself. */
+			left: 48%;
+			width: 68%;
+			rotate: 15deg;
+		}
+
+		.bh-button {
+			width: 100%;
+			justify-content: center;
+			font-size: 18px;
+			min-height: 58px;
+			padding: 0 16px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bh-button:hover,
+		.bh-button:focus-visible {
+			transform: none;
+		}
+	}
+</style>
+
+<script>
+	// bh-burst-parallax — mobile only. The lettering drifts against the scroll
+	// direction so the hero reads as layered on a small screen, and comes to
+	// rest on the top-right corner of the 我是輪椅哥 heading.
+	//
+	// Off on desktop, and off whenever the visitor asked for reduced motion.
+	const burst = document.querySelector('.bh-burst');
+	const heading = document.querySelector('.bh-hero-copy h1');
+	const small = window.matchMedia('(max-width: 900px)');
+	const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+	if (burst instanceof HTMLElement && heading instanceof HTMLElement) {
+		/** How far past the heading's top edge the burst settles. */
+		const OVERLAP = 62;
+		/** Travelled distance per pixel scrolled — it lands after ~110px. */
+		const SPEED = 1.35;
+		let maxShift = 0;
+		let frame = 0;
+
+		// The resting place is measured from the live layout instead of a
+		// hardcoded number, so it still lands on that corner at any phone
+		// width, in either language, whatever the heading wraps to.
+		const measure = () => {
+			const previousTranslate = burst.style.translate;
+			const previousRotate = burst.style.rotate;
+			// Measure the burst upright and unmoved. A rotated box reports a
+			// taller, wider rect, which would drag the resting point up and out
+			// as soon as the tilt changes — the stop should follow the layout,
+			// not the angle.
+			burst.style.translate = 'none';
+			burst.style.rotate = 'none';
+			const gap = heading.getBoundingClientRect().top - burst.getBoundingClientRect().bottom;
+			burst.style.translate = previousTranslate;
+			burst.style.rotate = previousRotate;
+			maxShift = Math.max(0, gap + OVERLAP);
+		};
+
+		const apply = () => {
+			frame = 0;
+			const shift = Math.min(window.scrollY * SPEED, maxShift);
+			// The standalone translate property, not `transform`: translate is
+			// composed before rotate, so the drift runs straight down the page
+			// instead of along the tilted axis of the burst.
+			burst.style.translate = `0 ${shift.toFixed(1)}px`;
+		};
+
+		const onScroll = () => {
+			if (frame === 0) frame = requestAnimationFrame(apply);
+		};
+
+		const remeasure = () => {
+			measure();
+			apply();
+		};
+
+		const sync = () => {
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('resize', remeasure);
+			if (small.matches && !still.matches) {
+				measure();
+				window.addEventListener('scroll', onScroll, { passive: true });
+				window.addEventListener('resize', remeasure, { passive: true });
+				apply();
+			} else {
+				burst.style.translate = '';
+			}
+		};
+
+		sync();
+		// Web fonts land after first paint and move the heading, so take the
+		// measurement again once everything has settled.
+		window.addEventListener('load', () => {
+			if (small.matches && !still.matches) remeasure();
+		});
+		small.addEventListener('change', sync);
+		still.addEventListener('change', sync);
+	}
+</script>

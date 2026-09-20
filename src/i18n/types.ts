@@ -264,6 +264,76 @@ export interface HomeText {
 	utilitiesKicker: string;
 }
 
+/**
+ * Brand-entry homepage (輪椅哥 / WTLab). Presentation copy only. The two
+ * locales are written independently — the humour has to land in each
+ * language on its own, so the English is not a literal translation.
+ */
+export type BrandEpisodeId = 'ep001' | 'ep002' | 'ep003' | 'ep004';
+
+export interface BrandHomeText {
+	seoTitle: string;
+	seoDescription: string;
+	nav: { tagline: string; comics: string; tools: string; blog: string; podcast: string; sectionsLabel: string };
+	hero: {
+		chip: string;
+		titleLine1: string;
+		titleLine2: string;
+		slogan: string;
+		/** The intro sentence is split so the brand term can be highlighted. */
+		introBefore: string;
+		flowTerm: string;
+		introAfter: string;
+		ctaTools: string;
+		ctaComics: string;
+		characterAlt: string;
+		letteringAlt: string;
+	};
+	flow: {
+		kicker: string;
+		heading: string;
+		aside: string;
+		beats: ReadonlyArray<{ word: string; tag: string; text: string }>;
+	};
+	comics: {
+		kicker: string;
+		heading: string;
+		status: string;
+		lede: string;
+		readArticle: string;
+		blogCardHeading: string;
+		blogCardLink: string;
+		episodes: Record<BrandEpisodeId, { name: string; alt: string }>;
+	};
+	tools: {
+		lead: string;
+		kicker: string;
+		heading: string;
+		/** `{count}` is replaced with the number of available instruments. */
+		headingCount: string;
+		lede: string;
+		libraryKicker: string;
+		libraryLink: string;
+		libraryNote: string;
+		workspaceKicker: string;
+		workspaceLede: string;
+		workspaceFacts: ReadonlyArray<string>;
+		workspaceOpen: string;
+		utilitiesLink: string;
+	};
+	blog: {
+		kicker: string;
+		heading: string;
+		status: string;
+		lede: string;
+		/** `{name}` is replaced with the matching comic episode name. */
+		comicRef: string;
+		articles: Record<BrandEpisodeId, { title: string }>;
+	};
+	podcast: { kicker: string; status: string; title: string; lede: string; note: string };
+	footer: { sloganLead: string; sloganPunch: string; line: string };
+}
+
 export interface AboutText {
 	kicker: string;
 	heading: string;
@@ -402,6 +472,7 @@ export interface Dictionary {
 	common: CommonText;
 	nav: NavigationText;
 	home: HomeText;
+	brandHome: BrandHomeText;
 	instrumentsPage: InstrumentsPageText;
 	instrumentPlaceholder: InstrumentPlaceholderText;
 	workspacesPage: WorkspacesPageText;

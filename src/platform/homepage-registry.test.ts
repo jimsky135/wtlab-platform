@@ -8,16 +8,20 @@
 // API and never hardcodes the tool's display name as literal markup.
 //
 // Sprint 005.5 update: src/pages/index.astro is now a thin locale
-// wrapper (`<HomeView locale="en" />`) — the actual registry call lives
-// in the shared src/views/HomeView.astro that both locale routes render,
-// so this test now points there instead.
+// wrapper — the actual registry call lives in the shared view both locale
+// routes render, so this test points there instead.
+//
+// Homepage v0.2 update: that view is now src/views/HomeBrandView.astro,
+// and its tool block is src/components/home/ToolsSection.astro — which is
+// where the Registry call moved. The guard follows the code that actually
+// renders on the homepage, otherwise it stops guarding anything.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const indexAstroPath = fileURLToPath(new URL('../views/HomeView.astro', import.meta.url));
+const indexAstroPath = fileURLToPath(new URL('../components/home/ToolsSection.astro', import.meta.url));
 const source = readFileSync(indexAstroPath, 'utf-8');
 
 test('Task 006 Case 3 — homepage reads tools from platformRegistry.getAvailable()', () => {

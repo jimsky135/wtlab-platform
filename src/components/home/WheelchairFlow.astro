@@ -1,0 +1,163 @@
+---
+// 輪椅流 in four panels. The philosophy is carried by the character's
+// voice, not by a methodology page (homepage-direction-v0.1.md).
+import { getDictionary, type Locale } from '../../i18n';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale).brandHome.flow;
+const tones = ['yellow', 'white', 'red', 'ink'];
+---
+
+<section class="bh-flow">
+	<div class="bh-wrap">
+		<p class="bh-kicker">{t.kicker}</p>
+		<div class="bh-flow-head">
+			<h2>{t.heading}</h2>
+			<p class="bh-aside">{t.aside}</p>
+		</div>
+		<ol class="bh-beats">
+			{t.beats.map((beat, index) => (
+				<li class={`bh-beat is-${tones[index % tones.length]}`}>
+					<p class="bh-beat-word">{beat.word}</p>
+					<div class="bh-beat-body">
+						<p class="bh-beat-tag">{String(index + 1).padStart(2, '0')} · {beat.tag}</p>
+						<p class="bh-beat-text">{beat.text}</p>
+					</div>
+				</li>
+			))}
+		</ol>
+	</div>
+</section>
+
+<style>
+	.bh-flow {
+		background: var(--bh-paper);
+		padding: 84px 0 92px;
+	}
+
+	.bh-wrap {
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 0 var(--bh-gutter);
+	}
+
+	.bh-kicker {
+		margin: 0 0 10px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.18em;
+		color: var(--bh-grey);
+	}
+
+	.bh-flow-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 8px 16px;
+		margin-bottom: 36px;
+	}
+
+	h2 {
+		margin: 0;
+		font-size: clamp(2rem, 3.6vw, 3.25rem);
+		font-weight: 900;
+		line-height: 1.1;
+	}
+
+	.bh-aside {
+		margin: 0;
+		font-family: var(--bh-font-hand);
+		font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+		color: var(--bh-grey);
+	}
+
+	.bh-beats {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 24px;
+	}
+
+	.bh-beat {
+		display: flex;
+		flex-direction: column;
+		border: 4px solid var(--bh-ink);
+		background: var(--bh-white);
+		box-shadow: 6px 6px 0 var(--bh-ink);
+	}
+
+	.bh-beat-word {
+		margin: 0;
+		padding: 28px 20px 24px;
+		border-bottom: 4px solid var(--bh-ink);
+		font-size: clamp(1.9rem, 3.2vw, 3.2rem);
+		font-weight: 900;
+		line-height: 1.1;
+		min-height: 3.2em;
+		display: flex;
+		align-items: center;
+	}
+
+	.is-yellow .bh-beat-word {
+		background: var(--bh-yellow);
+	}
+
+	.is-white .bh-beat-word {
+		background: var(--bh-white);
+	}
+
+	.is-red .bh-beat-word {
+		background: var(--bh-red);
+		color: #ffffff;
+	}
+
+	.is-ink .bh-beat-word {
+		background: var(--bh-ink);
+		color: var(--bh-paper);
+	}
+
+	.bh-beat-body {
+		padding: 16px 18px 20px;
+	}
+
+	.bh-beat-tag {
+		margin: 0 0 8px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		color: var(--bh-grey);
+	}
+
+	.bh-beat-text {
+		margin: 0;
+		font-size: 16px;
+		line-height: 1.65;
+	}
+
+	@media (max-width: 1080px) {
+		.bh-beats {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 600px) {
+		.bh-flow {
+			padding: 48px 0 56px;
+		}
+
+		.bh-beats {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 20px;
+		}
+
+		.bh-beat-word {
+			min-height: 0;
+			padding: 20px 18px 18px;
+		}
+	}
+</style>

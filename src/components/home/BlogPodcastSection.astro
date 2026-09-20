@@ -1,0 +1,243 @@
+---
+// Blog (real articles on Jim's Talk, one per comic) + Podcast (supporting
+// content, not recorded yet — shown as a note, never as a player).
+import { getDictionary, type Locale } from '../../i18n';
+import { brandEpisodes } from '../../platform/brand-content.ts';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale).brandHome;
+---
+
+<section class="bh-side">
+	<div class="bh-wrap">
+		<div id="blog" class="bh-blog">
+			<p class="bh-kicker">{t.blog.kicker}</p>
+			<div class="bh-head">
+				<h2>{t.blog.heading}</h2>
+				<span class="bh-status">{t.blog.status}</span>
+			</div>
+			<p class="bh-lede">{t.blog.lede}</p>
+			<ul class="bh-articles">
+				{brandEpisodes.map((episode) => (
+					<li>
+						<a href={episode.articleUrl} target="_blank" rel="noopener">
+							<span class="bh-code">{episode.code}</span>
+							<span class="bh-title">{t.blog.articles[episode.id].title}</span>
+							<span class="bh-ref">{t.blog.comicRef.replace('{name}', t.comics.episodes[episode.id].name)}</span>
+							<span class="bh-arrow" aria-hidden="true">→</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+
+		<aside id="podcast" class="bh-podcast">
+			<div class="bh-podcast-head">
+				<span class="bh-podcast-kicker">{t.podcast.kicker}</span>
+				<span class="bh-status is-small">{t.podcast.status}</span>
+			</div>
+			<h3>{t.podcast.title}</h3>
+			<p class="bh-podcast-lede">{t.podcast.lede}</p>
+			<p class="bh-podcast-note">{t.podcast.note}</p>
+		</aside>
+	</div>
+</section>
+
+<style>
+	.bh-side {
+		background: var(--bh-paper);
+		padding: 92px 0 100px;
+	}
+
+	.bh-wrap {
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 0 var(--bh-gutter);
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+		gap: 40px;
+		align-items: start;
+	}
+
+	.bh-kicker {
+		margin: 0 0 10px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.18em;
+		color: var(--bh-grey);
+	}
+
+	.bh-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px 16px;
+		margin-bottom: 22px;
+	}
+
+	h2 {
+		margin: 0;
+		font-size: clamp(2.75rem, 4.2vw, 3.75rem);
+		font-weight: 900;
+		line-height: 1.05;
+	}
+
+	.bh-status {
+		display: inline-block;
+		padding: 5px 12px;
+		border: 2px solid var(--bh-ink);
+		border-radius: 999px;
+		background: var(--bh-white);
+		font-size: 14px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		transform: rotate(2deg);
+	}
+
+	.bh-status.is-small {
+		font-size: 12px;
+		transform: none;
+	}
+
+	.bh-lede {
+		margin: 0 0 12px;
+		max-width: 36em;
+		font-size: 18px;
+		line-height: 1.8;
+	}
+
+	.bh-articles {
+		list-style: none;
+		margin: 22px 0 0;
+		padding: 0;
+		border-top: 4px solid var(--bh-ink);
+	}
+
+	.bh-articles a {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		min-height: 44px;
+		padding: 16px 0;
+		border-bottom: 2px solid var(--bh-ink);
+		color: var(--bh-ink);
+		text-decoration: none;
+	}
+
+	.bh-code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.1em;
+		background: var(--bh-yellow);
+		border: 2px solid var(--bh-ink);
+		padding: 2px 7px;
+		white-space: nowrap;
+	}
+
+	.bh-title {
+		flex-grow: 1;
+		font-size: 19px;
+		font-weight: 700;
+		line-height: 1.5;
+	}
+
+	.bh-articles a:hover .bh-title,
+	.bh-articles a:focus-visible .bh-title {
+		text-decoration: underline;
+		text-decoration-thickness: 3px;
+	}
+
+	.bh-ref {
+		font-size: 13px;
+		color: var(--bh-grey);
+		white-space: nowrap;
+	}
+
+	.bh-arrow {
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.bh-podcast {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 22px;
+		border: 3px solid var(--bh-ink);
+		background: var(--bh-paper-2);
+		transform: rotate(1.5deg);
+	}
+
+	.bh-podcast-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.bh-podcast-kicker {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.14em;
+	}
+
+	h3 {
+		margin: 0;
+		font-size: 26px;
+		font-weight: 900;
+		line-height: 1.25;
+	}
+
+	.bh-podcast-lede {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.7;
+		color: var(--bh-grey);
+	}
+
+	.bh-podcast-note {
+		margin: 0;
+		padding: 12px 14px;
+		border: 2px dashed var(--bh-ink);
+		background: var(--bh-white);
+		font-size: 14px;
+		line-height: 1.7;
+		color: var(--bh-grey);
+	}
+
+	@media (max-width: 900px) {
+		.bh-side {
+			padding: 52px 0 60px;
+		}
+
+		.bh-wrap {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 44px;
+		}
+
+		.bh-podcast {
+			transform: rotate(1deg);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.bh-articles a {
+			flex-wrap: wrap;
+			gap: 6px 10px;
+			padding: 14px 0;
+		}
+
+		.bh-title {
+			order: 3;
+			flex-basis: 100%;
+			font-size: 17px;
+		}
+
+		.bh-arrow {
+			display: none;
+		}
+	}
+</style>

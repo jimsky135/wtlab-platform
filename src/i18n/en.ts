@@ -113,6 +113,95 @@ export const en = {
 		utilitiesKicker: 'Utilities',
 	},
 
+
+	// ---- brand-entry homepage (Wheelchair Bro) ----
+	// Voice: dry, self-deprecating, plain-spoken. Written for English on its
+	// own terms — deliberately NOT a literal translation of the zh-TW copy.
+	brandHome: {
+		seoTitle: "WTLab — Wheelchair Bro's tool shed",
+		seoDescription: "I'll get you airborne. Landing alive, guaranteed. Comics, plain-talk essays, and a shed full of seriously built operations tools.",
+		nav: { tagline: "Wheelchair Bro's tool shed", comics: 'Comics', tools: 'Tools', blog: 'Blog', podcast: 'Podcast', sectionsLabel: 'On this page' },
+		hero: {
+			chip: 'WTLab home · enter Wheelchair Bro',
+			titleLine1: "I'm Wheelchair",
+			titleLine2: 'Bro.',
+			slogan: "I'll get you airborne. Landing alive, guaranteed!",
+			introBefore: "Real problems don't wait their turn, and I'm done being scared of them. Crash, adjust, roll again. I call it ",
+			flowTerm: 'the Wheelchair Way',
+			introAfter: '. WTLab is where I keep the tools. The serious kind.',
+			ctaTools: 'Into the tool shed (it gets serious) →',
+			ctaComics: 'Comics first ↓',
+			characterAlt: 'Wheelchair Bro: sunglasses, thumbs up, riding a wheelchair that has grown wings',
+			letteringAlt: 'Brush lettering in Chinese, roughly: "Huh? Wait, what? Oh, come ON!"',
+		},
+		flow: {
+			kicker: 'The Wheelchair Way',
+			heading: 'The Wheelchair Way, in four panels',
+			aside: 'Not a methodology. A habit I picked up by crashing.',
+			beats: [
+				{ word: 'Huh?', tag: 'Real problems', text: "A real problem shows up. It rarely knocks, and it never checks your calendar." },
+				{ word: 'Wait, what?', tag: 'Room for error', text: "Wrong math, wrong read, wrong guess: budget for all three. And if you don't get it, say so." },
+				{ word: 'Oh, come ON!', tag: 'Resilience', text: "Crashed. Swearing is allowed. Staying down isn't. Wheels still there? Then so am I." },
+				{ word: 'OK. Again.', tag: 'Keep adjusting', text: 'Tilt the angle, keep rolling. If the next crash looks better, that counts as progress.' },
+			],
+		},
+		comics: {
+			kicker: 'Main course · brand content',
+			heading: 'Comics',
+			status: "Essays are live on Jim's Talk · the comics page here isn't built yet",
+			lede: 'Everyday stories in plain talk. The crashes at work and the stuck bits of life are funnier in panels, and easier to get. (Drawn in Traditional Chinese.)',
+			readArticle: 'Read the essay →',
+			blogCardHeading: 'Read the comic and still wondering why?',
+			blogCardLink: 'The blog says it plainly ↓',
+			episodes: {
+				ep001: { name: 'The Boss Fight', alt: 'Four-panel comic: the raid boss is at 3%, the whole party is down, and the healer is on a beach in Hawaii, not picking up. Wheelchair Bro mutters: when a key resource has no backup, you find out who the real boss is.' },
+				ep002: { name: 'The Fish Tank', alt: 'Four-panel comic: the fish are swimming sideways, so Wheelchair Bro pours in more food, then more. The air pump was never plugged in. Meanwhile a meeting discusses the Fish Tank Improvement Project.' },
+				ep003: { name: 'The Banquet Soup', alt: 'Four-panel comic: the plan was burgers, until a VIP visit turns it into an elaborate banquet soup overnight and everyone melts down. Wheelchair Bro mutters: requirements can change. The scary part is everyone thinking it is just a small tweak.' },
+				ep004: { name: 'The Convenience Store', alt: 'Four-panel comic: the app says in stock, the shelf is empty, and warehouse, logistics, head office and the next store all point at each other. Wheelchair Bro mutters: being able to see it does not mean you can get it.' },
+			},
+		},
+		tools: {
+			lead: '↓ It gets serious from here. Wheelchair Bro, please keep it down.',
+			kicker: 'The tools · WTLab',
+			heading: 'Decision Instruments',
+			headingCount: 'Instruments · {count}',
+			lede: 'Each instrument observes or calculates one operational dimension. Everything listed here works today, and opens in the existing WTLab tool interface.',
+			libraryKicker: 'Library',
+			libraryLink: 'Full instrument library →',
+			libraryNote: 'What each instrument is for, and the question it answers.',
+			workspaceKicker: 'Workspace',
+			workspaceLede: "One place to see each tool's current working data. Here's the honest state of it:",
+			workspaceFacts: [
+				'It only shows working data from the Quick modes for now.',
+				'Calculations still happen inside each tool. The workspace itself calculates nothing.',
+				'The data is temporary working state, not permanent storage.',
+			],
+			workspaceOpen: 'Open the Integrated Workspace (beta) →',
+			utilitiesLink: 'Utilities library →',
+		},
+		blog: {
+			kicker: 'Plain-talk essays',
+			heading: 'Blog',
+			status: "Published on Jim's Talk",
+			lede: "Whatever the comics can't fit, the blog says plainly. One essay per comic: look first then read, or read first then look. (The essays are in Traditional Chinese; titles below are translated.)",
+			comicRef: '⇄ Comic: {name}',
+			articles: {
+				ep001: { title: "The scary part isn't a strong boss. It's the healer being away." },
+				ep002: { title: "The fish aren't dead yet. That doesn't mean the water is fine." },
+				ep003: { title: 'We agreed on burgers for tomorrow. Then it became banquet soup.' },
+				ep004: { title: 'The store clearly has stock. So why is the shelf empty?' },
+			},
+		},
+		podcast: {
+			kicker: 'PODCAST',
+			status: 'In the works · not recorded yet',
+			title: '行者自語 (Talking to Myself on the Road)',
+			lede: "A side dish. For when Wheelchair Bro isn't drawing, he talks.",
+			note: 'Nothing recorded yet. Once episode one exists, the player goes here.',
+		},
+		footer: { sloganLead: "I'll get you airborne. ", sloganPunch: 'Landing alive, guaranteed!', line: "Wheelchair Bro's tool platform. The tools are real. So are the crashes." },
+	},
+
 	instrumentsPage: {
 		kicker: 'Instrument Library',
 		heading: 'Instruments',
