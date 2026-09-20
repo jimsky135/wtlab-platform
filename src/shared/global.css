@@ -10,6 +10,14 @@ body {
 	padding: 0;
 }
 
+html {
+	/* iOS Safari inflates text inside a block that is wider than the
+	   viewport, which makes that block wider still. Opt out — the
+	   layout is responsive and sizes its own type. */
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
 body {
 	background: var(--color-bg);
 	color: var(--color-text-primary);

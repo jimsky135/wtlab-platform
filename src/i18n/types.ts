@@ -301,6 +301,10 @@ export interface BrandHomeText {
 		status: string;
 		lede: string;
 		readArticle: string;
+		/** Accessible name for the button that opens a comic full-screen. */
+		openComic: string;
+		/** Label on the lightbox close button. */
+		closeComic: string;
 		blogCardHeading: string;
 		blogCardLink: string;
 		episodes: Record<BrandEpisodeId, { name: string; alt: string }>;

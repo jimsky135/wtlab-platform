@@ -151,6 +151,8 @@ export const en = {
 			status: "Essays are live on Jim's Talk · the comics page here isn't built yet",
 			lede: 'Everyday stories in plain talk. The crashes at work and the stuck bits of life are funnier in panels, and easier to get. (Drawn in Traditional Chinese.)',
 			readArticle: 'Read the essay →',
+			openComic: 'Open this comic full screen',
+			closeComic: 'Close',
 			blogCardHeading: 'Read the comic and still wondering why?',
 			blogCardLink: 'The blog says it plainly ↓',
 			episodes: {

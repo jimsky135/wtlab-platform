@@ -143,6 +143,8 @@ export const zhTW = {
 			status: "白話版已發布於 Jim's Talk・站上漫畫頁尚未上線",
 			lede: '生活白話，日常故事。工作上摔過的、生活裡卡住的，畫成格子比較好笑，也比較好懂。',
 			readArticle: '看白話版 →',
+			openComic: '放大看這則漫畫',
+			closeComic: '關閉',
 			blogCardHeading: '看完漫畫還想問為什麼？',
 			blogCardLink: 'Blog 講白話版 ↓',
 			episodes: {

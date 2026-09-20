@@ -1,8 +1,11 @@
 ---
-// Comics: the main brand content. Every episode links out to its
-// plain-talk essay on Jim's Talk (new tab). The status chip says plainly
-// that WTLab itself has no comics page yet — do not soften that until a
-// real page exists.
+// Comics: the main brand content. Tapping a panel opens it full screen —
+// a comic is there to be read, and the collage thumbnails are small. The
+// essay link stays its own control in the caption, so opening the picture
+// and leaving for Jim's Talk can never be the same accidental tap.
+//
+// The status chip says plainly that WTLab itself has no comics page yet —
+// do not soften that until a real page exists.
 import { getDictionary, type Locale } from '../../i18n';
 import { brandEpisodes } from '../../platform/brand-content.ts';
 
@@ -36,7 +39,13 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 				<div class="bh-column">
 					{column.map((episode, rowIndex) => (
 						<figure style={`--tilt: ${tilts[(columnIndex * 2 + rowIndex) % tilts.length]}`}>
-							<a href={episode.articleUrl} target="_blank" rel="noopener">
+							<button
+								type="button"
+								class="bh-comic-open"
+								data-comic={episode.image}
+								data-comic-alt={t.episodes[episode.id].alt}
+								aria-label={`${t.episodes[episode.id].name} — ${t.openComic}`}
+							>
 								<img
 									src={episode.image}
 									width={episode.width}
@@ -45,12 +54,12 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 									loading="lazy"
 									decoding="async"
 								/>
-								<figcaption>
-									<span class="bh-code">{episode.code}</span>
-									<span class="bh-name">{t.episodes[episode.id].name}</span>
-									<span class="bh-read">{t.readArticle}</span>
-								</figcaption>
-							</a>
+							</button>
+							<figcaption>
+								<span class="bh-code">{episode.code}</span>
+								<span class="bh-name">{t.episodes[episode.id].name}</span>
+								<a class="bh-read" href={episode.articleUrl} target="_blank" rel="noopener">{t.readArticle}</a>
+							</figcaption>
 						</figure>
 					))}
 					{columnIndex === columns.length - 1 && (
@@ -63,6 +72,14 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 			))}
 		</div>
 	</div>
+
+	<dialog class="bh-lightbox" id="bh-lightbox">
+		<button type="button" class="bh-lightbox-close" data-close aria-label={t.closeComic}>
+			<span aria-hidden="true">✕</span>
+			<span class="bh-lightbox-close-text">{t.closeComic}</span>
+		</button>
+		<img id="bh-lightbox-image" src="" alt="" />
+	</dialog>
 </section>
 
 <style>
@@ -145,10 +162,13 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 		transform: rotate(var(--tilt, 0deg));
 	}
 
-	figure a {
+	.bh-comic-open {
 		display: block;
-		color: var(--bh-ink);
-		text-decoration: none;
+		width: 100%;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: zoom-in;
 	}
 
 	figure img {
@@ -189,9 +209,73 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 		white-space: nowrap;
 	}
 
-	figure a:hover .bh-read,
-	figure a:focus-visible .bh-read {
+	.bh-read {
+		color: var(--bh-ink);
+	}
+
+	.bh-read:hover,
+	.bh-read:focus-visible {
 		text-decoration-thickness: 3px;
+	}
+
+	/* Full-screen reader. <dialog> brings the focus trap, Esc, and the
+	   backdrop with it, so this is styling only. */
+	.bh-lightbox {
+		width: 100vw;
+		max-width: 100vw;
+		height: 100dvh;
+		max-height: 100dvh;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		overflow: hidden;
+	}
+
+	.bh-lightbox::backdrop {
+		background: rgba(10, 8, 6, 0.92);
+	}
+
+	.bh-lightbox img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.bh-lightbox-close {
+		position: fixed;
+		top: max(12px, env(safe-area-inset-top));
+		right: 12px;
+		z-index: 1;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 48px;
+		padding: 0 18px;
+		border: 3px solid var(--bh-ink);
+		border-radius: 999px;
+		background: var(--bh-yellow);
+		color: var(--bh-ink);
+		font-family: inherit;
+		font-size: 16px;
+		font-weight: 900;
+		cursor: pointer;
+	}
+
+	@media (max-width: 700px) {
+		.bh-lightbox-close-text {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+
+		.bh-lightbox-close {
+			padding: 0;
+			width: 48px;
+			justify-content: center;
+		}
 	}
 
 	.bh-blogcard {
@@ -266,3 +350,30 @@ const tilts = ['-1deg', '0.8deg', '1deg', '-0.8deg'];
 		}
 	}
 </style>
+
+<script>
+	// One dialog, reused: the clicked panel hands over its source and alt
+	// text before it opens, so there is never a stale picture to clear.
+	// Esc, the backdrop scrim and focus handling come from <dialog> itself.
+	const dialog = document.getElementById('bh-lightbox');
+	const image = document.getElementById('bh-lightbox-image');
+
+	if (dialog instanceof HTMLDialogElement && image instanceof HTMLImageElement) {
+		for (const trigger of document.querySelectorAll('.bh-comic-open')) {
+			trigger.addEventListener('click', () => {
+				const source = trigger.getAttribute('data-comic');
+				if (!source) return;
+				image.src = source;
+				image.alt = trigger.getAttribute('data-comic-alt') ?? '';
+				dialog.showModal();
+			});
+		}
+
+		dialog.addEventListener('click', (event) => {
+			// Anywhere that is not the picture closes it: the backdrop, and the
+			// letterboxed margins either side of a contained image.
+			if (event.target === image) return;
+			dialog.close();
+		});
+	}
+</script>

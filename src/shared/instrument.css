@@ -62,6 +62,10 @@
 	flex-direction: column;
 	gap: var(--space-xs);
 	flex: 1;
+	/* Without this a flex item refuses to go below the intrinsic width
+	   of the input inside it, so a value + unit row pushes past a
+	   narrow phone screen instead of shrinking to fit. */
+	min-width: 0;
 }
 
 .instrument-page .field-row {
@@ -97,6 +101,16 @@
 	font-family: var(--font-body);
 	font-size: 0.95rem;
 	padding: var(--space-xs) var(--space-sm);
+}
+
+/* On a narrow screen fill the column instead of keeping the browser
+   default width, which the column may be narrower than. Wide screens keep
+   the original field sizing. */
+@media (max-width: 700px) {
+	.instrument-page .field input,
+	.instrument-page .field select {
+		width: 100%;
+	}
 }
 
 .instrument-page .action-row {
