@@ -201,6 +201,59 @@ export const en = {
 			lede: "A side dish. For when Wheelchair Bro isn't drawing, he talks.",
 			note: 'Nothing recorded yet. Once episode one exists, the player goes here.',
 		},
+		projects: {
+			kicker: 'Projects',
+			heading: 'Projects at a glance',
+			lede: 'Beyond WTLab there are a few other projects in progress. This is what each one is for and where it stands — no way in from here.',
+			scrollHint: 'Swipe for more →',
+			listLabel: 'Projects',
+			items: [
+				{
+					name: 'WTLab',
+					tone: 'live',
+					status: 'Live',
+					summary: 'A platform of operational decision tools. Everyday calls about inventory, arrivals and suppliers, broken into small tools you can just use.',
+					points: [
+						'Seven decision instruments, all calculated in your browser',
+						"Integrated Workspace: each tool's working data in one place (beta)",
+						'Utilities: Excel Preprocessor',
+					],
+				},
+				{
+					name: 'Phoenix',
+					tone: 'internal',
+					status: 'Internal use',
+					summary: "An organisation's decision memory. What was decided, on what evidence — so the same mistake does not have to be made twice.",
+					points: [
+						'Built around evidence and records; it does not replace judgment',
+						'Modules for shipment tracking and delivery scheduling',
+						'Internal only, not open to the public',
+					],
+				},
+				{
+					name: 'Raw Material Stocktake',
+					tone: 'internal',
+					status: 'Live · internal only',
+					summary: 'Multi-person stocktaking. Several people count on the floor at once, and the numbers line up against the daily SAP inventory.',
+					points: [
+						'Daily reconciliation against SAP',
+						'Bin photos and a nested bin structure',
+						'Per-bin stock ledger, putaway order and pallet counts',
+					],
+				},
+				{
+					name: 'Life Event App',
+					tone: 'building',
+					status: 'In development',
+					summary: 'Turns the paperwork and notices of everyday life into events you can follow. Snap a photo or paste some text; it becomes calendar entries and reminders.',
+					points: [
+						'Says it does not know rather than guessing',
+						'Photos stay on the phone; only the extracted events sync',
+						'Not released yet',
+					],
+				},
+			],
+		},
 		footer: { sloganLead: "I'll get you airborne. ", sloganPunch: 'Landing alive, guaranteed!', line: "Wheelchair Bro's tool platform. The tools are real. So are the crashes." },
 	},
 

@@ -1,0 +1,216 @@
+---
+// 專案一覽: the projects around WTLab, directly below the decision
+// instruments and in the same tool tone — the brand voice stays above.
+//
+// Status only, never links. Most of these sit behind a login or are not
+// built yet, and the homepage must not read as a way into any of them.
+// Each status tag says plainly where the project stands.
+import { getDictionary, type Locale } from '../../i18n';
+
+interface Props {
+	locale?: Locale;
+}
+const { locale = 'en' } = Astro.props;
+const t = getDictionary(locale).brandHome.projects;
+---
+
+<section id="projects" class="bh-projects" aria-labelledby="projects-heading">
+	<div class="bh-wrap">
+		<hr class="bh-divider" />
+		<p class="kicker">{t.kicker}</p>
+		<h2 id="projects-heading">{t.heading}</h2>
+		<p class="lede">{t.lede}</p>
+		<p class="scroll-hint" aria-hidden="true">{t.scrollHint}</p>
+	</div>
+
+	<!-- Outside .bh-wrap on purpose: the rail bleeds to both screen edges,
+	     while its first card still lines up with the heading above. -->
+	<ul class="project-rail" tabindex="0" aria-label={t.listLabel}>
+		{t.items.map((item) => (
+			<li class="project-card">
+				<p class="project-status">
+					<span class:list={['tag', `tag-${item.tone}`]}>{item.status}</span>
+				</p>
+				<h3>{item.name}</h3>
+				<p class="summary">{item.summary}</p>
+				<ul class="points">
+					{item.points.map((point) => <li>{point}</li>)}
+				</ul>
+			</li>
+		))}
+	</ul>
+</section>
+
+<style>
+	/* Same tool tone as ToolsSection, which sits directly above. */
+	.bh-projects {
+		background: var(--color-bg);
+		color: var(--color-text-primary);
+		font-family: var(--font-body);
+		padding: 0 0 96px;
+	}
+
+	.bh-wrap {
+		max-width: var(--bh-max);
+		margin: 0 auto;
+		padding: 0 var(--bh-gutter);
+	}
+
+	.bh-divider {
+		border: 0;
+		border-top: var(--border-hairline);
+		margin: 0 0 72px;
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: var(--tracking-kicker);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin: 0 0 var(--space-sm);
+	}
+
+	h2 {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-weight: 400;
+		font-size: clamp(2.2rem, 4vw, 3.5rem);
+		line-height: 1.1;
+		margin: 0 0 var(--space-sm);
+	}
+
+	.lede {
+		color: var(--color-text-secondary);
+		max-width: 42em;
+		line-height: 1.8;
+		margin: 0 0 var(--space-sm);
+	}
+
+	.scroll-hint {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: var(--tracking-kicker);
+		color: var(--color-text-tertiary);
+		margin: 0 0 20px;
+	}
+
+	/* Full bleed: the rail spans the whole screen and scrolls inside
+	   itself, so the page never gains a horizontal scrollbar. The inset
+	   matches .bh-wrap — gutter on small screens, centred column edge on
+	   wide ones — so the first card, and every snap point, lines up with
+	   the heading above. The next card peeking at the right edge is the
+	   hint that there is more. */
+	.project-rail {
+		--rail-inset: max(var(--bh-gutter), calc((100% - var(--bh-max)) / 2 + var(--bh-gutter)));
+		display: flex;
+		gap: 16px;
+		list-style: none;
+		margin: 0;
+		padding: 0 var(--rail-inset) 14px;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: var(--rail-inset);
+
+		/* Thin and dark instead of the system bar: visible enough for a
+		   mouse user to see this scrolls, quiet enough not to compete. */
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-text-muted) transparent;
+	}
+
+	.project-rail::-webkit-scrollbar {
+		height: 6px;
+	}
+
+	.project-rail::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.project-rail::-webkit-scrollbar-thumb {
+		background: var(--color-text-muted);
+		border-radius: 3px;
+	}
+
+	/* Inset: the rail touches the screen edges, so an outer ring would be
+	   clipped. */
+	.project-rail:focus-visible {
+		outline: var(--focus-outline);
+		outline-offset: -2px;
+	}
+
+	.project-card {
+		flex: 0 0 min(340px, 85%);
+		scroll-snap-align: start;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 22px 22px 20px;
+		background: var(--color-bg-raised);
+		border: var(--border-hairline);
+	}
+
+	.project-status {
+		margin: 0;
+	}
+
+	.tag {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		border: var(--border-hairline);
+		padding: 2px 8px;
+	}
+
+	.tag-live {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.tag-building {
+		color: var(--color-text-muted);
+	}
+
+	h3 {
+		font-size: 1.125rem;
+		font-weight: 500;
+		line-height: 1.35;
+		margin: 4px 0 0;
+	}
+
+	.summary {
+		font-size: 0.85rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.points {
+		margin: 4px 0 0;
+		padding-left: 1.1em;
+		font-size: 0.8rem;
+		line-height: 1.6;
+		color: var(--color-text-tertiary);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.project-rail {
+			scroll-behavior: smooth;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.bh-projects {
+			padding: 0 0 56px;
+		}
+
+		.bh-divider {
+			margin-bottom: 48px;
+		}
+	}
+</style>

@@ -12,6 +12,7 @@ import BlogPodcastSection from '../components/home/BlogPodcastSection.astro';
 import BrandFooter from '../components/home/BrandFooter.astro';
 import BrandHero from '../components/home/BrandHero.astro';
 import ComicsSection from '../components/home/ComicsSection.astro';
+import ProjectsSection from '../components/home/ProjectsSection.astro';
 import ToolsSection from '../components/home/ToolsSection.astro';
 import WheelchairFlow from '../components/home/WheelchairFlow.astro';
 import { equivalentPath, getDictionary, type Locale } from '../i18n';
@@ -57,6 +58,7 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 			<WheelchairFlow locale={locale} />
 			<ComicsSection locale={locale} />
 			<ToolsSection locale={locale} />
+			<ProjectsSection locale={locale} />
 			<BlogPodcastSection locale={locale} />
 		</main>
 		<BrandFooter locale={locale} />
@@ -141,6 +143,8 @@ const absolute = (path: string) => new URL(path, siteOrigin).toString();
 		'.bh-tools-lead, .bh-tools .kicker, .bh-tools h2, .bh-tools .lede',
 		'.bh-tools .tool-grid > li',
 		'.bh-tools .second-row > *',
+		'.bh-projects .kicker, .bh-projects h2, .bh-projects .lede',
+		'.bh-projects .project-rail',
 		'.bh-side .bh-kicker, .bh-side .bh-head, .bh-side .bh-lede',
 		'.bh-side .bh-articles > li',
 		'.bh-side .bh-podcast',

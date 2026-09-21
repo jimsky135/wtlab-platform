@@ -335,6 +335,27 @@ export interface BrandHomeText {
 		articles: Record<BrandEpisodeId, { title: string }>;
 	};
 	podcast: { kicker: string; status: string; title: string; lede: string; note: string };
+	/**
+	 * Projects around WTLab, shown below the decision instruments. Status
+	 * only, deliberately no links: most sit behind a login or are not
+	 * built yet.
+	 */
+	projects: {
+		kicker: string;
+		heading: string;
+		lede: string;
+		scrollHint: string;
+		/** Accessible name for the horizontally scrolling list. */
+		listLabel: string;
+		items: Array<{
+			name: string;
+			/** Colour of the status tag: live / internal-only / still being built. */
+			tone: 'live' | 'internal' | 'building';
+			status: string;
+			summary: string;
+			points: string[];
+		}>;
+	};
 	footer: { sloganLead: string; sloganPunch: string; line: string };
 }
 
