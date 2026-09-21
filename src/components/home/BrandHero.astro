@@ -439,8 +439,13 @@ const BURST =
 	if (burst instanceof HTMLElement && heading instanceof HTMLElement) {
 		/** How far past the heading's top edge the burst settles. */
 		const OVERLAP = 62;
-		/** Travelled distance per pixel scrolled — it lands after ~110px. */
-		const SPEED = 1.35;
+		/**
+		 * Scroll distance over which the burst makes its whole move. Fixed in
+		 * scroll pixels rather than as a speed, so it lands at the same point
+		 * of the scroll on every phone width and in both languages — the
+		 * English headline is taller, so its drift is longer, not faster.
+		 */
+		const TRAVEL = 300;
 		let maxShift = 0;
 		let frame = 0;
 
@@ -464,7 +469,8 @@ const BURST =
 
 		const apply = () => {
 			frame = 0;
-			const shift = Math.min(window.scrollY * SPEED, maxShift);
+			const progress = Math.min(window.scrollY / TRAVEL, 1);
+			const shift = progress * maxShift;
 			// The standalone translate property, not `transform`: translate is
 			// composed before rotate, so the drift runs straight down the page
 			// instead of along the tilted axis of the burst.
