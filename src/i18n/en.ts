@@ -204,11 +204,13 @@ export const en = {
 		projects: {
 			kicker: 'Projects',
 			heading: 'Projects at a glance',
-			lede: 'Beyond WTLab there are a few other projects in progress. This is what each one is for and where it stands — no way in from here.',
+			lede: 'Beyond WTLab there are a few other projects in progress. Most are described here without a way in; where there is a public demo, it is linked.',
 			scrollHint: 'Swipe for more →',
 			listLabel: 'Projects',
+			openDemo: 'Open the demo →',
 			items: [
 				{
+					id: 'wtlab',
 					name: 'WTLab',
 					tone: 'live',
 					status: 'Live',
@@ -220,6 +222,7 @@ export const en = {
 					],
 				},
 				{
+					id: 'phoenix',
 					name: 'Phoenix',
 					tone: 'internal',
 					status: 'Internal use',
@@ -231,17 +234,22 @@ export const en = {
 					],
 				},
 				{
+					id: 'stocktake',
 					name: 'Raw Material Stocktake',
 					tone: 'internal',
 					status: 'Live · internal only',
-					summary: 'Multi-person stocktaking. Several people count on the floor at once, and the numbers line up against the daily SAP inventory.',
 					points: [
 						'Daily reconciliation against SAP',
 						'Bin photos and a nested bin structure',
 						'Per-bin stock ledger, putaway order and pallet counts',
 					],
+					demo: {
+						label: 'Demo “Asset Stocktake” · fictional data · no sign-in',
+						text: 'A multi-person stocktake tool for warehouses, shops and item management. Several people count each bin, and it is settled once their records agree; item totals are checked against the ERP book figures before a person confirms the count is done; putaway order is recorded as a first-in, first-out reference. Works without signing in.',
+					},
 				},
 				{
+					id: 'life-app',
 					name: 'Life Event App',
 					tone: 'building',
 					status: 'In development',

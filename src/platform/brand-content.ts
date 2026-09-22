@@ -7,7 +7,7 @@
 // that really exist. Each entry below points at a published article on
 // Jim's Talk; the comics themselves have no page on WTLab yet.
 
-import type { BrandEpisodeId } from '../i18n/types.ts';
+import type { BrandEpisodeId, ProjectId } from '../i18n/types.ts';
 
 export interface BrandEpisode {
 	id: BrandEpisodeId;
@@ -60,3 +60,16 @@ export const brandImages = {
 	character: { src: '/brand/wheelchair-bro-character.png', width: 1197, height: 1032 },
 	lettering: { src: '/brand/yi-ha-kaobei-lettering.png', width: 1136, height: 591 },
 } as const;
+
+/**
+ * Public demos linked from the homepage projects overview.
+ *
+ * Demo sites only. A production site never goes here: the stocktake
+ * tool's own site sits behind a sign-in and holds real data, while its
+ * demo needs no sign-in, realigns its data to today every day and resets
+ * itself when idle — safe to leave linked. brand-content.test.ts holds
+ * that line.
+ */
+export const projectDemos: Partial<Record<ProjectId, { href: string }>> = {
+	stocktake: { href: 'https://invdemo.wtlab.co/' },
+};

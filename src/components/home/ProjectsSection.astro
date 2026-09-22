@@ -2,10 +2,12 @@
 // 專案一覽: the projects around WTLab, directly below the decision
 // instruments and in the same tool tone — the brand voice stays above.
 //
-// Status only, never links. Most of these sit behind a login or are not
-// built yet, and the homepage must not read as a way into any of them.
-// Each status tag says plainly where the project stands.
+// Each status tag says plainly where the project stands. The only links
+// are to public demos that need no sign-in (from brand-content.ts) —
+// never to a production site, which sits behind a login and holds real
+// data. brand-content.test.ts guards that.
 import { getDictionary, type Locale } from '../../i18n';
+import { projectDemos } from '../../platform/brand-content.ts';
 
 interface Props {
 	locale?: Locale;
@@ -26,18 +28,32 @@ const t = getDictionary(locale).brandHome.projects;
 	<!-- Outside .bh-wrap on purpose: the rail bleeds to both screen edges,
 	     while its first card still lines up with the heading above. -->
 	<ul class="project-rail" tabindex="0" aria-label={t.listLabel}>
-		{t.items.map((item) => (
+		{t.items.map((item) => {
+			const demo = projectDemos[item.id];
+			return (
 			<li class="project-card">
 				<p class="project-status">
 					<span class:list={['tag', `tag-${item.tone}`]}>{item.status}</span>
 				</p>
 				<h3>{item.name}</h3>
-				<p class="summary">{item.summary}</p>
+				{item.summary && <p class="summary">{item.summary}</p>}
 				<ul class="points">
 					{item.points.map((point) => <li>{point}</li>)}
 				</ul>
+				{item.demo && (
+					<div class="project-demo">
+						<p class="demo-label">{item.demo.label}</p>
+						<p class="demo-text">{item.demo.text}</p>
+						{demo && (
+							<p class="demo-links">
+								<a href={demo.href} target="_blank" rel="noopener">{t.openDemo}</a>
+							</p>
+						)}
+					</div>
+				)}
 			</li>
-		))}
+			);
+		})}
 	</ul>
 </section>
 
@@ -156,7 +172,7 @@ const t = getDictionary(locale).brandHome.projects;
 
 	.tag {
 		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 12px;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: var(--color-text-secondary);
@@ -196,6 +212,59 @@ const t = getDictionary(locale).brandHome.projects;
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	/* A public demo, when there is one: pinned to the bottom of the card
+	   so the rail stays even, set off from the summary by a hairline. */
+	.project-demo {
+		margin-top: auto;
+		padding-top: 14px;
+		border-top: var(--border-hairline);
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.demo-label {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.demo-text {
+		margin: 0;
+		font-size: 0.8rem;
+		line-height: 1.65;
+		color: var(--color-text-secondary);
+	}
+
+	.demo-links {
+		margin: 4px 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 6px 16px;
+	}
+
+	.demo-links a {
+		color: var(--color-accent);
+		font-size: 0.9rem;
+		font-weight: 500;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.demo-links a:hover,
+	.demo-links a:focus-visible {
+		text-decoration-thickness: 2px;
+	}
+
+	.demo-links a:focus-visible {
+		outline: var(--focus-outline);
+		outline-offset: 2px;
 	}
 
 	@media (prefers-reduced-motion: no-preference) {

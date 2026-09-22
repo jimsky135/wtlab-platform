@@ -196,11 +196,13 @@ export const zhTW = {
 		projects: {
 			kicker: '專案 · Projects',
 			heading: '專案一覽',
-			lede: 'WTLab 之外，還有幾個正在進行的專案。這裡只介紹用途與現況，不提供入口。',
+			lede: 'WTLab 之外，還有幾個正在進行的專案。多數只介紹用途與現況；有公開示範站的會附上連結。',
 			scrollHint: '左右滑動看更多 →',
 			listLabel: '專案列表',
+			openDemo: '開啟示範站 →',
 			items: [
 				{
+					id: 'wtlab',
 					name: 'WTLab',
 					tone: 'live',
 					status: '已上線',
@@ -212,6 +214,7 @@ export const zhTW = {
 					],
 				},
 				{
+					id: 'phoenix',
 					name: 'Phoenix',
 					tone: 'internal',
 					status: '內部使用中',
@@ -223,17 +226,22 @@ export const zhTW = {
 					],
 				},
 				{
+					id: 'stocktake',
 					name: '原料盤點工具',
 					tone: 'internal',
 					status: '已上線・限內部使用',
-					summary: '多人原料盤點。現場多人同時盤點，資料直接對上每日的 SAP 庫存。',
 					points: [
 						'每日 SAP 歸倉對帳',
 						'儲格照片與樹狀儲格結構',
 						'每格現量帳、存入順序與棧板數',
 					],
+					demo: {
+						label: '示範站「資產盤點」・虛構資料・免登入',
+						text: '適用於倉庫、門市及物品管理的多人盤點工具。每一格多人盤點、記錄一致後定案；品項加總對照 ERP 帳面後由人確認盤完；記錄存入順序，提供先進先出作業參考。可不登入直接操作。',
+					},
 				},
 				{
+					id: 'life-app',
 					name: '生活幫手 App',
 					tone: 'building',
 					status: '開發中',

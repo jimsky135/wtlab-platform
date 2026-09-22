@@ -271,6 +271,9 @@ export interface HomeText {
  */
 export type BrandEpisodeId = 'ep001' | 'ep002' | 'ep003' | 'ep004';
 
+/** Projects on the homepage overview. */
+export type ProjectId = 'wtlab' | 'phoenix' | 'stocktake' | 'life-app';
+
 export interface BrandHomeText {
 	seoTitle: string;
 	seoDescription: string;
@@ -347,13 +350,20 @@ export interface BrandHomeText {
 		scrollHint: string;
 		/** Accessible name for the horizontally scrolling list. */
 		listLabel: string;
+		/** Link text for a project's public demo. */
+		openDemo: string;
 		items: Array<{
+			/** Keys the demo link in brand-content.ts; URLs never live in i18n. */
+			id: ProjectId;
 			name: string;
 			/** Colour of the status tag: live / internal-only / still being built. */
 			tone: 'live' | 'internal' | 'building';
 			status: string;
-			summary: string;
+			/** Omitted when the points already say it. */
+			summary?: string;
 			points: string[];
+			/** A public demo that needs no sign-in, described on the card. */
+			demo?: { label: string; text: string };
 		}>;
 	};
 	footer: { sloganLead: string; sloganPunch: string; line: string };
